@@ -5,8 +5,9 @@ import { Card } from '../components/Card';
 import { ProgressBar } from '../components/ProgressBar';
 import { questionBank } from '../data/loadQuestionBank';
 import { fetchUsPhonetic } from '../lib/phonetic';
-import { createSession, loadState, saveState } from '../lib/storage';
 import { pickDailyQuestions, scheduleReviewTasks } from '../lib/practiceUtils';
+import { createSession, loadState, saveState } from '../lib/storage';
+import { fetchWordImage } from '../lib/wordImage';
 import type { Question, SessionAnswer } from '../types/schema';
 
 type TrainMode =
@@ -148,6 +149,9 @@ export function PracticePage() {
   const [listenRate, setListenRate] = useState(1);
   const [sentenceCursor, setSentenceCursor] = useState(0);
   const [phonetic, setPhonetic] = useState('');
+  const [spellingInput, setSpellingInput] = useState('');
+  const [wordImageUrl, setWordImageUrl] = useState('');
+  const [wordImageLoading, setWordImageLoading] = useState(false);
   const autoPlayAfterSubmitRef = useRef(false);
 
   const currentBank = useMemo(() => {
@@ -215,17 +219,13 @@ export function PracticePage() {
 
     if (train === 'spelling') {
       const vocabBank = bank.filter((q) => q.tags.includes('vocab-qa') || q.tags.includes('vocab'));
-      const wordPool = vocabBank.map((q) => q.prompt);
-      bank = vocabBank.map((q) => {
-        const distract = shuffleArray(wordPool.filter((word) => word !== q.prompt)).slice(0, 3);
-        const options = shuffleArray([q.prompt, ...distract]);
-        return {
-          ...q,
-          stem: `拼写提示：${maskWord(q.prompt)}`,
-          options,
-          answerIndex: options.indexOf(q.prompt),
-        };
-      });
+      bank = vocabBank.map((q) => ({
+        ...q,
+        type: 'spell' as const,
+        stem: `拼写提示：${maskWord(q.prompt)}`,
+        options: [],
+        answerIndex: 0,
+      }));
     }
 
     if (train === 'initial') {
@@ -353,6 +353,9 @@ export function PracticePage() {
     setStreak(0);
     setListenRate(1);
     setSentenceCursor(0);
+    setSpellingInput('');
+    setWordImageUrl('');
+    setWordImageLoading(false);
     autoPlayAfterSubmitRef.current = false;
   }, [currentBank, mode, train]);
 
@@ -366,7 +369,8 @@ export function PracticePage() {
   const totalCount = questionFlow.length;
   const currentQuestionId = questionFlow[questionIndex];
   const question = currentQuestionId !== undefined ? questionById.get(currentQuestionId) : undefined;
-  const isChoiceQuestion = Boolean(question && question.type === 'single_choice' && question.options.length > 0);
+  const isSpellingQuestion = train === 'spelling';
+  const isChoiceQuestion = !isSpellingQuestion && Boolean(question && question.type === 'single_choice' && question.options.length > 0);
 
   useEffect(() => {
     if (!question) return;
@@ -376,8 +380,9 @@ export function PracticePage() {
     const existed = session?.answers.find((a) => a.questionId === question.id);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSelected(existed ? existed.selectedIndex : null);
+    setSelected(existed && existed.selectedIndex >= 0 ? existed.selectedIndex : null);
     setFeedback('');
+    setSpellingInput('');
   }, [question]);
 
   useEffect(() => {
@@ -402,6 +407,27 @@ export function PracticePage() {
       canceled = true;
     };
   }, [question]);
+
+  useEffect(() => {
+    if (!question || !isSpellingQuestion || !isSingleEnglishWord(question.prompt)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setWordImageUrl('');
+      setWordImageLoading(false);
+      return;
+    }
+
+    let canceled = false;
+    setWordImageLoading(true);
+    fetchWordImage(question.prompt).then((url) => {
+      if (canceled) return;
+      setWordImageUrl(url ?? '');
+      setWordImageLoading(false);
+    });
+
+    return () => {
+      canceled = true;
+    };
+  }, [question, isSpellingQuestion]);
 
   const audioText = question ? getAudioText(question) : '';
   const sentenceList = splitSentences(audioText);
@@ -471,6 +497,7 @@ export function PracticePage() {
 
   const submit = () => {
     if (isChoiceQuestion && selected === null) return;
+    if (isSpellingQuestion && spellingInput.trim().length === 0) return;
 
     const state = loadState();
     const hasCompatibleSession =
@@ -480,8 +507,14 @@ export function PracticePage() {
       state.activeSession.answers.every((answer) => questionById.has(answer.questionId));
 
     const session = hasCompatibleSession && state.activeSession ? state.activeSession : createSession();
-    const selectedIndex = isChoiceQuestion ? (selected ?? 0) : 0;
-    const isCorrect = isChoiceQuestion ? selectedIndex === question.answerIndex : true;
+    const selectedIndex = isChoiceQuestion ? (selected ?? 0) : isSpellingQuestion ? -1 : 0;
+    const normalizedInput = spellingInput.trim().toLowerCase();
+    const normalizedAnswer = question.prompt.trim().toLowerCase();
+    const isCorrect = isSpellingQuestion
+      ? normalizedInput === normalizedAnswer
+      : isChoiceQuestion
+        ? selectedIndex === question.answerIndex
+        : true;
 
     const answerPayload: SessionAnswer = {
       questionId: question.id,
@@ -505,7 +538,7 @@ export function PracticePage() {
     let nextFeedback = '';
     let nextFlow = questionFlow;
 
-    if (isChoiceQuestion && !isCorrect) {
+    if (!isCorrect) {
       const now = new Date();
       if (wrongIndex >= 0) {
         state.wrongBook[wrongIndex].wrongCount += 1;
@@ -523,7 +556,9 @@ export function PracticePage() {
       state.reviewTasks = scheduleReviewTasks(state.reviewTasks, question.id, now);
       setStreak(0);
 
-      nextFeedback = `答错了，正确答案是 ${String.fromCharCode(65 + question.answerIndex)}。`;
+      nextFeedback = isSpellingQuestion
+        ? `答错了，正确拼写是 ${question.prompt}。`
+        : `答错了，正确答案是 ${String.fromCharCode(65 + question.answerIndex)}。`;
 
       const reinforcementId = pickReinforcementQuestionId(question, questionFlow, questionIndex, questionById);
       if (reinforcementId !== null) {
@@ -590,6 +625,12 @@ export function PracticePage() {
 
   const cardSubtitle = train === 'audio' ? '听音后选择正确选项' : question.stem;
 
+  const submitDisabled = isChoiceQuestion
+    ? selected === null
+    : isSpellingQuestion
+      ? spellingInput.trim().length === 0
+      : false;
+
   return (
     <main className="page">
       <h1>
@@ -611,7 +652,29 @@ export function PracticePage() {
           </Button>
         </div>
 
-        {isChoiceQuestion ? (
+        {isSpellingQuestion ? (
+          <div className="learning-block">
+            {wordImageUrl ? (
+              <img className="spelling-image" src={wordImageUrl} alt={`${question.prompt} 图片`} loading="lazy" referrerPolicy="no-referrer" />
+            ) : (
+              <p className="muted">{wordImageLoading ? '图片加载中...' : '暂未找到对应图片'}</p>
+            )}
+
+            <label className="spelling-label" htmlFor="spelling-input">
+              请输入英文拼写：
+            </label>
+            <input
+              id="spelling-input"
+              className="spelling-input"
+              value={spellingInput}
+              onChange={(event) => setSpellingInput(event.target.value)}
+              placeholder="输入单词"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+          </div>
+        ) : isChoiceQuestion ? (
           <div className="options">
             {question.options.map((op, idx) => (
               <button
@@ -640,8 +703,8 @@ export function PracticePage() {
           </Button>
         </div>
 
-        <Button onClick={submit} disabled={isChoiceQuestion && selected === null} fullWidth>
-          {isChoiceQuestion ? '提交' : '我会了，下一题'}
+        <Button onClick={submit} disabled={submitDisabled} fullWidth>
+          {isChoiceQuestion || isSpellingQuestion ? '提交' : '我会了，下一题'}
         </Button>
       </Card>
     </main>

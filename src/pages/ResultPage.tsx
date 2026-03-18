@@ -29,17 +29,22 @@ export function ResultPage() {
   const targetCount = getTargetCount(latest.score, answered, latest.questionTotal);
   const wrongCount = Math.max(targetCount - latest.score, 0);
   const percent = Math.round((latest.score / targetCount) * 100);
+  const isSpellingRound = latest.train === 'spelling';
 
   const wrongDetails = latest.answers
     .filter((answer) => !answer.isCorrect)
     .map((answer) => {
       const question = questionBank.find((item) => item.id === answer.questionId);
       if (!question) return null;
-      const correctOption = question.options[question.answerIndex] ?? '（缺少正确答案）';
+
+      const correctOption = isSpellingRound
+        ? question.prompt
+        : question.options[question.answerIndex] ?? '（缺少正确答案）';
+
       return {
         id: question.id,
         prompt: question.prompt,
-        correctLabel: String.fromCharCode(65 + question.answerIndex),
+        correctLabel: isSpellingRound ? '拼写' : String.fromCharCode(65 + question.answerIndex),
         correctOption,
       };
     })
@@ -64,7 +69,7 @@ export function ResultPage() {
         <Card title="本轮新错题与正确答案">
           {wrongDetails.map((item, index) => (
             <p key={item.id}>
-              {index + 1}. {item.prompt} → {item.correctLabel}. {item.correctOption}
+              {index + 1}. {item.prompt} {'→'} {item.correctLabel}. {item.correctOption}
             </p>
           ))}
         </Card>

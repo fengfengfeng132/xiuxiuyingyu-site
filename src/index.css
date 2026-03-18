@@ -303,3 +303,35 @@ h1 {
     border-radius: 18px;
   }
 }
+
+.spelling-image {
+  width: 100%;
+  max-height: 240px;
+  object-fit: contain;
+  border: 1px solid #d7e2ff;
+  border-radius: 14px;
+  background: #ffffff;
+  margin-bottom: 10px;
+}
+
+.spelling-label {
+  display: block;
+  margin: 6px 0;
+  color: #2a4585;
+  font-weight: 700;
+}
+
+.spelling-input {
+  width: 100%;
+  border: 1px solid #cbd8ff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  color: #233873;
+  background: #ffffff;
+}
+
+.spelling-input:focus {
+  outline: 2px solid #7b99ff;
+  outline-offset: 1px;
+}

@@ -1,0 +1,16 @@
+﻿{
+  "name": "WOE L2 英语练习",
+  "short_name": "WOE L2",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#1f6fff",
+  "description": "iPad 互动英语练习（纯本地）",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -1,0 +1,1602 @@
+[
+  {
+    "id": 1,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "keyboard",
+    "stem": "选择与 \"keyboard\" 对应的中文意思",
+    "options": [
+      "击打",
+      "的",
+      "帽子",
+      "电子琴/键盘"
+    ],
+    "answerIndex": 3,
+    "explanation": "keyboard 电子琴/键盘",
+    "tags": [
+      "vocab",
+      "instrument",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "keyboard"
+  },
+  {
+    "id": 2,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "guitar",
+    "stem": "选择与 \"guitar\" 对应的中文意思",
+    "options": [
+      "吉他",
+      "母鸡",
+      "放置/一套（待确认）",
+      "清洗"
+    ],
+    "answerIndex": 0,
+    "explanation": "guitar 吉他",
+    "tags": [
+      "vocab",
+      "instrument",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "guitar"
+  },
+  {
+    "id": 3,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "trumpet",
+    "stem": "选择与 \"trumpet\" 对应的中文意思",
+    "options": [
+      "踢",
+      "那个",
+      "小号",
+      "击打"
+    ],
+    "answerIndex": 2,
+    "explanation": "trumpet 小号",
+    "tags": [
+      "vocab",
+      "instrument",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "trumpet"
+  },
+  {
+    "id": 4,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "drum",
+    "stem": "选择与 \"drum\" 对应的中文意思",
+    "options": [
+      "布",
+      "鼓",
+      "打扫",
+      "击打"
+    ],
+    "answerIndex": 1,
+    "explanation": "drum 鼓",
+    "tags": [
+      "vocab",
+      "instrument",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "drum"
+  },
+  {
+    "id": 5,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "xylophone",
+    "stem": "选择与 \"xylophone\" 对应的中文意思",
+    "options": [
+      "鼓",
+      "跳绳/蹦跳",
+      "吉他",
+      "木琴"
+    ],
+    "answerIndex": 3,
+    "explanation": "xylophone 木琴",
+    "tags": [
+      "vocab",
+      "instrument",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "xylophone"
+  },
+  {
+    "id": 6,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "recorder",
+    "stem": "选择与 \"recorder\" 对应的中文意思",
+    "options": [
+      "腿",
+      "梅格（人名）",
+      "竖笛",
+      "小地毯"
+    ],
+    "answerIndex": 2,
+    "explanation": "recorder 竖笛",
+    "tags": [
+      "vocab",
+      "instrument",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "recorder"
+  },
+  {
+    "id": 7,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "violin",
+    "stem": "选择与 \"violin\" 对应的中文意思",
+    "options": [
+      "家",
+      "小提琴",
+      "猪",
+      "梅格（人名）"
+    ],
+    "answerIndex": 1,
+    "explanation": "violin 小提琴",
+    "tags": [
+      "vocab",
+      "instrument",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "violin"
+  },
+  {
+    "id": 8,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "piano",
+    "stem": "选择与 \"piano\" 对应的中文意思",
+    "options": [
+      "公牛",
+      "钢琴",
+      "床",
+      "梅格（人名）"
+    ],
+    "answerIndex": 1,
+    "explanation": "piano 钢琴",
+    "tags": [
+      "vocab",
+      "instrument",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "piano"
+  },
+  {
+    "id": 9,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "throw",
+    "stem": "选择与 \"throw\" 对应的中文意思",
+    "options": [
+      "热的",
+      "小路",
+      "击打",
+      "扔"
+    ],
+    "answerIndex": 3,
+    "explanation": "throw 扔",
+    "tags": [
+      "vocab",
+      "verb",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "throw"
+  },
+  {
+    "id": 10,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "catch",
+    "stem": "选择与 \"catch\" 对应的中文意思",
+    "options": [
+      "接",
+      "清洗",
+      "瘦的/薄的",
+      "家"
+    ],
+    "answerIndex": 0,
+    "explanation": "catch 接",
+    "tags": [
+      "vocab",
+      "verb",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "catch"
+  },
+  {
+    "id": 11,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "hit",
+    "stem": "选择与 \"hit\" 对应的中文意思",
+    "options": [
+      "击打",
+      "清洗",
+      "布",
+      "梅格（人名）"
+    ],
+    "answerIndex": 0,
+    "explanation": "hit 击打",
+    "tags": [
+      "vocab",
+      "verb",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "hit"
+  },
+  {
+    "id": 12,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "kick",
+    "stem": "选择与 \"kick\" 对应的中文意思",
+    "options": [
+      "热的",
+      "踢",
+      "花蕾",
+      "小地毯"
+    ],
+    "answerIndex": 1,
+    "explanation": "kick 踢",
+    "tags": [
+      "vocab",
+      "verb",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "kick"
+  },
+  {
+    "id": 13,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "climb",
+    "stem": "选择与 \"climb\" 对应的中文意思",
+    "options": [
+      "布",
+      "鼓",
+      "打扫",
+      "爬"
+    ],
+    "answerIndex": 3,
+    "explanation": "climb 爬",
+    "tags": [
+      "vocab",
+      "verb",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "climb"
+  },
+  {
+    "id": 14,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "slide",
+    "stem": "选择与 \"slide\" 对应的中文意思",
+    "options": [
+      "接",
+      "踢",
+      "滑",
+      "家"
+    ],
+    "answerIndex": 2,
+    "explanation": "slide 滑",
+    "tags": [
+      "vocab",
+      "verb",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "slide"
+  },
+  {
+    "id": 15,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "skip",
+    "stem": "选择与 \"skip\" 对应的中文意思",
+    "options": [
+      "网",
+      "木琴",
+      "跳绳/蹦跳",
+      "画画（涂色）"
+    ],
+    "answerIndex": 2,
+    "explanation": "skip 跳绳/蹦跳",
+    "tags": [
+      "vocab",
+      "verb",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "skip"
+  },
+  {
+    "id": 16,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "sit",
+    "stem": "选择与 \"sit\" 对应的中文意思",
+    "options": [
+      "电子琴/键盘",
+      "飞蛾",
+      "坐",
+      "小地毯"
+    ],
+    "answerIndex": 2,
+    "explanation": "sit 坐",
+    "tags": [
+      "vocab",
+      "verb",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "sit"
+  },
+  {
+    "id": 17,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "paint",
+    "stem": "选择与 \"paint\" 对应的中文意思",
+    "options": [
+      "打扫",
+      "画画（涂色）",
+      "木琴",
+      "梅格（人名）"
+    ],
+    "answerIndex": 1,
+    "explanation": "paint 画画（涂色）",
+    "tags": [
+      "vocab",
+      "verb",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "paint"
+  },
+  {
+    "id": 18,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "draw",
+    "stem": "选择与 \"draw\" 对应的中文意思",
+    "options": [
+      "小提琴",
+      "击打",
+      "画（线稿）",
+      "公牛"
+    ],
+    "answerIndex": 2,
+    "explanation": "draw 画（线稿）",
+    "tags": [
+      "vocab",
+      "verb",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "draw"
+  },
+  {
+    "id": 19,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "clean",
+    "stem": "选择与 \"clean\" 对应的中文意思",
+    "options": [
+      "踢",
+      "钢琴",
+      "打扫",
+      "腿"
+    ],
+    "answerIndex": 2,
+    "explanation": "clean 打扫",
+    "tags": [
+      "vocab",
+      "verb",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "clean"
+  },
+  {
+    "id": 20,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "wash",
+    "stem": "选择与 \"wash\" 对应的中文意思",
+    "options": [
+      "狐狸",
+      "爬",
+      "清洗",
+      "飞蛾"
+    ],
+    "answerIndex": 2,
+    "explanation": "wash 清洗",
+    "tags": [
+      "vocab",
+      "verb",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "wash"
+  },
+  {
+    "id": 21,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "this",
+    "stem": "选择与 \"this\" 对应的中文意思",
+    "options": [
+      "这个",
+      "花蕾",
+      "狐狸",
+      "贝丝（人名）"
+    ],
+    "answerIndex": 0,
+    "explanation": "this 这个",
+    "tags": [
+      "vocab",
+      "phonics",
+      "th",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "this"
+  },
+  {
+    "id": 22,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "that",
+    "stem": "选择与 \"that\" 对应的中文意思",
+    "options": [
+      "木琴",
+      "小路",
+      "画（线稿）",
+      "那个"
+    ],
+    "answerIndex": 3,
+    "explanation": "that 那个",
+    "tags": [
+      "vocab",
+      "phonics",
+      "th",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "that"
+  },
+  {
+    "id": 23,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "them",
+    "stem": "选择与 \"them\" 对应的中文意思",
+    "options": [
+      "梅格（人名）",
+      "布",
+      "他们/她们/它们",
+      "清洗"
+    ],
+    "answerIndex": 2,
+    "explanation": "them 他们/她们/它们",
+    "tags": [
+      "vocab",
+      "phonics",
+      "th",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "them"
+  },
+  {
+    "id": 24,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "thin",
+    "stem": "选择与 \"thin\" 对应的中文意思",
+    "options": [
+      "瘦的/薄的",
+      "滑",
+      "跳绳/蹦跳",
+      "公共汽车"
+    ],
+    "answerIndex": 0,
+    "explanation": "thin 瘦的/薄的",
+    "tags": [
+      "vocab",
+      "phonics",
+      "th",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "thin"
+  },
+  {
+    "id": 25,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "thick",
+    "stem": "选择与 \"thick\" 对应的中文意思",
+    "options": [
+      "厚的",
+      "一个（用于元音音素前）",
+      "那个",
+      "爬"
+    ],
+    "answerIndex": 0,
+    "explanation": "thick 厚的",
+    "tags": [
+      "vocab",
+      "phonics",
+      "th",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "thick"
+  },
+  {
+    "id": 26,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "moth",
+    "stem": "选择与 \"moth\" 对应的中文意思",
+    "options": [
+      "帽子",
+      "床",
+      "公共汽车",
+      "飞蛾"
+    ],
+    "answerIndex": 3,
+    "explanation": "moth 飞蛾",
+    "tags": [
+      "vocab",
+      "phonics",
+      "th",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "moth"
+  },
+  {
+    "id": 27,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "path",
+    "stem": "选择与 \"path\" 对应的中文意思",
+    "options": [
+      "跳绳/蹦跳",
+      "小地毯",
+      "小路",
+      "母鸡"
+    ],
+    "answerIndex": 2,
+    "explanation": "path 小路",
+    "tags": [
+      "vocab",
+      "phonics",
+      "th",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "path"
+  },
+  {
+    "id": 28,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "bath",
+    "stem": "选择与 \"bath\" 对应的中文意思",
+    "options": [
+      "腿",
+      "瘦的/薄的",
+      "洗澡/浴缸",
+      "公共汽车"
+    ],
+    "answerIndex": 2,
+    "explanation": "bath 洗澡/浴缸",
+    "tags": [
+      "vocab",
+      "phonics",
+      "th",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "bath"
+  },
+  {
+    "id": 29,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "cloth",
+    "stem": "选择与 \"cloth\" 对应的中文意思",
+    "options": [
+      "小地毯",
+      "布",
+      "数学",
+      "狐狸"
+    ],
+    "answerIndex": 1,
+    "explanation": "cloth 布",
+    "tags": [
+      "vocab",
+      "phonics",
+      "th",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "cloth"
+  },
+  {
+    "id": 30,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "math",
+    "stem": "选择与 \"math\" 对应的中文意思",
+    "options": [
+      "布",
+      "放置/一套（待确认）",
+      "木琴",
+      "数学"
+    ],
+    "answerIndex": 3,
+    "explanation": "math 数学",
+    "tags": [
+      "vocab",
+      "phonics",
+      "th",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "math"
+  },
+  {
+    "id": 31,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "ox",
+    "stem": "选择与 \"ox\" 对应的中文意思",
+    "options": [
+      "热的",
+      "公牛",
+      "湿的",
+      "瘦的/薄的"
+    ],
+    "answerIndex": 1,
+    "explanation": "ox 公牛",
+    "tags": [
+      "vocab",
+      "phonics",
+      "word",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "ox"
+  },
+  {
+    "id": 32,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "fox",
+    "stem": "选择与 \"fox\" 对应的中文意思",
+    "options": [
+      "腿",
+      "布",
+      "狐狸",
+      "猪"
+    ],
+    "answerIndex": 2,
+    "explanation": "fox 狐狸",
+    "tags": [
+      "vocab",
+      "phonics",
+      "word",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "fox"
+  },
+  {
+    "id": 33,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "box",
+    "stem": "选择与 \"box\" 对应的中文意思",
+    "options": [
+      "布",
+      "盒子",
+      "腿",
+      "这个"
+    ],
+    "answerIndex": 1,
+    "explanation": "box 盒子",
+    "tags": [
+      "vocab",
+      "phonics",
+      "word",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "box"
+  },
+  {
+    "id": 34,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "hop",
+    "stem": "选择与 \"hop\" 对应的中文意思",
+    "options": [
+      "单脚跳",
+      "踢",
+      "那个",
+      "扔"
+    ],
+    "answerIndex": 0,
+    "explanation": "hop 单脚跳",
+    "tags": [
+      "vocab",
+      "phonics",
+      "word",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "hop"
+  },
+  {
+    "id": 35,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "hat",
+    "stem": "选择与 \"hat\" 对应的中文意思",
+    "options": [
+      "瘦的/薄的",
+      "帽子",
+      "打扫",
+      "拖/用力提（待确认）"
+    ],
+    "answerIndex": 1,
+    "explanation": "hat 帽子",
+    "tags": [
+      "vocab",
+      "phonics",
+      "word",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "hat"
+  },
+  {
+    "id": 36,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "hot",
+    "stem": "选择与 \"hot\" 对应的中文意思",
+    "options": [
+      "扔",
+      "公共汽车",
+      "一个（用于元音音素前）",
+      "热的"
+    ],
+    "answerIndex": 3,
+    "explanation": "hot 热的",
+    "tags": [
+      "vocab",
+      "phonics",
+      "word",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "hot"
+  },
+  {
+    "id": 37,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "hen",
+    "stem": "选择与 \"hen\" 对应的中文意思",
+    "options": [
+      "画（线稿）",
+      "贝丝（人名）",
+      "帽子",
+      "母鸡"
+    ],
+    "answerIndex": 3,
+    "explanation": "hen 母鸡",
+    "tags": [
+      "vocab",
+      "phonics",
+      "word",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "hen"
+  },
+  {
+    "id": 38,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "pin",
+    "stem": "选择与 \"pin\" 对应的中文意思",
+    "options": [
+      "床",
+      "厚的",
+      "别针",
+      "接"
+    ],
+    "answerIndex": 2,
+    "explanation": "pin 别针",
+    "tags": [
+      "vocab",
+      "phonics",
+      "word",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "pin"
+  },
+  {
+    "id": 39,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "pig",
+    "stem": "选择与 \"pig\" 对应的中文意思",
+    "options": [
+      "猪",
+      "一个（用于元音音素前）",
+      "拖/用力提（待确认）",
+      "画（线稿）"
+    ],
+    "answerIndex": 0,
+    "explanation": "pig 猪",
+    "tags": [
+      "vocab",
+      "phonics",
+      "word",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "pig"
+  },
+  {
+    "id": 40,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "wig",
+    "stem": "选择与 \"wig\" 对应的中文意思",
+    "options": [
+      "公牛",
+      "数学",
+      "假发",
+      "贝丝（人名）"
+    ],
+    "answerIndex": 2,
+    "explanation": "wig 假发",
+    "tags": [
+      "vocab",
+      "phonics",
+      "word",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "wig"
+  },
+  {
+    "id": 41,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "an",
+    "stem": "选择与 \"an\" 对应的中文意思",
+    "options": [
+      "数学",
+      "小地毯",
+      "一个（用于元音音素前）",
+      "的"
+    ],
+    "answerIndex": 2,
+    "explanation": "an 一个（用于元音音素前）",
+    "tags": [
+      "vocab",
+      "reading",
+      "sightword",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "an"
+  },
+  {
+    "id": 42,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "of",
+    "stem": "选择与 \"of\" 对应的中文意思",
+    "options": [
+      "帽子",
+      "木琴",
+      "公牛",
+      "的"
+    ],
+    "answerIndex": 3,
+    "explanation": "of 的",
+    "tags": [
+      "vocab",
+      "reading",
+      "sightword",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "of"
+  },
+  {
+    "id": 43,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "home",
+    "stem": "选择与 \"home\" 对应的中文意思",
+    "options": [
+      "吉他",
+      "跳绳/蹦跳",
+      "家",
+      "假发"
+    ],
+    "answerIndex": 2,
+    "explanation": "home 家",
+    "tags": [
+      "vocab",
+      "reading",
+      "sightword",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "home"
+  },
+  {
+    "id": 44,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "net",
+    "stem": "选择与 \"net\" 对应的中文意思",
+    "options": [
+      "跳绳/蹦跳",
+      "滑",
+      "网",
+      "热的"
+    ],
+    "answerIndex": 2,
+    "explanation": "net 网",
+    "tags": [
+      "vocab",
+      "reading",
+      "phonics",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "net"
+  },
+  {
+    "id": 45,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "Meg",
+    "stem": "选择与 \"Meg\" 对应的中文意思",
+    "options": [
+      "小号",
+      "击打",
+      "母鸡",
+      "梅格（人名）"
+    ],
+    "answerIndex": 3,
+    "explanation": "Meg 梅格（人名）",
+    "tags": [
+      "vocab",
+      "name",
+      "reading",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "Meg"
+  },
+  {
+    "id": 46,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "bed",
+    "stem": "选择与 \"bed\" 对应的中文意思",
+    "options": [
+      "清洗",
+      "公牛",
+      "床",
+      "马克杯"
+    ],
+    "answerIndex": 2,
+    "explanation": "bed 床",
+    "tags": [
+      "vocab",
+      "reading",
+      "phonics",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "bed"
+  },
+  {
+    "id": 47,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "Bess",
+    "stem": "选择与 \"Bess\" 对应的中文意思",
+    "options": [
+      "帽子",
+      "湿的",
+      "贝丝（人名）",
+      "一个（用于元音音素前）"
+    ],
+    "answerIndex": 2,
+    "explanation": "Bess 贝丝（人名）",
+    "tags": [
+      "vocab",
+      "name",
+      "reading",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "Bess"
+  },
+  {
+    "id": 48,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "leg",
+    "stem": "选择与 \"leg\" 对应的中文意思",
+    "options": [
+      "竖笛",
+      "腿",
+      "飞蛾",
+      "画画（涂色）"
+    ],
+    "answerIndex": 1,
+    "explanation": "leg 腿",
+    "tags": [
+      "vocab",
+      "reading",
+      "body",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "leg"
+  },
+  {
+    "id": 49,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "nut",
+    "stem": "选择与 \"nut\" 对应的中文意思",
+    "options": [
+      "爬",
+      "坚果",
+      "那个",
+      "钢琴"
+    ],
+    "answerIndex": 1,
+    "explanation": "nut 坚果",
+    "tags": [
+      "vocab",
+      "reading",
+      "phonics",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "nut"
+  },
+  {
+    "id": 50,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "mug",
+    "stem": "选择与 \"mug\" 对应的中文意思",
+    "options": [
+      "盒子",
+      "家",
+      "马克杯",
+      "坚果"
+    ],
+    "answerIndex": 2,
+    "explanation": "mug 马克杯",
+    "tags": [
+      "vocab",
+      "reading",
+      "object",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "mug"
+  },
+  {
+    "id": 51,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "bud",
+    "stem": "选择与 \"bud\" 对应的中文意思",
+    "options": [
+      "踢",
+      "小提琴",
+      "花蕾",
+      "打扫"
+    ],
+    "answerIndex": 2,
+    "explanation": "bud 花蕾",
+    "tags": [
+      "vocab",
+      "reading",
+      "nature",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "bud"
+  },
+  {
+    "id": 52,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "bus",
+    "stem": "选择与 \"bus\" 对应的中文意思",
+    "options": [
+      "拖/用力提（待确认）",
+      "别针",
+      "盒子",
+      "公共汽车"
+    ],
+    "answerIndex": 3,
+    "explanation": "bus 公共汽车",
+    "tags": [
+      "vocab",
+      "reading",
+      "transport",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "bus"
+  },
+  {
+    "id": 53,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "lug",
+    "stem": "选择与 \"lug\" 对应的中文意思",
+    "options": [
+      "热的",
+      "拖/用力提（待确认）",
+      "这个",
+      "鼓"
+    ],
+    "answerIndex": 1,
+    "explanation": "lug 拖/用力提（待确认）",
+    "tags": [
+      "vocab",
+      "reading",
+      "phonics",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "lug"
+  },
+  {
+    "id": 54,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "rug",
+    "stem": "选择与 \"rug\" 对应的中文意思",
+    "options": [
+      "扔",
+      "腿",
+      "坚果",
+      "小地毯"
+    ],
+    "answerIndex": 3,
+    "explanation": "rug 小地毯",
+    "tags": [
+      "vocab",
+      "reading",
+      "object",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "rug"
+  },
+  {
+    "id": 55,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "wet",
+    "stem": "选择与 \"wet\" 对应的中文意思",
+    "options": [
+      "踢",
+      "网",
+      "湿的",
+      "狐狸"
+    ],
+    "answerIndex": 2,
+    "explanation": "wet 湿的",
+    "tags": [
+      "vocab",
+      "reading",
+      "adjective",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "wet"
+  },
+  {
+    "id": 56,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "set",
+    "stem": "选择与 \"set\" 对应的中文意思",
+    "options": [
+      "踢",
+      "放置/一套（待确认）",
+      "热的",
+      "瘦的/薄的"
+    ],
+    "answerIndex": 1,
+    "explanation": "set 放置/一套（待确认）",
+    "tags": [
+      "vocab",
+      "reading",
+      "phonics",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "set"
+  },
+  {
+    "id": 57,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "How do we play the guitar?",
+    "stem": "选择最合适的回答",
+    "options": [
+      "I’m painting a picture.",
+      "We hit the xylophone.",
+      "We strum the guitar.",
+      "We press the keyboard."
+    ],
+    "answerIndex": 2,
+    "explanation": "How do we play the guitar? We strum the guitar.",
+    "tags": [
+      "dialogue",
+      "instrument",
+      "action",
+      "auto-generated",
+      "dialogue-qa"
+    ],
+    "audioText": "How do we play the guitar? We strum the guitar."
+  },
+  {
+    "id": 58,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "How do we play the trumpet?",
+    "stem": "选择最合适的回答",
+    "options": [
+      "We strum the guitar.",
+      "We hit the xylophone.",
+      "We blow the trumpet.",
+      "We press the keyboard."
+    ],
+    "answerIndex": 2,
+    "explanation": "How do we play the trumpet? We blow the trumpet.",
+    "tags": [
+      "dialogue",
+      "instrument",
+      "action",
+      "auto-generated",
+      "dialogue-qa"
+    ],
+    "audioText": "How do we play the trumpet? We blow the trumpet."
+  },
+  {
+    "id": 59,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "How do we play the keyboard?",
+    "stem": "选择最合适的回答",
+    "options": [
+      "We blow the trumpet.",
+      "We press the keyboard.",
+      "I throw the ball.",
+      "I’m painting a picture."
+    ],
+    "answerIndex": 1,
+    "explanation": "How do we play the keyboard? We press the keyboard.",
+    "tags": [
+      "dialogue",
+      "instrument",
+      "action",
+      "auto-generated",
+      "dialogue-qa"
+    ],
+    "audioText": "How do we play the keyboard? We press the keyboard."
+  },
+  {
+    "id": 60,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "How do we play the drum?",
+    "stem": "选择最合适的回答",
+    "options": [
+      "We strum the guitar.",
+      "We hit the drum.",
+      "He throws the ball.",
+      "I’m painting a picture."
+    ],
+    "answerIndex": 1,
+    "explanation": "How do we play the drum? We hit the drum.",
+    "tags": [
+      "dialogue",
+      "instrument",
+      "action",
+      "auto-generated",
+      "dialogue-qa"
+    ],
+    "audioText": "How do we play the drum? We hit the drum."
+  },
+  {
+    "id": 61,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "How do we play the recorder?",
+    "stem": "选择最合适的回答",
+    "options": [
+      "I’m painting.",
+      "We hit the xylophone.",
+      "We blow the recorder.",
+      "We blow the trumpet."
+    ],
+    "answerIndex": 2,
+    "explanation": "How do we play the recorder? We blow the recorder.",
+    "tags": [
+      "dialogue",
+      "instrument",
+      "action",
+      "auto-generated",
+      "dialogue-qa"
+    ],
+    "audioText": "How do we play the recorder? We blow the recorder."
+  },
+  {
+    "id": 62,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "How do we play the xylophone?",
+    "stem": "选择最合适的回答",
+    "options": [
+      "We blow the recorder.",
+      "She throws the ball.",
+      "We hit the xylophone.",
+      "He throws the ball."
+    ],
+    "answerIndex": 2,
+    "explanation": "How do we play the xylophone? We hit the xylophone.",
+    "tags": [
+      "dialogue",
+      "instrument",
+      "action",
+      "auto-generated",
+      "dialogue-qa"
+    ],
+    "audioText": "How do we play the xylophone? We hit the xylophone."
+  },
+  {
+    "id": 63,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "What do I do?",
+    "stem": "选择最合适的回答",
+    "options": [
+      "I throw the ball.",
+      "We press the keyboard.",
+      "I’m painting a picture.",
+      "He throws the ball."
+    ],
+    "answerIndex": 0,
+    "explanation": "What do I do? I throw the ball. I catch the ball. I hit the ball. I kick the ball.",
+    "tags": [
+      "dialogue",
+      "verb",
+      "ball",
+      "auto-generated",
+      "dialogue-qa"
+    ],
+    "audioText": "What do I do? I throw the ball. I catch the ball. I hit the ball. I kick the ball."
+  },
+  {
+    "id": 64,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "What does he do?",
+    "stem": "选择最合适的回答",
+    "options": [
+      "We hit the xylophone.",
+      "She throws the ball.",
+      "He throws the ball.",
+      "We strum the guitar."
+    ],
+    "answerIndex": 2,
+    "explanation": "What does he do? He throws the ball. He catches the ball. He hits the ball. He kicks the ball.",
+    "tags": [
+      "dialogue",
+      "grammar",
+      "verb",
+      "auto-generated",
+      "dialogue-qa"
+    ],
+    "audioText": "What does he do? He throws the ball. He catches the ball. He hits the ball. He kicks the ball."
+  },
+  {
+    "id": 65,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "What does she do?",
+    "stem": "选择最合适的回答",
+    "options": [
+      "I’m painting.",
+      "I throw the ball.",
+      "We press the keyboard.",
+      "She throws the ball."
+    ],
+    "answerIndex": 3,
+    "explanation": "What does she do? She throws the ball. She catches the ball. She hits the ball. She kicks the ball.",
+    "tags": [
+      "dialogue",
+      "grammar",
+      "verb",
+      "auto-generated",
+      "dialogue-qa"
+    ],
+    "audioText": "What does she do? She throws the ball. She catches the ball. She hits the ball. She kicks the ball."
+  },
+  {
+    "id": 66,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "What are you doing?",
+    "stem": "选择最合适的回答",
+    "options": [
+      "We press the keyboard.",
+      "He throws the ball.",
+      "I’m painting a picture.",
+      "We strum the guitar."
+    ],
+    "answerIndex": 2,
+    "explanation": "What are you doing? I’m painting a picture. I’m drawing a picture. I’m cleaning the table. I’m washing clothes.",
+    "tags": [
+      "dialogue",
+      "grammar",
+      "action",
+      "auto-generated",
+      "dialogue-qa"
+    ],
+    "audioText": "What are you doing? I’m painting a picture. I’m drawing a picture. I’m cleaning the table. I’m washing clothes."
+  },
+  {
+    "id": 67,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "What am I doing?",
+    "stem": "选择最合适的回答",
+    "options": [
+      "We blow the recorder.",
+      "He throws the ball.",
+      "I’m painting.",
+      "We hit the xylophone."
+    ],
+    "answerIndex": 2,
+    "explanation": "What am I doing? I'm painting. I'm drawing. I'm cleaning. I'm washing.",
+    "tags": [
+      "dialogue",
+      "chant",
+      "action",
+      "auto-generated",
+      "dialogue-qa"
+    ],
+    "audioText": "What am I doing? I'm painting. I'm drawing. I'm cleaning. I'm washing."
+  }
+]

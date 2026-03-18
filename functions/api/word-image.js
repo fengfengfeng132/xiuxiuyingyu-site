@@ -61,18 +61,19 @@ function fallbackResponse(word, status = 200) {
       'content-type': 'image/svg+xml; charset=UTF-8',
       'cache-control': SHORT_CACHE,
       'x-word-image-source': 'fallback',
+      'x-word-image-style': 'fallback-card',
     },
   });
 }
 
 function buildPrompt(word, hint) {
-  const hintText = hint ? `Context meaning: ${hint}.` : '';
+  const hintText = hint ? `Meaning hint: ${hint}.` : '';
   return [
-    `Children's book style illustration for the English word "${word}".`,
+    `Create a realistic educational image for the English word "${word}".`,
     hintText,
-    'Single clear subject, centered composition, bright friendly colors, soft rounded shapes,',
-    'clean white background, suitable for grade-2 learning flashcards, no scary content, no violence,',
-    'no text, no letters, no watermark.',
+    'Single clear subject only, centered composition, natural proportions, realistic textures, soft natural daylight,',
+    'plain light background, high detail, child-safe and friendly, suitable for grade-2 vocabulary flashcards.',
+    'No text, no letters, no logo, no watermark, no abstract art, no surreal style, no cartoon, no anime.',
   ]
     .join(' ')
     .replace(/\s+/g, ' ')
@@ -96,7 +97,7 @@ export async function onRequestGet(context) {
   cacheUrl.pathname = '/api/word-image';
   cacheUrl.searchParams.set('word', word);
   if (hint) cacheUrl.searchParams.set('hint', hint);
-  cacheUrl.searchParams.set('v', 'ai-v1');
+  cacheUrl.searchParams.set('v', 'ai-v2-realistic');
 
   const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
   const cache = caches.default;
@@ -125,6 +126,17 @@ export async function onRequestGet(context) {
       'weapon',
       'horror',
       'blurry',
+      'abstract',
+      'surreal',
+      'cartoon',
+      'anime',
+      'illustration',
+      'painting',
+      '3d render',
+      'distorted',
+      'deformed',
+      'extra limbs',
+      'low quality',
     ].join(', ');
 
     const imageStream = await context.env.AI.run(MODEL, {
@@ -132,8 +144,8 @@ export async function onRequestGet(context) {
       negative_prompt: negativePrompt,
       width: 512,
       height: 512,
-      num_steps: 20,
-      guidance: 7.5,
+      num_steps: 28,
+      guidance: 8,
       seed: hashSeed(word),
     });
 
@@ -143,6 +155,7 @@ export async function onRequestGet(context) {
         'content-type': 'image/png',
         'cache-control': LONG_CACHE,
         'x-word-image-source': 'ai',
+        'x-word-image-style': 'realistic-v2',
       },
     });
 

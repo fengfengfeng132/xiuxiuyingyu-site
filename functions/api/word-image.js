@@ -1,6 +1,65 @@
-const MODEL = '@cf/stabilityai/stable-diffusion-xl-base-1.0';
+const MODEL = '@cf/black-forest-labs/flux-1-schnell';
 const LONG_CACHE = 'public, max-age=1209600, s-maxage=1209600';
 const SHORT_CACHE = 'public, max-age=900, s-maxage=900';
+
+const wordEmojiMap = {
+  keyboard: '⌨️',
+  guitar: '🎸',
+  trumpet: '🎺',
+  drum: '🥁',
+  xylophone: '🎼',
+  recorder: '🪈',
+  violin: '🎻',
+  piano: '🎹',
+  throw: '🥎',
+  catch: '🤲',
+  hit: '👊',
+  kick: '🦵',
+  clean: '🧽',
+  wash: '🧼',
+  draw: '✏️',
+  paint: '🎨',
+  climb: '🧗',
+  slide: '🛝',
+  skip: '🤸',
+  hop: '🦘',
+  bed: '🛏️',
+  bath: '🛁',
+  box: '📦',
+  bus: '🚌',
+  cloth: '👕',
+  fox: '🦊',
+  hen: '🐔',
+  pig: '🐷',
+  ox: '🐂',
+  hat: '🧢',
+  leg: '🦵',
+  home: '🏠',
+  hot: '🔥',
+  wet: '💧',
+  thin: '📏',
+  thick: '📚',
+  rug: '🧶',
+  mug: '☕',
+  math: '➕',
+  pin: '📌',
+  wig: '👩',
+  bud: '🌱',
+  lug: '🧳',
+  net: '🥅',
+  nut: '🥜',
+  moth: '🦋',
+  path: '🛣️',
+  set: '🧩',
+  sit: '🪑',
+  this: '👉',
+  that: '👈',
+  them: '👥',
+  an: '🔤',
+  of: '🔗',
+  bess: '👧',
+  meg: '👧',
+};
 
 function normalizeWord(input) {
   return (input || '').trim().toLowerCase();
@@ -36,8 +95,21 @@ function hashSeed(text) {
   return Math.abs(hash >>> 0);
 }
 
-function buildFallbackSvg(word) {
-  const safeWord = escapeXml(word);
+function pickEmoji(word, hint = '') {
+  if (wordEmojiMap[word]) return wordEmojiMap[word];
+
+  const source = `${word} ${hint.toLowerCase()}`;
+  if (source.includes('music') || source.includes('乐')) return '🎵';
+  if (source.includes('animal') || source.includes('动物')) return '🐾';
+  if (source.includes('verb') || source.includes('动作')) return '🏃';
+  if (source.includes('color') || source.includes('颜色')) return '🎨';
+  if (source.includes('food') || source.includes('食')) return '🍎';
+  if (source.includes('body') || source.includes('身体')) return '🧍';
+  return '📘';
+}
+
+function buildFallbackSvg(word, hint) {
+  const safeEmoji = escapeXml(pickEmoji(word, hint));
   return `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640">
   <defs>
     <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
@@ -47,21 +119,20 @@ function buildFallbackSvg(word) {
   </defs>
   <rect x="0" y="0" width="640" height="640" rx="28" fill="url(#bg)"/>
   <rect x="30" y="30" width="580" height="580" rx="24" fill="#ffffff" stroke="#d7e2ff" stroke-width="4"/>
-  <circle cx="320" cy="270" r="110" fill="#e8f0ff" stroke="#bfd3ff" stroke-width="6"/>
-  <rect x="265" y="215" width="110" height="110" rx="18" fill="#c5d8ff"/>
-  <text x="320" y="500" text-anchor="middle" font-size="56" font-family="Arial, sans-serif" font-weight="700" fill="#254b91">${safeWord}</text>
+  <circle cx="320" cy="300" r="138" fill="#e8f0ff" stroke="#bfd3ff" stroke-width="6"/>
+  <text x="320" y="350" text-anchor="middle" font-size="170">${safeEmoji}</text>
 </svg>`;
 }
 
-function fallbackResponse(word, status = 200) {
-  const svg = buildFallbackSvg(word);
+function fallbackResponse(word, hint, status = 200) {
+  const svg = buildFallbackSvg(word, hint);
   return new Response(svg, {
     status,
     headers: {
       'content-type': 'image/svg+xml; charset=UTF-8',
       'cache-control': SHORT_CACHE,
       'x-word-image-source': 'fallback',
-      'x-word-image-style': 'fallback-card',
+      'x-word-image-style': 'fallback-emoji-v3',
     },
   });
 }
@@ -69,11 +140,11 @@ function fallbackResponse(word, status = 200) {
 function buildPrompt(word, hint) {
   const hintText = hint ? `Meaning hint: ${hint}.` : '';
   return [
-    `Create a realistic educational image for the English word "${word}".`,
+    `A realistic educational photo-style image for the English vocabulary word "${word}".`,
     hintText,
-    'Single clear subject only, centered composition, natural proportions, realistic textures, soft natural daylight,',
-    'plain light background, high detail, child-safe and friendly, suitable for grade-2 vocabulary flashcards.',
-    'No text, no letters, no logo, no watermark, no abstract art, no surreal style, no cartoon, no anime.',
+    'One clear subject only, centered composition, natural proportions, realistic textures, soft natural daylight,',
+    'light plain background, high detail, child-safe, classroom flashcard style.',
+    'No text, no letters, no logos, no watermark, not abstract, not cartoon, not anime.',
   ]
     .join(' ')
     .replace(/\s+/g, ' ')
@@ -82,6 +153,15 @@ function buildPrompt(word, hint) {
 
 function hasAiBinding(env) {
   return Boolean(env && env.AI && typeof env.AI.run === 'function');
+}
+
+function decodeBase64Image(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
 }
 
 export async function onRequestGet(context) {
@@ -97,7 +177,7 @@ export async function onRequestGet(context) {
   cacheUrl.pathname = '/api/word-image';
   cacheUrl.searchParams.set('word', word);
   if (hint) cacheUrl.searchParams.set('hint', hint);
-  cacheUrl.searchParams.set('v', 'ai-v2-realistic');
+  cacheUrl.searchParams.set('v', 'ai-v3-noanswer');
 
   const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
   const cache = caches.default;
@@ -108,61 +188,38 @@ export async function onRequestGet(context) {
   }
 
   if (!hasAiBinding(context.env)) {
-    const fallback = fallbackResponse(word);
+    const fallback = fallbackResponse(word, hint);
     context.waitUntil(cache.put(cacheKey, fallback.clone()));
     return fallback;
   }
 
   try {
     const prompt = buildPrompt(word, hint);
-    const negativePrompt = [
-      'text',
-      'letters',
-      'watermark',
-      'logo',
-      'brand',
-      'gore',
-      'violence',
-      'weapon',
-      'horror',
-      'blurry',
-      'abstract',
-      'surreal',
-      'cartoon',
-      'anime',
-      'illustration',
-      'painting',
-      '3d render',
-      'distorted',
-      'deformed',
-      'extra limbs',
-      'low quality',
-    ].join(', ');
-
-    const imageStream = await context.env.AI.run(MODEL, {
+    const aiResult = await context.env.AI.run(MODEL, {
       prompt,
-      negative_prompt: negativePrompt,
-      width: 512,
-      height: 512,
-      num_steps: 28,
-      guidance: 8,
+      steps: 8,
       seed: hashSeed(word),
     });
 
-    const response = new Response(imageStream, {
+    if (!aiResult || typeof aiResult !== 'object' || typeof aiResult.image !== 'string') {
+      throw new Error('Workers AI returned unexpected payload');
+    }
+
+    const imageBytes = decodeBase64Image(aiResult.image);
+    const response = new Response(imageBytes, {
       status: 200,
       headers: {
-        'content-type': 'image/png',
+        'content-type': 'image/jpeg',
         'cache-control': LONG_CACHE,
         'x-word-image-source': 'ai',
-        'x-word-image-style': 'realistic-v2',
+        'x-word-image-style': 'realistic-v3',
       },
     });
 
     context.waitUntil(cache.put(cacheKey, response.clone()));
     return response;
   } catch (error) {
-    const fallback = fallbackResponse(word, 200);
+    const fallback = fallbackResponse(word, hint, 200);
     context.waitUntil(cache.put(cacheKey, fallback.clone()));
     return fallback;
   }

@@ -86,8 +86,7 @@ function pickEmoji(word: string, hint = ''): string {
   return '📘';
 }
 
-function buildSvgDataUrl(word: string, emoji: string): string {
-  const safeWord = escapeXml(word);
+function buildSvgDataUrl(emoji: string): string {
   const safeEmoji = escapeXml(emoji);
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
@@ -99,8 +98,8 @@ function buildSvgDataUrl(word: string, emoji: string): string {
   </defs>
   <rect x="0" y="0" width="640" height="360" rx="24" fill="url(#bg)"/>
   <rect x="26" y="22" width="588" height="316" rx="20" fill="#ffffff" stroke="#d7e2ff" stroke-width="3"/>
-  <text x="320" y="175" text-anchor="middle" font-size="116">${safeEmoji}</text>
-  <text x="320" y="275" text-anchor="middle" font-size="46" font-family="Arial, sans-serif" font-weight="700" fill="#254b91">${safeWord}</text>
+  <circle cx="320" cy="180" r="92" fill="#e8f0ff" stroke="#bfd3ff" stroke-width="5"/>
+  <text x="320" y="210" text-anchor="middle" font-size="112">${safeEmoji}</text>
 </svg>`;
 
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
@@ -150,7 +149,7 @@ export async function fetchWordImage(word: string, hint?: string): Promise<strin
     return imageCache.get(key) ?? null;
   }
 
-  const fallback = buildSvgDataUrl(key, pickEmoji(key, hint));
+  const fallback = buildSvgDataUrl(pickEmoji(key, hint));
   const aiImage = await fetchAiImage(key, hint);
   const result = aiImage ?? fallback;
 

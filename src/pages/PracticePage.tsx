@@ -655,7 +655,7 @@ export function PracticePage() {
         {isSpellingQuestion ? (
           <div className="learning-block">
             {wordImageUrl ? (
-              <img className="spelling-image" src={wordImageUrl} alt={`${question.prompt} 图片`} loading="lazy" referrerPolicy="no-referrer" />
+              <img className="spelling-image" src={wordImageUrl} alt="单词提示图" loading="lazy" referrerPolicy="no-referrer" />
             ) : (
               <p className="muted">{wordImageLoading ? '图片加载中...' : '暂未找到对应图片'}</p>
             )}

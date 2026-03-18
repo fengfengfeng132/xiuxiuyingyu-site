@@ -1,12 +1,13 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ProgressBar } from '../components/ProgressBar';
 import { questionBank } from '../data/loadQuestionBank';
+import { fetchUsPhonetic } from '../lib/phonetic';
 import { createSession, loadState, saveState } from '../lib/storage';
-import { cloneReviewTasks, pickDailyQuestions, scheduleReviewTasks } from '../lib/practiceUtils';
-import type { Question, ReviewTask, SessionAnswer, WrongItem } from '../types/schema';
+import { pickDailyQuestions, scheduleReviewTasks } from '../lib/practiceUtils';
+import type { Question, SessionAnswer } from '../types/schema';
 
 type TrainMode =
   | 'normal'
@@ -23,20 +24,6 @@ type TrainMode =
   | 'today10'
   | 'level10'
   | 'spaced';
-
-interface UndoSnapshot {
-  questionId: number;
-  questionIndex: number;
-  selected: number | null;
-  previousAnswer: SessionAnswer | null;
-  previousWrongItem: WrongItem | null;
-  previousSessionIndex: number;
-  previousScore: number;
-  previousAccuracy: number;
-  previousStreak: number;
-  previousFlow: number[];
-  previousReviewTasks: ReviewTask[];
-}
 
 function shuffleArray<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -138,12 +125,30 @@ function getAudioText(question: Question): string {
   return (question.audioText || question.prompt || '').trim();
 }
 
+function isVocabQuestion(question: Question): boolean {
+  return question.tags.includes('vocab-qa') || question.tags.includes('vocab');
+}
+
+function isSingleEnglishWord(word: string): boolean {
+  return /^[A-Za-z]+(?:[-'][A-Za-z]+)*$/.test(word.trim());
+}
+
 export function PracticePage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const mode = (searchParams.get('mode') || 'all') as 'all' | 'vocab' | 'dialogue';
   const train = (searchParams.get('train') || 'normal') as TrainMode;
+
   const [nowForSpaced, setNowForSpaced] = useState(0);
+  const [questionFlow, setQuestionFlow] = useState<number[]>([]);
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState('');
+  const [streak, setStreak] = useState(0);
+  const [listenRate, setListenRate] = useState(1);
+  const [sentenceCursor, setSentenceCursor] = useState(0);
+  const [phonetic, setPhonetic] = useState('');
+  const autoPlayAfterSubmitRef = useRef(false);
 
   const currentBank = useMemo(() => {
     const stateSnapshot = loadState();
@@ -210,10 +215,17 @@ export function PracticePage() {
 
     if (train === 'spelling') {
       const vocabBank = bank.filter((q) => q.tags.includes('vocab-qa') || q.tags.includes('vocab'));
-      bank = vocabBank.map((q) => ({
-        ...q,
-        stem: `拼写提示：${maskWord(q.prompt)}`,
-      }));
+      const wordPool = vocabBank.map((q) => q.prompt);
+      bank = vocabBank.map((q) => {
+        const distract = shuffleArray(wordPool.filter((word) => word !== q.prompt)).slice(0, 3);
+        const options = shuffleArray([q.prompt, ...distract]);
+        return {
+          ...q,
+          stem: `拼写提示：${maskWord(q.prompt)}`,
+          options,
+          answerIndex: options.indexOf(q.prompt),
+        };
+      });
     }
 
     if (train === 'initial') {
@@ -305,15 +317,6 @@ export function PracticePage() {
     return map;
   }, [currentBank]);
 
-  const [questionFlow, setQuestionFlow] = useState<number[]>([]);
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [selected, setSelected] = useState<number | null>(null);
-  const [feedback, setFeedback] = useState('');
-  const [streak, setStreak] = useState(0);
-  const [listenRate, setListenRate] = useState(1);
-  const [sentenceCursor, setSentenceCursor] = useState(0);
-  const [undoSnapshot, setUndoSnapshot] = useState<UndoSnapshot | null>(null);
-
   useEffect(() => {
     const flow = currentBank.map((q) => q.id);
     const state = loadState();
@@ -348,9 +351,9 @@ export function PracticePage() {
     setSelected(null);
     setFeedback('');
     setStreak(0);
-    setUndoSnapshot(null);
     setListenRate(1);
     setSentenceCursor(0);
+    autoPlayAfterSubmitRef.current = false;
   }, [currentBank, mode, train]);
 
   useEffect(() => {
@@ -382,11 +385,25 @@ export function PracticePage() {
     setSentenceCursor(0);
   }, [question]);
 
-  if (!question || totalCount === 0) {
-    return <main className="page">当前模式暂无可练习内容。</main>;
-  }
+  useEffect(() => {
+    if (!question || !isVocabQuestion(question) || !isSingleEnglishWord(question.prompt)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPhonetic('');
+      return;
+    }
 
-  const audioText = getAudioText(question);
+    let canceled = false;
+    fetchUsPhonetic(question.prompt).then((result) => {
+      if (canceled) return;
+      setPhonetic(result ?? '');
+    });
+
+    return () => {
+      canceled = true;
+    };
+  }, [question]);
+
+  const audioText = question ? getAudioText(question) : '';
   const sentenceList = splitSentences(audioText);
 
   const speakAudio = (text: string, rate: number) => {
@@ -398,12 +415,29 @@ export function PracticePage() {
 
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
+    const usVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith('en-us'));
+    if (usVoice) utterance.voice = usVoice;
     utterance.lang = 'en-US';
     utterance.rate = rate;
     utterance.pitch = 1.05;
     utterance.volume = 1;
     window.speechSynthesis.speak(utterance);
   };
+
+  useEffect(() => {
+    if (!autoPlayAfterSubmitRef.current) return;
+
+    autoPlayAfterSubmitRef.current = false;
+    if (!question || !isVocabQuestion(question)) return;
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    speakAudio(audioText, 1);
+  }, [audioText, question]);
+
+  if (!question || totalCount === 0) {
+    return <main className="page">当前模式暂无可练习内容。</main>;
+  }
 
   const playFullAudio = (rate: number) => {
     setListenRate(rate);
@@ -424,55 +458,15 @@ export function PracticePage() {
   const goPrev = () => {
     if (questionIndex === 0) return;
     setFeedback('');
+    autoPlayAfterSubmitRef.current = false;
     setQuestionIndex((v) => v - 1);
   };
 
   const goNext = () => {
     if (questionIndex >= totalCount - 1) return;
     setFeedback('');
+    autoPlayAfterSubmitRef.current = false;
     setQuestionIndex((v) => v + 1);
-  };
-
-  const undoLastSubmit = () => {
-    if (!undoSnapshot) return;
-
-    const state = loadState();
-    const session = state.activeSession;
-    if (!session) return;
-
-    const answerIndex = session.answers.findIndex((item) => item.questionId === undoSnapshot.questionId);
-    if (undoSnapshot.previousAnswer) {
-      if (answerIndex >= 0) session.answers[answerIndex] = undoSnapshot.previousAnswer;
-      else session.answers.push(undoSnapshot.previousAnswer);
-    } else if (answerIndex >= 0) {
-      session.answers.splice(answerIndex, 1);
-    }
-
-    session.score = undoSnapshot.previousScore;
-    session.accuracy = undoSnapshot.previousAccuracy;
-    session.currentQuestionIndex = undoSnapshot.previousSessionIndex;
-    session.questionTotal = undoSnapshot.previousFlow.length;
-    session.mode = mode;
-    session.train = train;
-
-    const wrongIndex = state.wrongBook.findIndex((item) => item.questionId === undoSnapshot.questionId);
-    if (undoSnapshot.previousWrongItem) {
-      if (wrongIndex >= 0) state.wrongBook[wrongIndex] = undoSnapshot.previousWrongItem;
-      else state.wrongBook.push(undoSnapshot.previousWrongItem);
-    } else if (wrongIndex >= 0) {
-      state.wrongBook.splice(wrongIndex, 1);
-    }
-
-    state.reviewTasks = cloneReviewTasks(undoSnapshot.previousReviewTasks);
-    state.activeSession = session;
-    saveState(state);
-
-    setQuestionFlow(undoSnapshot.previousFlow);
-    setQuestionIndex(undoSnapshot.questionIndex);
-    setSelected(undoSnapshot.selected);
-    setStreak(undoSnapshot.previousStreak);
-    setFeedback('已撤销上一次提交，可重新作答。');
-    setUndoSnapshot(null);
   };
 
   const submit = () => {
@@ -497,20 +491,10 @@ export function PracticePage() {
     };
 
     const answerIndex = session.answers.findIndex((a) => a.questionId === question.id);
-    const previousAnswer = answerIndex >= 0 ? { ...session.answers[answerIndex] } : null;
-
-    const wrongIndex = state.wrongBook.findIndex((item) => item.questionId === question.id);
-    const previousWrongItem = wrongIndex >= 0 ? { ...state.wrongBook[wrongIndex] } : null;
-
     if (answerIndex >= 0) session.answers[answerIndex] = answerPayload;
     else session.answers.push(answerPayload);
 
-    const previousSessionIndex = session.currentQuestionIndex;
-    const previousScore = session.score;
-    const previousAccuracy = session.accuracy;
-    const previousFlow = [...questionFlow];
-    const previousStreak = streak;
-    const previousReviewTasks = cloneReviewTasks(state.reviewTasks);
+    const wrongIndex = state.wrongBook.findIndex((item) => item.questionId === question.id);
 
     session.score = session.answers.filter((a) => a.isCorrect).length;
     session.accuracy = totalCount > 0 ? session.score / totalCount : 0;
@@ -571,19 +555,9 @@ export function PracticePage() {
     state.activeSession = session;
     saveState(state);
 
-    setUndoSnapshot({
-      questionId: question.id,
-      questionIndex,
-      selected,
-      previousAnswer,
-      previousWrongItem,
-      previousSessionIndex,
-      previousScore,
-      previousAccuracy,
-      previousStreak,
-      previousFlow,
-      previousReviewTasks,
-    });
+    const nextQuestionId = nextFlow[nextIndex];
+    const nextQuestion = nextQuestionId !== undefined ? questionById.get(nextQuestionId) : undefined;
+    autoPlayAfterSubmitRef.current = Boolean(nextQuestion && isVocabQuestion(nextQuestion));
 
     setFeedback(nextFeedback);
     setQuestionIndex(nextIndex);
@@ -607,16 +581,24 @@ export function PracticePage() {
     spaced: '间隔复习',
   };
 
+  const cardTitle =
+    train === 'audio'
+      ? '先点击播放，再作答'
+      : train === 'spelling'
+        ? `中文释义：${extractZh(question.explanation)}`
+        : question.prompt;
+
+  const cardSubtitle = train === 'audio' ? '听音后选择正确选项' : question.stem;
+
   return (
     <main className="page">
       <h1>
         练习 - {modeTitle} - {trainTitleMap[train] || '标准'}
       </h1>
       <ProgressBar current={questionIndex + 1} total={totalCount} />
-      <Card
-        title={train === 'audio' ? '先点击播放，再作答' : question.prompt}
-        subtitle={train === 'audio' ? '听音后选择正确选项' : question.stem}
-      >
+      <Card title={cardTitle} subtitle={cardSubtitle}>
+        {phonetic ? <p className="muted">美式音标：{phonetic}</p> : null}
+
         <div className="listen-controls">
           <Button variant="ghost" onClick={() => playFullAudio(1)}>
             正常
@@ -649,12 +631,6 @@ export function PracticePage() {
 
         {feedback ? <p className="feedback">{feedback}</p> : null}
 
-        {undoSnapshot ? (
-          <Button variant="secondary" fullWidth onClick={undoLastSubmit}>
-            撤销上次提交（仅一次）
-          </Button>
-        ) : null}
-
         <div className="actions-row">
           <Button variant="secondary" onClick={goPrev} disabled={questionIndex === 0}>
             上一题
@@ -671,5 +647,3 @@ export function PracticePage() {
     </main>
   );
 }
-
-

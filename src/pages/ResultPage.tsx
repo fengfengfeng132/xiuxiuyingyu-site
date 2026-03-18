@@ -1,6 +1,7 @@
-﻿import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { questionBank } from '../data/loadQuestionBank';
 import { loadState, startSession } from '../lib/storage';
 
 function getTargetCount(score: number, answered: number, storedTotal?: number): number {
@@ -29,6 +30,26 @@ export function ResultPage() {
   const wrongCount = Math.max(targetCount - latest.score, 0);
   const percent = Math.round((latest.score / targetCount) * 100);
 
+  const wrongDetails = latest.answers
+    .filter((answer) => !answer.isCorrect)
+    .map((answer) => {
+      const question = questionBank.find((item) => item.id === answer.questionId);
+      if (!question) return null;
+      const correctOption = question.options[question.answerIndex] ?? '（缺少正确答案）';
+      return {
+        id: question.id,
+        prompt: question.prompt,
+        correctLabel: String.fromCharCode(65 + question.answerIndex),
+        correctOption,
+      };
+    })
+    .filter(Boolean) as Array<{
+    id: number;
+    prompt: string;
+    correctLabel: string;
+    correctOption: string;
+  }>;
+
   return (
     <main className="page">
       <h1>结果</h1>
@@ -38,6 +59,16 @@ export function ResultPage() {
         <p>答错：{wrongCount}</p>
         <p>正确率：{percent}%（答对/{targetCount}）</p>
       </Card>
+
+      {wrongDetails.length > 0 ? (
+        <Card title="本轮新错题与正确答案">
+          {wrongDetails.map((item, index) => (
+            <p key={item.id}>
+              {index + 1}. {item.prompt} → {item.correctLabel}. {item.correctOption}
+            </p>
+          ))}
+        </Card>
+      ) : null}
 
       <Card title="下一步">
         <div style={{ display: 'grid', gap: 10 }}>

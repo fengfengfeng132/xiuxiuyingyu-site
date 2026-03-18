@@ -418,7 +418,7 @@ export function PracticePage() {
 
     let canceled = false;
     setWordImageLoading(true);
-    fetchWordImage(question.prompt).then((url) => {
+    fetchWordImage(question.prompt, question.explanation).then((url) => {
       if (canceled) return;
       setWordImageUrl(url ?? '');
       setWordImageLoading(false);

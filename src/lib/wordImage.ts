@@ -106,6 +106,42 @@ function buildSvgDataUrl(word: string, emoji: string): string {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
+async function blobToDataUrl(blob: Blob): Promise<string> {
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('Failed to read blob as data URL'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function fetchAiImage(word: string, hint?: string): Promise<string | null> {
+  const params = new URLSearchParams();
+  params.set('word', word);
+  if (hint) params.set('hint', hint.slice(0, 120));
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
+
+  try {
+    const response = await fetch(`/api/word-image?${params.toString()}`, {
+      signal: controller.signal,
+    });
+
+    if (!response.ok) return null;
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!contentType.startsWith('image/')) return null;
+
+    const blob = await response.blob();
+    if (!blob.size) return null;
+    return await blobToDataUrl(blob);
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function fetchWordImage(word: string, hint?: string): Promise<string | null> {
   const key = normalizeWord(word);
   if (!key) return null;
@@ -114,8 +150,10 @@ export async function fetchWordImage(word: string, hint?: string): Promise<strin
     return imageCache.get(key) ?? null;
   }
 
-  const emoji = pickEmoji(key, hint);
-  const image = buildSvgDataUrl(key, emoji);
-  imageCache.set(key, image);
-  return image;
+  const fallback = buildSvgDataUrl(key, pickEmoji(key, hint));
+  const aiImage = await fetchAiImage(key, hint);
+  const result = aiImage ?? fallback;
+
+  imageCache.set(key, result);
+  return result;
 }

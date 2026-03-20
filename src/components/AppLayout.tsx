@@ -1,7 +1,8 @@
-﻿import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 
 const navItems = [
   { to: '/', label: '首页' },
+  { to: '/dictation', label: '听写' },
   { to: '/practice', label: '做题' },
   { to: '/wrong', label: '错题' },
   { to: '/review', label: '复习' },

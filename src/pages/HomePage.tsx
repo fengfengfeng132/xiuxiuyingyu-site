@@ -1,4 +1,4 @@
-﻿import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { questionBank } from '../data/loadQuestionBank';
@@ -51,6 +51,15 @@ export function HomePage() {
             开始今日任务（约 10 分钟）
           </Button>
           <p className="muted">未掌握错题：{pendingWrongCount} · 待复习任务：{pendingReviewCount}</p>
+        </div>
+      </Card>
+
+      <Card title="听写单词 · 先把这 10 个词练熟" subtitle="先认识词义，再听音辨义，最后听音拼写。">
+        <div className="actions-stack">
+          <Button fullWidth onClick={() => navigate('/dictation')}>
+            开始听写单词学习
+          </Button>
+          <p className="muted">look · mop · sweep · cut · paint · with · that · baby · bath · thin</p>
         </div>
       </Card>
 
@@ -133,6 +142,7 @@ export function HomePage() {
       </Card>
 
       <nav className="grid-nav">
+        <Link to="/dictation">听写</Link>
         <Link to="/result">结果</Link>
         <Link to="/wrong">错题本</Link>
         <Link to="/review">复习</Link>

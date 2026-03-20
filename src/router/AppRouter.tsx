@@ -7,6 +7,7 @@ import { WrongPage } from '../pages/WrongPage';
 import { ReviewPage } from '../pages/ReviewPage';
 import { ParentPage } from '../pages/ParentPage';
 import { SettingsPage } from '../pages/SettingsPage';
+import { DictationPage } from '../pages/DictationPage';
 
 export function AppRouter() {
   return (
@@ -19,6 +20,7 @@ export function AppRouter() {
         <Route path="/review" element={<ReviewPage />} />
         <Route path="/parent" element={<ParentPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/dictation" element={<DictationPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

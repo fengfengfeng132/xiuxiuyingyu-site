@@ -99,17 +99,32 @@ function getCardSubtitle(step: DictationStep): string {
   return '先播放读音，再输入拼写。';
 }
 
+const DEFAULT_PLAY_RATE = 0.82;
+const SLOW_PLAY_RATE = 0.62;
+
+function pickUsVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  return (
+    voices.find((voice) => voice.lang === 'en-US') ??
+    voices.find((voice) => voice.lang.toLowerCase().startsWith('en-us')) ??
+    voices.find((voice) => {
+      const name = voice.name.toLowerCase();
+      return name.includes('us english') || name.includes('american') || name.includes('samantha');
+    }) ??
+    null
+  );
+}
+
 function speakEnglish(text: string, rate: number): boolean {
   if (!text || !('speechSynthesis' in window)) return false;
 
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   const voices = window.speechSynthesis.getVoices();
-  const usVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith('en-us'));
+  const usVoice = pickUsVoice(voices);
   if (usVoice) utterance.voice = usVoice;
   utterance.lang = 'en-US';
   utterance.rate = rate;
-  utterance.pitch = 1.02;
+  utterance.pitch = 1;
   window.speechSynthesis.speak(utterance);
   return true;
 }
@@ -176,7 +191,7 @@ export function DictationPage() {
     autoPlayStepRef.current = autoPlayKey;
 
     const timer = window.setTimeout(() => {
-      speakEnglish(currentStep.word.word, 1);
+      speakEnglish(currentStep.word.word, DEFAULT_PLAY_RATE);
     }, 180);
 
     return () => {
@@ -323,10 +338,10 @@ export function DictationPage() {
         <p className="dictation-stage">{getStageLabel(currentStep)}</p>
 
         <div className="dictation-audio-row">
-          <Button variant="ghost" onClick={() => playCurrentWord(1)}>
+          <Button variant="ghost" onClick={() => playCurrentWord(DEFAULT_PLAY_RATE)}>
             正常播放
           </Button>
-          <Button variant="ghost" onClick={() => playCurrentWord(0.75)}>
+          <Button variant="ghost" onClick={() => playCurrentWord(SLOW_PLAY_RATE)}>
             慢速播放
           </Button>
         </div>

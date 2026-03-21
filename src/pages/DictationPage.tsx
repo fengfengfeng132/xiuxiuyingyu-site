@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ProgressBar } from '../components/ProgressBar';
 import { dictationWords, type DictationWord } from '../data/dictationWords';
-import { fetchUsPhonetic } from '../lib/phonetic';
+import { fetchUsAudioUrl, fetchUsPhonetic } from '../lib/phonetic';
 import { fetchWordImage } from '../lib/wordImage';
 
 type DictationStep =
@@ -35,6 +35,9 @@ interface DictationAnswer {
   correctAnswer: string;
   isCorrect: boolean;
 }
+
+const DEFAULT_PLAY_RATE = 0.8;
+const SLOW_PLAY_RATE = 0.4;
 
 function shuffleArray<T>(items: T[]): T[] {
   const next = [...items];
@@ -99,9 +102,6 @@ function getCardSubtitle(step: DictationStep): string {
   return '先播放读音，再输入拼写。';
 }
 
-const DEFAULT_PLAY_RATE = 0.8;
-const SLOW_PLAY_RATE = 0.55;
-
 function pickUsVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   return (
     voices.find((voice) => voice.lang === 'en-US') ??
@@ -129,6 +129,18 @@ function speakEnglish(text: string, rate: number): boolean {
   return true;
 }
 
+function setAudioPitchBehavior(audio: HTMLAudioElement) {
+  const media = audio as HTMLAudioElement & {
+    preservesPitch?: boolean;
+    mozPreservesPitch?: boolean;
+    webkitPreservesPitch?: boolean;
+  };
+
+  media.preservesPitch = false;
+  media.mozPreservesPitch = false;
+  media.webkitPreservesPitch = false;
+}
+
 export function DictationPage() {
   const [steps, setSteps] = useState<DictationStep[]>(() => buildSteps(dictationWords));
   const [stepIndex, setStepIndex] = useState(0);
@@ -136,30 +148,65 @@ export function DictationPage() {
   const [spellingInput, setSpellingInput] = useState('');
   const [feedback, setFeedback] = useState('');
   const [phonetic, setPhonetic] = useState('');
+  const [audioUrl, setAudioUrl] = useState('');
   const [wordImageUrl, setWordImageUrl] = useState('');
   const [wordImageLoading, setWordImageLoading] = useState(false);
   const [answers, setAnswers] = useState<DictationAnswer[]>([]);
   const autoPlayStepRef = useRef('');
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const currentStep = stepIndex < steps.length ? steps[stepIndex] : null;
   const quizTotal = steps.filter((step) => step.type !== 'study').length;
   const isCompleted = currentStep === null;
 
-  const playCurrentWord = (rate: number) => {
+  const stopAudioPlayback = useCallback(() => {
+    if (!audioRef.current) return;
+    audioRef.current.pause();
+    audioRef.current.currentTime = 0;
+    audioRef.current = null;
+  }, []);
+
+  const playCurrentWord = useCallback((rate: number) => {
     if (!currentStep) return;
+
+    stopAudioPlayback();
+
+    if (audioUrl) {
+      const audio = new Audio(audioUrl);
+      audio.preload = 'auto';
+      audio.playbackRate = rate;
+      setAudioPitchBehavior(audio);
+      audioRef.current = audio;
+      audio
+        .play()
+        .then(() => {
+          setFeedback('');
+        })
+        .catch(() => {
+          audioRef.current = null;
+          if (!speakEnglish(currentStep.word.word, rate)) {
+            setFeedback('当前浏览器不支持语音朗读。');
+          }
+        });
+      return;
+    }
+
     if (!speakEnglish(currentStep.word.word, rate)) {
       setFeedback('当前浏览器不支持语音朗读。');
     }
-  };
+  }, [audioUrl, currentStep, stopAudioPlayback]);
 
   useEffect(() => {
     if (!currentStep) return;
 
     let canceled = false;
-    fetchUsPhonetic(currentStep.word.word).then((result) => {
-      if (canceled) return;
-      setPhonetic(result ?? '');
-    });
+    Promise.all([fetchUsPhonetic(currentStep.word.word), fetchUsAudioUrl(currentStep.word.word)]).then(
+      ([nextPhonetic, nextAudioUrl]) => {
+        if (canceled) return;
+        setPhonetic(nextPhonetic ?? '');
+        setAudioUrl(nextAudioUrl ?? '');
+      },
+    );
 
     return () => {
       canceled = true;
@@ -191,19 +238,27 @@ export function DictationPage() {
     autoPlayStepRef.current = autoPlayKey;
 
     const timer = window.setTimeout(() => {
-      speakEnglish(currentStep.word.word, DEFAULT_PLAY_RATE);
-    }, 180);
+      playCurrentWord(DEFAULT_PLAY_RATE);
+    }, 220);
 
     return () => {
       window.clearTimeout(timer);
     };
-  }, [currentStep]);
+  }, [audioUrl, currentStep, playCurrentWord]);
+
+  useEffect(() => {
+    return () => {
+      stopAudioPlayback();
+    };
+  }, [stopAudioPlayback]);
 
   const resetStepUi = () => {
+    stopAudioPlayback();
     setSelectedMeaning(null);
     setSpellingInput('');
     setFeedback('');
     setPhonetic('');
+    setAudioUrl('');
     setWordImageUrl('');
     setWordImageLoading(false);
   };
@@ -426,7 +481,8 @@ export function DictationPage() {
           fullWidth
           onClick={submitStep}
           disabled={
-            (isChooseStep && !selectedMeaning && !feedback) || (isSpellStep && spellingInput.trim().length === 0 && !feedback)
+            (isChooseStep && !selectedMeaning && !feedback) ||
+            (isSpellStep && spellingInput.trim().length === 0 && !feedback)
           }
         >
           {isStudyStep ? '我记住了，下一张' : feedback ? '下一题' : '提交'}

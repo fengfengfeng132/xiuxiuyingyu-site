@@ -10,20 +10,34 @@ interface RawEntry {
   phonetics?: RawPhonetic[];
 }
 
-const phoneticCache = new Map<string, string | null>();
+interface PronunciationData {
+  phonetic: string | null;
+  audioUrl: string | null;
+}
+
+const pronunciationCache = new Map<string, PronunciationData>();
 
 function normalizeWord(word: string): string {
   return word.trim().toLowerCase();
 }
 
-function pickUsPhonetic(entries: RawEntry[]): string | null {
+function isUsAudio(audio: string): boolean {
+  const normalized = audio.toLowerCase();
+  return normalized.includes('/us') || normalized.includes('-us') || normalized.includes('_us');
+}
+
+function normalizeAudioUrl(audio?: string): string | null {
+  if (!audio || audio.trim().length === 0) return null;
+  if (audio.startsWith('//')) return `https:${audio}`;
+  return audio;
+}
+
+function collectCandidates(entries: RawEntry[]): RawPhonetic[] {
   const candidates: RawPhonetic[] = [];
 
   entries.forEach((entry) => {
     if (entry.phonetics?.length) {
-      candidates.push(
-        ...entry.phonetics.filter((item) => typeof item.text === 'string' && item.text.trim().length > 0),
-      );
+      candidates.push(...entry.phonetics);
     }
 
     if (typeof entry.phonetic === 'string' && entry.phonetic.trim().length > 0) {
@@ -31,42 +45,80 @@ function pickUsPhonetic(entries: RawEntry[]): string | null {
     }
   });
 
+  return candidates;
+}
+
+function pickUsPhonetic(entries: RawEntry[]): string | null {
+  const candidates = collectCandidates(entries).filter(
+    (item) => typeof item.text === 'string' && item.text.trim().length > 0,
+  );
+
   if (!candidates.length) return null;
 
   const usCandidate = candidates.find((item) => {
     const audio = item.audio?.toLowerCase() ?? '';
-    return audio.includes('/us') || audio.includes('-us') || audio.includes('_us');
+    return isUsAudio(audio);
   });
 
   return (usCandidate ?? candidates[0]).text?.trim() ?? null;
 }
 
-export async function fetchUsPhonetic(word: string): Promise<string | null> {
-  const key = normalizeWord(word);
-  if (!key) return null;
+function pickUsAudioUrl(entries: RawEntry[]): string | null {
+  const candidates = collectCandidates(entries)
+    .map((item) => normalizeAudioUrl(item.audio))
+    .filter((item): item is string => Boolean(item));
 
-  if (phoneticCache.has(key)) {
-    return phoneticCache.get(key) ?? null;
+  if (!candidates.length) return null;
+
+  const usCandidate = candidates.find((audio) => isUsAudio(audio));
+  return usCandidate ?? candidates[0];
+}
+
+async function fetchUsPronunciation(word: string): Promise<PronunciationData> {
+  const key = normalizeWord(word);
+  if (!key) {
+    return { phonetic: null, audioUrl: null };
+  }
+
+  if (pronunciationCache.has(key)) {
+    return pronunciationCache.get(key) ?? { phonetic: null, audioUrl: null };
   }
 
   try {
     const response = await fetch(`${DICTIONARY_API}/${encodeURIComponent(key)}`);
     if (!response.ok) {
-      phoneticCache.set(key, null);
-      return null;
+      const empty = { phonetic: null, audioUrl: null };
+      pronunciationCache.set(key, empty);
+      return empty;
     }
 
     const data = (await response.json()) as unknown;
     if (!Array.isArray(data)) {
-      phoneticCache.set(key, null);
-      return null;
+      const empty = { phonetic: null, audioUrl: null };
+      pronunciationCache.set(key, empty);
+      return empty;
     }
 
-    const phonetic = pickUsPhonetic(data as RawEntry[]);
-    phoneticCache.set(key, phonetic);
-    return phonetic;
+    const entries = data as RawEntry[];
+    const pronunciation = {
+      phonetic: pickUsPhonetic(entries),
+      audioUrl: pickUsAudioUrl(entries),
+    };
+    pronunciationCache.set(key, pronunciation);
+    return pronunciation;
   } catch {
-    phoneticCache.set(key, null);
-    return null;
+    const empty = { phonetic: null, audioUrl: null };
+    pronunciationCache.set(key, empty);
+    return empty;
   }
+}
+
+export async function fetchUsPhonetic(word: string): Promise<string | null> {
+  const pronunciation = await fetchUsPronunciation(word);
+  return pronunciation.phonetic;
+}
+
+export async function fetchUsAudioUrl(word: string): Promise<string | null> {
+  const pronunciation = await fetchUsPronunciation(word);
+  return pronunciation.audioUrl;
 }

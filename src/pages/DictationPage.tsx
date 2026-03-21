@@ -99,8 +99,8 @@ function getCardSubtitle(step: DictationStep): string {
   return '先播放读音，再输入拼写。';
 }
 
-const DEFAULT_PLAY_RATE = 0.82;
-const SLOW_PLAY_RATE = 0.62;
+const DEFAULT_PLAY_RATE = 0.8;
+const SLOW_PLAY_RATE = 0.55;
 
 function pickUsVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   return (

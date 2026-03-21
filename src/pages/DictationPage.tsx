@@ -37,7 +37,7 @@ interface DictationAnswer {
 }
 
 const DEFAULT_PLAY_RATE = 0.8;
-const SLOW_PLAY_RATE = 0.4;
+const SLOW_PLAY_RATE = 0.7;
 
 function shuffleArray<T>(items: T[]): T[] {
   const next = [...items];
@@ -233,13 +233,14 @@ export function DictationPage() {
   useEffect(() => {
     if (!currentStep) return;
 
-    const autoPlayKey = currentStep.id;
+    const sourceKey = audioUrl ? 'audio' : 'tts';
+    const autoPlayKey = `${currentStep.id}-${sourceKey}`;
     if (autoPlayStepRef.current === autoPlayKey) return;
     autoPlayStepRef.current = autoPlayKey;
 
     const timer = window.setTimeout(() => {
       playCurrentWord(DEFAULT_PLAY_RATE);
-    }, 220);
+    }, audioUrl ? 120 : 220);
 
     return () => {
       window.clearTimeout(timer);

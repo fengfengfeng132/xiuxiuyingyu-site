@@ -1598,5 +1598,149 @@
       "dialogue-qa"
     ],
     "audioText": "What am I doing? I'm painting. I'm drawing. I'm cleaning. I'm washing."
+  },
+  {
+    "id": 68,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "look",
+    "stem": "选择与 \"look\" 对应的中文意思",
+    "options": [
+      "看/瞧",
+      "大的",
+      "贝壳",
+      "去；走"
+    ],
+    "answerIndex": 0,
+    "explanation": "look 看/瞧",
+    "tags": [
+      "vocab",
+      "verb",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "look"
+  },
+  {
+    "id": 69,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "mop",
+    "stem": "选择与 \"mop\" 对应的中文意思",
+    "options": [
+      "厚的",
+      "拖把/拖地",
+      "说",
+      "鱼"
+    ],
+    "answerIndex": 1,
+    "explanation": "mop 拖把/拖地",
+    "tags": [
+      "vocab",
+      "object",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "mop"
+  },
+  {
+    "id": 70,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "sweep",
+    "stem": "选择与 \"sweep\" 对应的中文意思",
+    "options": [
+      "喜欢",
+      "短的；矮的",
+      "打扫/清扫",
+      "婴儿/宝宝"
+    ],
+    "answerIndex": 2,
+    "explanation": "sweep 打扫/清扫",
+    "tags": [
+      "vocab",
+      "verb",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "sweep"
+  },
+  {
+    "id": 71,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "cut",
+    "stem": "选择与 \"cut\" 对应的中文意思",
+    "options": [
+      "切/剪",
+      "贝壳",
+      "长的",
+      "洗澡/浴缸"
+    ],
+    "answerIndex": 0,
+    "explanation": "cut 切/剪",
+    "tags": [
+      "vocab",
+      "verb",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "cut"
+  },
+  {
+    "id": 72,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "with",
+    "stem": "选择与 \"with\" 对应的中文意思",
+    "options": [
+      "厚的",
+      "说",
+      "和/用/带着",
+      "看/瞧"
+    ],
+    "answerIndex": 2,
+    "explanation": "with 和/用/带着",
+    "tags": [
+      "vocab",
+      "reading",
+      "sightword",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "with"
+  },
+  {
+    "id": 73,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "baby",
+    "stem": "选择与 \"baby\" 对应的中文意思",
+    "options": [
+      "婴儿/宝宝",
+      "鱼",
+      "打扫/清扫",
+      "去；走"
+    ],
+    "answerIndex": 0,
+    "explanation": "baby 婴儿/宝宝",
+    "tags": [
+      "vocab",
+      "people",
+      "reading",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "baby"
   }
 ]

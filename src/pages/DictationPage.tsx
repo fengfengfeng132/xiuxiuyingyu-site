@@ -4,7 +4,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ProgressBar } from '../components/ProgressBar';
 import { dictationWords, type DictationWord } from '../data/dictationWords';
-import { fetchUsAudioUrl, fetchUsPhonetic } from '../lib/phonetic';
+import { fetchUsPhonetic } from '../lib/phonetic';
 import { fetchWordImage } from '../lib/wordImage';
 
 type DictationStep =
@@ -38,6 +38,11 @@ interface DictationAnswer {
 
 const DEFAULT_PLAY_RATE = 0.8;
 const SLOW_PLAY_RATE = 0.7;
+const PREFERRED_US_VOICE_NAMES = [
+  'Microsoft Jenny Online (Natural) - English (United States)',
+  'Microsoft Aria Online (Natural) - English (United States)',
+  'Samantha',
+];
 
 function shuffleArray<T>(items: T[]): T[] {
   const next = [...items];
@@ -103,6 +108,11 @@ function getCardSubtitle(step: DictationStep): string {
 }
 
 function pickUsVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  for (const preferredName of PREFERRED_US_VOICE_NAMES) {
+    const exactMatch = voices.find((voice) => voice.name === preferredName);
+    if (exactMatch) return exactMatch;
+  }
+
   return (
     voices.find((voice) => voice.lang === 'en-US') ??
     voices.find((voice) => voice.lang.toLowerCase().startsWith('en-us')) ??
@@ -114,31 +124,19 @@ function pickUsVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | nul
   );
 }
 
-function speakEnglish(text: string, rate: number): boolean {
+function speakEnglish(text: string, rate: number, preferredVoice: SpeechSynthesisVoice | null): boolean {
   if (!text || !('speechSynthesis' in window)) return false;
 
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   const voices = window.speechSynthesis.getVoices();
-  const usVoice = pickUsVoice(voices);
+  const usVoice = preferredVoice ?? pickUsVoice(voices);
   if (usVoice) utterance.voice = usVoice;
   utterance.lang = 'en-US';
   utterance.rate = rate;
   utterance.pitch = 1;
   window.speechSynthesis.speak(utterance);
   return true;
-}
-
-function setAudioPitchBehavior(audio: HTMLAudioElement) {
-  const media = audio as HTMLAudioElement & {
-    preservesPitch?: boolean;
-    mozPreservesPitch?: boolean;
-    webkitPreservesPitch?: boolean;
-  };
-
-  media.preservesPitch = false;
-  media.mozPreservesPitch = false;
-  media.webkitPreservesPitch = false;
 }
 
 export function DictationPage() {
@@ -148,65 +146,60 @@ export function DictationPage() {
   const [spellingInput, setSpellingInput] = useState('');
   const [feedback, setFeedback] = useState('');
   const [phonetic, setPhonetic] = useState('');
-  const [audioUrl, setAudioUrl] = useState('');
   const [wordImageUrl, setWordImageUrl] = useState('');
   const [wordImageLoading, setWordImageLoading] = useState(false);
   const [answers, setAnswers] = useState<DictationAnswer[]>([]);
   const autoPlayStepRef = useRef('');
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const preferredVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
 
   const currentStep = stepIndex < steps.length ? steps[stepIndex] : null;
   const quizTotal = steps.filter((step) => step.type !== 'study').length;
   const isCompleted = currentStep === null;
 
   const stopAudioPlayback = useCallback(() => {
-    if (!audioRef.current) return;
-    audioRef.current.pause();
-    audioRef.current.currentTime = 0;
-    audioRef.current = null;
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!('speechSynthesis' in window)) return;
+
+    const syncPreferredVoice = () => {
+      const nextVoice = pickUsVoice(window.speechSynthesis.getVoices());
+      if (nextVoice) {
+        preferredVoiceRef.current = nextVoice;
+      }
+    };
+
+    syncPreferredVoice();
+    window.speechSynthesis.addEventListener('voiceschanged', syncPreferredVoice);
+
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', syncPreferredVoice);
+    };
   }, []);
 
   const playCurrentWord = useCallback((rate: number) => {
     if (!currentStep) return;
 
     stopAudioPlayback();
-
-    if (audioUrl) {
-      const audio = new Audio(audioUrl);
-      audio.preload = 'auto';
-      audio.playbackRate = rate;
-      setAudioPitchBehavior(audio);
-      audioRef.current = audio;
-      audio
-        .play()
-        .then(() => {
-          setFeedback('');
-        })
-        .catch(() => {
-          audioRef.current = null;
-          if (!speakEnglish(currentStep.word.word, rate)) {
-            setFeedback('当前浏览器不支持语音朗读。');
-          }
-        });
+    if (!speakEnglish(currentStep.word.word, rate, preferredVoiceRef.current)) {
+      setFeedback('?????????????');
       return;
     }
 
-    if (!speakEnglish(currentStep.word.word, rate)) {
-      setFeedback('当前浏览器不支持语音朗读。');
-    }
-  }, [audioUrl, currentStep, stopAudioPlayback]);
+    setFeedback('');
+  }, [currentStep, stopAudioPlayback]);
 
   useEffect(() => {
     if (!currentStep) return;
 
     let canceled = false;
-    Promise.all([fetchUsPhonetic(currentStep.word.word), fetchUsAudioUrl(currentStep.word.word)]).then(
-      ([nextPhonetic, nextAudioUrl]) => {
-        if (canceled) return;
-        setPhonetic(nextPhonetic ?? '');
-        setAudioUrl(nextAudioUrl ?? '');
-      },
-    );
+    fetchUsPhonetic(currentStep.word.word).then((nextPhonetic) => {
+      if (canceled) return;
+      setPhonetic(nextPhonetic ?? '');
+    });
 
     return () => {
       canceled = true;
@@ -233,19 +226,18 @@ export function DictationPage() {
   useEffect(() => {
     if (!currentStep) return;
 
-    const sourceKey = audioUrl ? 'audio' : 'tts';
-    const autoPlayKey = `${currentStep.id}-${sourceKey}`;
+    const autoPlayKey = currentStep.id;
     if (autoPlayStepRef.current === autoPlayKey) return;
     autoPlayStepRef.current = autoPlayKey;
 
     const timer = window.setTimeout(() => {
       playCurrentWord(DEFAULT_PLAY_RATE);
-    }, audioUrl ? 120 : 220);
+    }, 180);
 
     return () => {
       window.clearTimeout(timer);
     };
-  }, [audioUrl, currentStep, playCurrentWord]);
+  }, [currentStep, playCurrentWord]);
 
   useEffect(() => {
     return () => {
@@ -259,7 +251,6 @@ export function DictationPage() {
     setSpellingInput('');
     setFeedback('');
     setPhonetic('');
-    setAudioUrl('');
     setWordImageUrl('');
     setWordImageLoading(false);
   };

@@ -132,6 +132,18 @@ h1 {
   background: linear-gradient(135deg, #edf3ff, #efe9ff);
 }
 
+.option-correct {
+  border-color: #4ca96b;
+  background: linear-gradient(135deg, #ebfff1, #dcf8e6);
+  color: #1f6a3a;
+}
+
+.option-wrong {
+  border-color: #e46f6f;
+  background: linear-gradient(135deg, #fff1f1, #ffe3e3);
+  color: #9c2f2f;
+}
+
 .feedback {
   margin: 0 0 12px;
   color: #22365d;

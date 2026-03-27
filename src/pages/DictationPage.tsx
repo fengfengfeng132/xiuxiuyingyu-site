@@ -37,7 +37,7 @@ interface DictationAnswer {
 }
 
 const DEFAULT_PLAY_RATE = 0.8;
-const SLOW_PLAY_RATE = 0.7;
+const SLOW_PLAY_RATE = 0.55;
 const PREFERRED_US_VOICE_NAMES = [
   'Microsoft Jenny Online (Natural) - English (United States)',
   'Microsoft Aria Online (Natural) - English (United States)',
@@ -185,7 +185,7 @@ export function DictationPage() {
 
     stopAudioPlayback();
     if (!speakEnglish(currentStep.word.word, rate, preferredVoiceRef.current)) {
-      setFeedback('?????????????');
+      setFeedback('当前浏览器不支持语音朗读。');
       return;
     }
 
@@ -374,6 +374,23 @@ export function DictationPage() {
   const isStudyStep = currentStep.type === 'study';
   const isChooseStep = currentStep.type === 'listenChoose';
   const isSpellStep = currentStep.type === 'listenSpell';
+  const getChoiceOptionClassName = (option: string) => {
+    const classes = ['option'];
+
+    if (selectedMeaning === option) {
+      classes.push('option-selected');
+    }
+
+    if (currentStep.type === 'listenChoose' && feedback) {
+      if (option === currentStep.word.meaning) {
+        classes.push('option-correct');
+      } else if (selectedMeaning === option) {
+        classes.push('option-wrong');
+      }
+    }
+
+    return classes.join(' ');
+  };
 
   return (
     <main className="page">
@@ -434,7 +451,7 @@ export function DictationPage() {
             {currentStep.options.map((option) => (
               <button
                 key={`${currentStep.id}-${option}`}
-                className={`option ${selectedMeaning === option ? 'option-selected' : ''}`}
+                className={getChoiceOptionClassName(option)}
                 onClick={() => {
                   if (feedback) return;
                   setSelectedMeaning(option);

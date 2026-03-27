@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -378,7 +378,6 @@ export function DictationPage() {
   return (
     <main className="page">
       <h1>听写单词学习</h1>
-      <p className="muted">本轮词库：look, mop, sweep, cut, paint, with, that, baby, bath, thin</p>
       <ProgressBar current={stepIndex + 1} total={steps.length} />
 
       <Card title={getCardTitle(currentStep)} subtitle={getCardSubtitle(currentStep)}>
@@ -483,3 +482,4 @@ export function DictationPage() {
     </main>
   );
 }
+

@@ -1742,5 +1742,221 @@
       "vocab-qa"
     ],
     "audioText": "baby"
+  },
+  {
+    "id": 74,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "like",
+    "stem": "选择与 \"like\" 对应的中文意思",
+    "options": [
+      "喜欢",
+      "商店",
+      "重的",
+      "高的"
+    ],
+    "answerIndex": 0,
+    "explanation": "like 喜欢",
+    "tags": [
+      "vocab",
+      "verb",
+      "reading",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "like"
+  },
+  {
+    "id": 75,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "go",
+    "stem": "选择与 \"go\" 对应的中文意思",
+    "options": [
+      "盘子",
+      "去；走",
+      "轮船",
+      "贝壳"
+    ],
+    "answerIndex": 1,
+    "explanation": "go 去；走",
+    "tags": [
+      "vocab",
+      "verb",
+      "action",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "go"
+  },
+  {
+    "id": 76,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "says",
+    "stem": "选择与 \"says\" 对应的中文意思",
+    "options": [
+      "轻的",
+      "鱼",
+      "说",
+      "高的"
+    ],
+    "answerIndex": 2,
+    "explanation": "says 说",
+    "tags": [
+      "vocab",
+      "verb",
+      "grammar",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "says"
+  },
+  {
+    "id": 77,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "long",
+    "stem": "选择与 \"long\" 对应的中文意思",
+    "options": [
+      "短的；矮的",
+      "长的",
+      "商店",
+      "皮疹"
+    ],
+    "answerIndex": 1,
+    "explanation": "long 长的",
+    "tags": [
+      "vocab",
+      "adjective",
+      "reading",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "long"
+  },
+  {
+    "id": 78,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "short",
+    "stem": "选择与 \"short\" 对应的中文意思",
+    "options": [
+      "长的",
+      "短的；矮的",
+      "贝壳",
+      "轮船"
+    ],
+    "answerIndex": 1,
+    "explanation": "short 短的；矮的",
+    "tags": [
+      "vocab",
+      "adjective",
+      "reading",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "short"
+  },
+  {
+    "id": 79,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "big",
+    "stem": "选择与 \"big\" 对应的中文意思",
+    "options": [
+      "大的",
+      "轻的",
+      "盘子",
+      "喜欢"
+    ],
+    "answerIndex": 0,
+    "explanation": "big 大的",
+    "tags": [
+      "vocab",
+      "adjective",
+      "reading",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "big"
+  },
+  {
+    "id": 80,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "small",
+    "stem": "选择与 \"small\" 对应的中文意思",
+    "options": [
+      "重的",
+      "小的",
+      "去；走",
+      "皮疹"
+    ],
+    "answerIndex": 1,
+    "explanation": "small 小的",
+    "tags": [
+      "vocab",
+      "adjective",
+      "reading",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "small"
+  },
+  {
+    "id": 81,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "shell",
+    "stem": "选择与 \"shell\" 对应的中文意思",
+    "options": [
+      "鱼",
+      "商店",
+      "贝壳",
+      "盘子"
+    ],
+    "answerIndex": 2,
+    "explanation": "shell 贝壳",
+    "tags": [
+      "vocab",
+      "nature",
+      "object",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "shell"
+  },
+  {
+    "id": 82,
+    "level": "L2",
+    "unit": 1,
+    "type": "single_choice",
+    "prompt": "fish",
+    "stem": "选择与 \"fish\" 对应的中文意思",
+    "options": [
+      "轮船",
+      "长的",
+      "说",
+      "鱼"
+    ],
+    "answerIndex": 3,
+    "explanation": "fish 鱼",
+    "tags": [
+      "vocab",
+      "animal",
+      "nature",
+      "auto-generated",
+      "vocab-qa"
+    ],
+    "audioText": "fish"
   }
 ]

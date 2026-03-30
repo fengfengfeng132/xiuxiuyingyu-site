@@ -330,7 +330,7 @@ export function DictationPage() {
     return (
       <main className="page">
         <h1>听写单词学习</h1>
-        <Card title="本轮完成" subtitle="已经完成这 10 个单词的认识、辨义和听写。">
+        <Card title="本轮完成" subtitle={`已经完成这 ${dictationWords.length} 个单词的认识、辨义和听写。`}>
           <p>学习单词：{dictationWords.length} 个</p>
           <p>测验题数：{quizTotal} 题</p>
           <p>答对：{correctCount} 题</p>
@@ -351,7 +351,7 @@ export function DictationPage() {
           </Card>
         ) : (
           <Card title="表现很好" subtitle="这一轮没有做错，可以稍后再练一遍巩固记忆。">
-            <p>这 10 个词已经基本掌握了。</p>
+            <p>这 {dictationWords.length} 个词已经基本掌握了。</p>
           </Card>
         )}
 

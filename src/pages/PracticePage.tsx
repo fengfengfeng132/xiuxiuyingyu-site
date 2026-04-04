@@ -26,6 +26,25 @@ type TrainMode =
   | 'level10'
   | 'spaced';
 
+const DAILY_DICTATION_TAG = 'daily-dictation';
+
+function pickDailyLearningSet(bank: Question[], count: number): Question[] {
+  const dailyDictationBank = bank.filter((item) => item.tags.includes(DAILY_DICTATION_TAG));
+  if (!dailyDictationBank.length) {
+    return pickDailyQuestions(bank, count);
+  }
+
+  const pickedDailyDictation = pickDailyQuestions(dailyDictationBank, Math.min(count, dailyDictationBank.length));
+  if (pickedDailyDictation.length >= count) {
+    return pickedDailyDictation;
+  }
+
+  const pickedIds = new Set(pickedDailyDictation.map((item) => item.id));
+  const fallbackBank = bank.filter((item) => !pickedIds.has(item.id));
+  const fallback = pickDailyQuestions(fallbackBank, count - pickedDailyDictation.length);
+  return [...pickedDailyDictation, ...fallback];
+}
+
 function shuffleArray<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i -= 1) {
@@ -186,11 +205,11 @@ export function PracticePage() {
     }
 
     if (train === 'today10') {
-      bank = pickDailyQuestions(bank, 10);
+      bank = pickDailyLearningSet(bank, 10);
     }
 
     if (train === 'daily20') {
-      bank = pickDailyQuestions(bank, 20);
+      bank = pickDailyLearningSet(bank, 20);
     }
 
     if (train === 'level10') {

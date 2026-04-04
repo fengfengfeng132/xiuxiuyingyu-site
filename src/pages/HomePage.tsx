@@ -30,7 +30,7 @@ export function HomePage() {
       : {
           query: 'mode=all&train=today10',
           title: '今日 10 分钟任务',
-          desc: '10 道混合题，保持每天稳步学习。',
+          desc: '10 个每日听写词，保持每天稳步学习。',
         };
 
   const beginLearning = (query: string) => {

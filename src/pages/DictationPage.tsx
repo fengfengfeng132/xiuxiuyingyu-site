@@ -4,7 +4,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ProgressBar } from '../components/ProgressBar';
 import { dictationWords, type DictationWord } from '../data/dictationWords';
-import { fetchUsPhonetic } from '../lib/phonetic';
+import { fetchUsPhonetic, playUsWordAudio, stopUsWordAudioPlayback } from '../lib/phonetic';
 import { fetchWordImage } from '../lib/wordImage';
 
 type DictationStep =
@@ -157,6 +157,7 @@ export function DictationPage() {
   const isCompleted = currentStep === null;
 
   const stopAudioPlayback = useCallback(() => {
+    stopUsWordAudioPlayback();
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
@@ -180,10 +181,16 @@ export function DictationPage() {
     };
   }, []);
 
-  const playCurrentWord = useCallback((rate: number) => {
+  const playCurrentWord = useCallback(async (rate: number) => {
     if (!currentStep) return;
 
     stopAudioPlayback();
+    const playedWithDictionaryAudio = await playUsWordAudio(currentStep.word.word, rate);
+    if (playedWithDictionaryAudio) {
+      setFeedback('');
+      return;
+    }
+
     if (!speakEnglish(currentStep.word.word, rate, preferredVoiceRef.current)) {
       setFeedback('当前浏览器不支持语音朗读。');
       return;
@@ -231,7 +238,7 @@ export function DictationPage() {
     autoPlayStepRef.current = autoPlayKey;
 
     const timer = window.setTimeout(() => {
-      playCurrentWord(DEFAULT_PLAY_RATE);
+      void playCurrentWord(DEFAULT_PLAY_RATE);
     }, 180);
 
     return () => {
@@ -401,10 +408,10 @@ export function DictationPage() {
         <p className="dictation-stage">{getStageLabel(currentStep)}</p>
 
         <div className="dictation-audio-row">
-          <Button variant="ghost" onClick={() => playCurrentWord(DEFAULT_PLAY_RATE)}>
+          <Button variant="ghost" onClick={() => void playCurrentWord(DEFAULT_PLAY_RATE)}>
             正常播放
           </Button>
-          <Button variant="ghost" onClick={() => playCurrentWord(SLOW_PLAY_RATE)}>
+          <Button variant="ghost" onClick={() => void playCurrentWord(SLOW_PLAY_RATE)}>
             慢速播放
           </Button>
         </div>

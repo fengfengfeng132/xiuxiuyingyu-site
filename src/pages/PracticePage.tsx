@@ -4,7 +4,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ProgressBar } from '../components/ProgressBar';
 import { questionBank } from '../data/loadQuestionBank';
-import { fetchUsPhonetic } from '../lib/phonetic';
+import { fetchUsPhonetic, playUsWordAudio, stopUsWordAudioPlayback } from '../lib/phonetic';
 import { pickDailyQuestions, scheduleReviewTasks } from '../lib/practiceUtils';
 import { createSession, loadState, saveState } from '../lib/storage';
 import { fetchWordImage } from '../lib/wordImage';
@@ -27,6 +27,28 @@ type TrainMode =
   | 'spaced';
 
 const DAILY_DICTATION_TAG = 'daily-dictation';
+const PREFERRED_US_VOICE_NAMES = [
+  'Microsoft Jenny Online (Natural) - English (United States)',
+  'Microsoft Aria Online (Natural) - English (United States)',
+  'Samantha',
+];
+
+function pickUsVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  for (const preferredName of PREFERRED_US_VOICE_NAMES) {
+    const exactMatch = voices.find((voice) => voice.name === preferredName);
+    if (exactMatch) return exactMatch;
+  }
+
+  return (
+    voices.find((voice) => voice.lang === 'en-US') ??
+    voices.find((voice) => voice.lang.toLowerCase().startsWith('en-us')) ??
+    voices.find((voice) => {
+      const name = voice.name.toLowerCase();
+      return name.includes('us english') || name.includes('american') || name.includes('samantha');
+    }) ??
+    null
+  );
+}
 
 function pickDailyLearningSet(bank: Question[], count: number): Question[] {
   const dailyDictationBank = bank.filter((item) => item.tags.includes(DAILY_DICTATION_TAG));
@@ -172,6 +194,7 @@ export function PracticePage() {
   const [wordImageUrl, setWordImageUrl] = useState('');
   const [wordImageLoading, setWordImageLoading] = useState(false);
   const autoPlayAfterSubmitRef = useRef(false);
+  const preferredVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
 
   const currentBank = useMemo(() => {
     const stateSnapshot = loadState();
@@ -385,6 +408,24 @@ export function PracticePage() {
     }
   }, [mode, train]);
 
+  useEffect(() => {
+    if (!('speechSynthesis' in window)) return;
+
+    const syncPreferredVoice = () => {
+      const nextVoice = pickUsVoice(window.speechSynthesis.getVoices());
+      if (nextVoice) {
+        preferredVoiceRef.current = nextVoice;
+      }
+    };
+
+    syncPreferredVoice();
+    window.speechSynthesis.addEventListener('voiceschanged', syncPreferredVoice);
+
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', syncPreferredVoice);
+    };
+  }, []);
+
   const totalCount = questionFlow.length;
   const currentQuestionId = questionFlow[questionIndex];
   const question = currentQuestionId !== undefined ? questionById.get(currentQuestionId) : undefined;
@@ -451,17 +492,24 @@ export function PracticePage() {
   const audioText = question ? getAudioText(question) : '';
   const sentenceList = splitSentences(audioText);
 
-  const speakAudio = (text: string, rate: number) => {
+  const speakAudio = async (text: string, rate: number) => {
     if (!text) return;
+
+    if (isSingleEnglishWord(text)) {
+      const playedWithDictionaryAudio = await playUsWordAudio(text, rate);
+      if (playedWithDictionaryAudio) return;
+    }
+
     if (!('speechSynthesis' in window)) {
       setFeedback('当前浏览器不支持语音朗读。');
       return;
     }
 
+    stopUsWordAudioPlayback();
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     const voices = window.speechSynthesis.getVoices();
-    const usVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith('en-us'));
+    const usVoice = preferredVoiceRef.current ?? pickUsVoice(voices);
     if (usVoice) utterance.voice = usVoice;
     utterance.lang = 'en-US';
     utterance.rate = rate;
@@ -477,8 +525,17 @@ export function PracticePage() {
     if (!question || !isVocabQuestion(question)) return;
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    speakAudio(audioText, 1);
+    void speakAudio(audioText, 1);
   }, [audioText, question]);
+
+  useEffect(() => {
+    return () => {
+      stopUsWordAudioPlayback();
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   if (!question || totalCount === 0) {
     return <main className="page">当前模式暂无可练习内容。</main>;
@@ -486,17 +543,17 @@ export function PracticePage() {
 
   const playFullAudio = (rate: number) => {
     setListenRate(rate);
-    speakAudio(audioText, rate);
+    void speakAudio(audioText, rate);
   };
 
   const repeatSingleSentence = () => {
     if (!sentenceList.length) {
-      speakAudio(audioText, listenRate);
+      void speakAudio(audioText, listenRate);
       return;
     }
 
     const index = sentenceCursor % sentenceList.length;
-    speakAudio(sentenceList[index], listenRate);
+    void speakAudio(sentenceList[index], listenRate);
     setSentenceCursor((prev) => (prev + 1) % sentenceList.length);
   };
 

@@ -1,3 +1,5 @@
+import { dictationWords } from '../data/dictationWords';
+
 const DICTIONARY_API = 'https://api.dictionaryapi.dev/api/v2/entries/en';
 
 interface RawPhonetic {
@@ -16,6 +18,14 @@ interface PronunciationData {
 }
 
 const pronunciationCache = new Map<string, PronunciationData>();
+let wordAudioPlayer: HTMLAudioElement | null = null;
+const LOCAL_WORD_AUDIO_BASE = '/audio/words/us';
+const localWordAudioMap = new Map(
+  dictationWords.map((item) => {
+    const key = item.word.trim().toLowerCase();
+    return [key, `${LOCAL_WORD_AUDIO_BASE}/${encodeURIComponent(key)}.wav`] as const;
+  }),
+);
 
 function normalizeWord(word: string): string {
   return word.trim().toLowerCase();
@@ -119,6 +129,48 @@ export async function fetchUsPhonetic(word: string): Promise<string | null> {
 }
 
 export async function fetchUsAudioUrl(word: string): Promise<string | null> {
+  const localAudio = localWordAudioMap.get(normalizeWord(word));
+  if (localAudio) {
+    return localAudio;
+  }
+
   const pronunciation = await fetchUsPronunciation(word);
   return pronunciation.audioUrl;
+}
+
+function getWordAudioPlayer(): HTMLAudioElement | null {
+  if (typeof window === 'undefined') return null;
+  if (!wordAudioPlayer) {
+    wordAudioPlayer = new Audio();
+    wordAudioPlayer.preload = 'auto';
+  }
+  return wordAudioPlayer;
+}
+
+export function stopUsWordAudioPlayback(): void {
+  const player = getWordAudioPlayer();
+  if (!player) return;
+
+  player.pause();
+  player.currentTime = 0;
+}
+
+export async function playUsWordAudio(word: string, rate = 1): Promise<boolean> {
+  const url = await fetchUsAudioUrl(word);
+  const player = getWordAudioPlayer();
+
+  if (!url || !player) return false;
+
+  try {
+    player.pause();
+    player.currentTime = 0;
+    if (player.src !== url) {
+      player.src = url;
+    }
+    player.playbackRate = rate;
+    await player.play();
+    return true;
+  } catch {
+    return false;
+  }
 }

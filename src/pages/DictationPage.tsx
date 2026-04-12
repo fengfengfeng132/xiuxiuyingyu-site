@@ -36,8 +36,7 @@ interface DictationAnswer {
   isCorrect: boolean;
 }
 
-const DEFAULT_PLAY_RATE = 0.8;
-const SLOW_PLAY_RATE = 0.55;
+const FIXED_PLAY_RATE = 1;
 const PREFERRED_US_VOICE_NAMES = [
   'Microsoft Jenny Online (Natural) - English (United States)',
   'Microsoft Aria Online (Natural) - English (United States)',
@@ -124,7 +123,7 @@ function pickUsVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | nul
   );
 }
 
-function speakEnglish(text: string, rate: number, preferredVoice: SpeechSynthesisVoice | null): boolean {
+function speakEnglish(text: string, preferredVoice: SpeechSynthesisVoice | null): boolean {
   if (!text || !('speechSynthesis' in window)) return false;
 
   window.speechSynthesis.cancel();
@@ -133,7 +132,7 @@ function speakEnglish(text: string, rate: number, preferredVoice: SpeechSynthesi
   const usVoice = preferredVoice ?? pickUsVoice(voices);
   if (usVoice) utterance.voice = usVoice;
   utterance.lang = 'en-US';
-  utterance.rate = rate;
+  utterance.rate = FIXED_PLAY_RATE;
   utterance.pitch = 1;
   window.speechSynthesis.speak(utterance);
   return true;
@@ -181,17 +180,17 @@ export function DictationPage() {
     };
   }, []);
 
-  const playCurrentWord = useCallback(async (rate: number) => {
+  const playCurrentWord = useCallback(async () => {
     if (!currentStep) return;
 
     stopAudioPlayback();
-    const playedWithDictionaryAudio = await playUsWordAudio(currentStep.word.word, rate);
+    const playedWithDictionaryAudio = await playUsWordAudio(currentStep.word.word, FIXED_PLAY_RATE);
     if (playedWithDictionaryAudio) {
       setFeedback('');
       return;
     }
 
-    if (!speakEnglish(currentStep.word.word, rate, preferredVoiceRef.current)) {
+    if (!speakEnglish(currentStep.word.word, preferredVoiceRef.current)) {
       setFeedback('当前浏览器不支持语音朗读。');
       return;
     }
@@ -238,7 +237,7 @@ export function DictationPage() {
     autoPlayStepRef.current = autoPlayKey;
 
     const timer = window.setTimeout(() => {
-      void playCurrentWord(DEFAULT_PLAY_RATE);
+      void playCurrentWord();
     }, 180);
 
     return () => {
@@ -408,11 +407,8 @@ export function DictationPage() {
         <p className="dictation-stage">{getStageLabel(currentStep)}</p>
 
         <div className="dictation-audio-row">
-          <Button variant="ghost" onClick={() => void playCurrentWord(DEFAULT_PLAY_RATE)}>
-            正常播放
-          </Button>
-          <Button variant="ghost" onClick={() => void playCurrentWord(SLOW_PLAY_RATE)}>
-            慢速播放
+          <Button variant="ghost" onClick={() => void playCurrentWord()}>
+            播放发音
           </Button>
         </div>
 

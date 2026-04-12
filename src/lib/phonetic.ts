@@ -19,11 +19,18 @@ interface PronunciationData {
 
 const pronunciationCache = new Map<string, PronunciationData>();
 let wordAudioPlayer: HTMLAudioElement | null = null;
-const LOCAL_WORD_AUDIO_BASE = '/audio/words/us';
-const localWordAudioMap = new Map(
+const LOCAL_NORMAL_WORD_AUDIO_BASE = '/audio/words/us';
+const LOCAL_SLOW_WORD_AUDIO_BASE = '/audio/words/us-slow';
+const localNormalWordAudioMap = new Map(
   dictationWords.map((item) => {
     const key = item.word.trim().toLowerCase();
-    return [key, `${LOCAL_WORD_AUDIO_BASE}/${encodeURIComponent(key)}.wav`] as const;
+    return [key, `${LOCAL_NORMAL_WORD_AUDIO_BASE}/${encodeURIComponent(key)}.wav`] as const;
+  }),
+);
+const localSlowWordAudioMap = new Map(
+  dictationWords.map((item) => {
+    const key = item.word.trim().toLowerCase();
+    return [key, `${LOCAL_SLOW_WORD_AUDIO_BASE}/${encodeURIComponent(key)}.wav`] as const;
   }),
 );
 
@@ -129,13 +136,16 @@ export async function fetchUsPhonetic(word: string): Promise<string | null> {
 }
 
 export async function fetchUsAudioUrl(word: string): Promise<string | null> {
-  const localAudio = localWordAudioMap.get(normalizeWord(word));
-  if (localAudio) {
-    return localAudio;
-  }
-
   const pronunciation = await fetchUsPronunciation(word);
   return pronunciation.audioUrl;
+}
+
+export function fetchLocalUsAudioUrl(word: string): string | null {
+  return localNormalWordAudioMap.get(normalizeWord(word)) ?? null;
+}
+
+export function fetchLocalUsSlowAudioUrl(word: string): string | null {
+  return localSlowWordAudioMap.get(normalizeWord(word)) ?? null;
 }
 
 function getWordAudioPlayer(): HTMLAudioElement | null {
@@ -168,6 +178,46 @@ export async function playUsWordAudio(word: string, rate = 1): Promise<boolean> 
       player.src = url;
     }
     player.playbackRate = rate;
+    await player.play();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function playLocalUsWordAudio(word: string): Promise<boolean> {
+  const url = fetchLocalUsAudioUrl(word);
+  const player = getWordAudioPlayer();
+
+  if (!url || !player) return false;
+
+  try {
+    player.pause();
+    player.currentTime = 0;
+    if (player.src !== url) {
+      player.src = url;
+    }
+    player.playbackRate = 1;
+    await player.play();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function playLocalUsSlowWordAudio(word: string): Promise<boolean> {
+  const url = fetchLocalUsSlowAudioUrl(word);
+  const player = getWordAudioPlayer();
+
+  if (!url || !player) return false;
+
+  try {
+    player.pause();
+    player.currentTime = 0;
+    if (player.src !== url) {
+      player.src = url;
+    }
+    player.playbackRate = 1;
     await player.play();
     return true;
   } catch {

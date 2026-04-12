@@ -1,10 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ProgressBar } from '../components/ProgressBar';
 import { questionBank } from '../data/loadQuestionBank';
-import { fetchUsPhonetic, playUsWordAudio, stopUsWordAudioPlayback } from '../lib/phonetic';
+import {
+  fetchUsPhonetic,
+  playLocalUsSlowWordAudio,
+  playUsWordAudio,
+  stopUsWordAudioPlayback,
+} from '../lib/phonetic';
 import { pickDailyQuestions, scheduleReviewTasks } from '../lib/practiceUtils';
 import { createSession, loadState, saveState } from '../lib/storage';
 import { fetchWordImage } from '../lib/wordImage';
@@ -492,10 +497,25 @@ export function PracticePage() {
   const audioText = question ? getAudioText(question) : '';
   const sentenceList = splitSentences(audioText);
 
-  const speakAudio = async (text: string, rate: number) => {
+  const speakAudio = useCallback(async (text: string, rate: number) => {
     if (!text) return;
 
     if (isSingleEnglishWord(text)) {
+      const isDailyDictationWord = Boolean(question?.tags.includes(DAILY_DICTATION_TAG));
+      if (isDailyDictationWord) {
+        if (rate < 1) {
+          const playedWithLocalSlowAudio = await playLocalUsSlowWordAudio(text);
+          if (playedWithLocalSlowAudio) return;
+          setFeedback('当前单词暂无本地慢速语音。');
+          return;
+        }
+
+        const playedWithDictionaryAudio = await playUsWordAudio(text, 1);
+        if (playedWithDictionaryAudio) return;
+        setFeedback('当前单词词典发音加载失败，请稍后重试。');
+        return;
+      }
+
       const playedWithDictionaryAudio = await playUsWordAudio(text, rate);
       if (playedWithDictionaryAudio) return;
     }
@@ -516,7 +536,7 @@ export function PracticePage() {
     utterance.pitch = 1.05;
     utterance.volume = 1;
     window.speechSynthesis.speak(utterance);
-  };
+  }, [question]);
 
   useEffect(() => {
     if (!autoPlayAfterSubmitRef.current) return;
@@ -526,7 +546,7 @@ export function PracticePage() {
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void speakAudio(audioText, 1);
-  }, [audioText, question]);
+  }, [audioText, question, speakAudio]);
 
   useEffect(() => {
     return () => {

@@ -4,7 +4,12 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ProgressBar } from '../components/ProgressBar';
 import { dictationWords, type DictationWord } from '../data/dictationWords';
-import { fetchUsPhonetic, playUsWordAudio, stopUsWordAudioPlayback } from '../lib/phonetic';
+import {
+  fetchUsPhonetic,
+  playLocalUsSlowWordAudio,
+  playUsWordAudio,
+  stopUsWordAudioPlayback,
+} from '../lib/phonetic';
 import { fetchWordImage } from '../lib/wordImage';
 
 type DictationStep =
@@ -35,13 +40,6 @@ interface DictationAnswer {
   correctAnswer: string;
   isCorrect: boolean;
 }
-
-const FIXED_PLAY_RATE = 1;
-const PREFERRED_US_VOICE_NAMES = [
-  'Microsoft Jenny Online (Natural) - English (United States)',
-  'Microsoft Aria Online (Natural) - English (United States)',
-  'Samantha',
-];
 
 function shuffleArray<T>(items: T[]): T[] {
   const next = [...items];
@@ -106,38 +104,6 @@ function getCardSubtitle(step: DictationStep): string {
   return '先播放读音，再输入拼写。';
 }
 
-function pickUsVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
-  for (const preferredName of PREFERRED_US_VOICE_NAMES) {
-    const exactMatch = voices.find((voice) => voice.name === preferredName);
-    if (exactMatch) return exactMatch;
-  }
-
-  return (
-    voices.find((voice) => voice.lang === 'en-US') ??
-    voices.find((voice) => voice.lang.toLowerCase().startsWith('en-us')) ??
-    voices.find((voice) => {
-      const name = voice.name.toLowerCase();
-      return name.includes('us english') || name.includes('american') || name.includes('samantha');
-    }) ??
-    null
-  );
-}
-
-function speakEnglish(text: string, preferredVoice: SpeechSynthesisVoice | null): boolean {
-  if (!text || !('speechSynthesis' in window)) return false;
-
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  const voices = window.speechSynthesis.getVoices();
-  const usVoice = preferredVoice ?? pickUsVoice(voices);
-  if (usVoice) utterance.voice = usVoice;
-  utterance.lang = 'en-US';
-  utterance.rate = FIXED_PLAY_RATE;
-  utterance.pitch = 1;
-  window.speechSynthesis.speak(utterance);
-  return true;
-}
-
 export function DictationPage() {
   const [steps, setSteps] = useState<DictationStep[]>(() => buildSteps(dictationWords));
   const [stepIndex, setStepIndex] = useState(0);
@@ -149,7 +115,6 @@ export function DictationPage() {
   const [wordImageLoading, setWordImageLoading] = useState(false);
   const [answers, setAnswers] = useState<DictationAnswer[]>([]);
   const autoPlayStepRef = useRef('');
-  const preferredVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
 
   const currentStep = stepIndex < steps.length ? steps[stepIndex] : null;
   const quizTotal = steps.filter((step) => step.type !== 'study').length;
@@ -162,36 +127,26 @@ export function DictationPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!('speechSynthesis' in window)) return;
-
-    const syncPreferredVoice = () => {
-      const nextVoice = pickUsVoice(window.speechSynthesis.getVoices());
-      if (nextVoice) {
-        preferredVoiceRef.current = nextVoice;
-      }
-    };
-
-    syncPreferredVoice();
-    window.speechSynthesis.addEventListener('voiceschanged', syncPreferredVoice);
-
-    return () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', syncPreferredVoice);
-    };
-  }, []);
-
   const playCurrentWord = useCallback(async () => {
     if (!currentStep) return;
 
     stopAudioPlayback();
-    const playedWithDictionaryAudio = await playUsWordAudio(currentStep.word.word, FIXED_PLAY_RATE);
+    const playedWithDictionaryAudio = await playUsWordAudio(currentStep.word.word, 1);
     if (playedWithDictionaryAudio) {
       setFeedback('');
       return;
     }
 
-    if (!speakEnglish(currentStep.word.word, preferredVoiceRef.current)) {
-      setFeedback('当前浏览器不支持语音朗读。');
+    setFeedback('当前单词词典发音加载失败，请稍后重试。');
+  }, [currentStep, stopAudioPlayback]);
+
+  const playSlowWord = useCallback(async () => {
+    if (!currentStep) return;
+
+    stopAudioPlayback();
+    const playedWithLocalSlowAudio = await playLocalUsSlowWordAudio(currentStep.word.word);
+    if (!playedWithLocalSlowAudio) {
+      setFeedback('当前单词暂无本地慢速语音。');
       return;
     }
 
@@ -409,6 +364,9 @@ export function DictationPage() {
         <div className="dictation-audio-row">
           <Button variant="ghost" onClick={() => void playCurrentWord()}>
             播放发音
+          </Button>
+          <Button variant="ghost" onClick={() => void playSlowWord()}>
+            慢速播放
           </Button>
         </div>
 

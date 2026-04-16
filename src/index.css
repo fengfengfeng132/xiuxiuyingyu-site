@@ -150,6 +150,25 @@ h1 {
   font-weight: 700;
 }
 
+.speech-check {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #eef4ff;
+  color: #274788;
+  font-weight: 600;
+}
+
+.speech-check-pass {
+  background: #ebfff1;
+  color: #1f6a3a;
+}
+
+.speech-check-warn {
+  background: #fff1f1;
+  color: #9c2f2f;
+}
+
 .learning-block {
   border: 1px dashed #b7c9ff;
   background: #f6f9ff;
@@ -160,7 +179,7 @@ h1 {
 
 .listen-controls {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -365,7 +384,7 @@ h1 {
 
 .dictation-audio-row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 12px;
 }

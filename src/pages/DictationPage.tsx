@@ -10,6 +10,12 @@ import {
   playUsWordAudio,
   stopUsWordAudioPlayback,
 } from '../lib/phonetic';
+import {
+  assessSpokenText,
+  getSpeechRecognitionErrorMessage,
+  isSpeechRecognitionSupported,
+  recognizeSpeechOnce,
+} from '../lib/speechAssessment';
 import { fetchWordImage } from '../lib/wordImage';
 
 type DictationStep =
@@ -114,9 +120,13 @@ export function DictationPage() {
   const [wordImageUrl, setWordImageUrl] = useState('');
   const [wordImageLoading, setWordImageLoading] = useState(false);
   const [answers, setAnswers] = useState<DictationAnswer[]>([]);
+  const [speechChecking, setSpeechChecking] = useState(false);
+  const [speechCheckMessage, setSpeechCheckMessage] = useState('');
+  const [speechCheckPassed, setSpeechCheckPassed] = useState<boolean | null>(null);
   const autoPlayStepRef = useRef('');
 
   const currentStep = stepIndex < steps.length ? steps[stepIndex] : null;
+  const speechRecognitionSupported = isSpeechRecognitionSupported();
   const quizTotal = steps.filter((step) => step.type !== 'study').length;
   const isCompleted = currentStep === null;
 
@@ -152,6 +162,36 @@ export function DictationPage() {
 
     setFeedback('');
   }, [currentStep, stopAudioPlayback]);
+
+  const runSpeechCheck = useCallback(async () => {
+    if (!currentStep) return;
+
+    if (!speechRecognitionSupported) {
+      setSpeechCheckPassed(false);
+      setSpeechCheckMessage('当前浏览器不支持语音识别。iPad 请使用 Safari，并确认已开启 Siri。');
+      return;
+    }
+
+    stopAudioPlayback();
+    setSpeechChecking(true);
+    setSpeechCheckPassed(null);
+    setSpeechCheckMessage('正在听你读，请开始说英文...');
+
+    const attempt = await recognizeSpeechOnce('en-US', 8000);
+    if (!attempt.ok) {
+      setSpeechChecking(false);
+      setSpeechCheckPassed(false);
+      setSpeechCheckMessage(getSpeechRecognitionErrorMessage(attempt.error));
+      return;
+    }
+
+    const assessment = assessSpokenText(currentStep.word.word, attempt.transcript);
+    setSpeechChecking(false);
+    setSpeechCheckPassed(assessment.passed);
+    setSpeechCheckMessage(
+      `识别到：${attempt.transcript}。匹配度 ${assessment.score}% · ${assessment.passed ? '判定通过' : '再读一次会更好。'}`,
+    );
+  }, [currentStep, speechRecognitionSupported, stopAudioPlayback]);
 
   useEffect(() => {
     if (!currentStep) return;
@@ -214,6 +254,9 @@ export function DictationPage() {
     setPhonetic('');
     setWordImageUrl('');
     setWordImageLoading(false);
+    setSpeechChecking(false);
+    setSpeechCheckMessage('');
+    setSpeechCheckPassed(null);
   };
 
   const moveNext = () => {
@@ -335,6 +378,11 @@ export function DictationPage() {
   const isStudyStep = currentStep.type === 'study';
   const isChooseStep = currentStep.type === 'listenChoose';
   const isSpellStep = currentStep.type === 'listenSpell';
+  const speechCheckClassName = speechCheckPassed === null
+    ? 'speech-check'
+    : speechCheckPassed
+      ? 'speech-check speech-check-pass'
+      : 'speech-check speech-check-warn';
   const getChoiceOptionClassName = (option: string) => {
     const classes = ['option'];
 
@@ -368,7 +416,14 @@ export function DictationPage() {
           <Button variant="ghost" onClick={() => void playSlowWord()}>
             慢速播放
           </Button>
+          <Button variant="ghost" onClick={() => void runSpeechCheck()} disabled={speechChecking || !speechRecognitionSupported}>
+            {speechChecking ? '识别中...' : '跟读判定'}
+          </Button>
         </div>
+        {speechCheckMessage ? <p className={speechCheckClassName}>{speechCheckMessage}</p> : null}
+        {!speechRecognitionSupported ? (
+          <p className="speech-check speech-check-warn">当前浏览器不支持语音识别。iPad 请使用 Safari，并确认已开启 Siri。</p>
+        ) : null}
 
         {isStudyStep ? (
           <div className="learning-block">

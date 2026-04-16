@@ -10,6 +10,12 @@ import {
   playUsWordAudio,
   stopUsWordAudioPlayback,
 } from '../lib/phonetic';
+import {
+  assessSpokenText,
+  getSpeechRecognitionErrorMessage,
+  isSpeechRecognitionSupported,
+  recognizeSpeechOnce,
+} from '../lib/speechAssessment';
 import { pickDailyQuestions, scheduleReviewTasks } from '../lib/practiceUtils';
 import { createSession, loadState, saveState } from '../lib/storage';
 import { fetchWordImage } from '../lib/wordImage';
@@ -198,6 +204,9 @@ export function PracticePage() {
   const [spellingInput, setSpellingInput] = useState('');
   const [wordImageUrl, setWordImageUrl] = useState('');
   const [wordImageLoading, setWordImageLoading] = useState(false);
+  const [speechChecking, setSpeechChecking] = useState(false);
+  const [speechCheckMessage, setSpeechCheckMessage] = useState('');
+  const [speechCheckPassed, setSpeechCheckPassed] = useState<boolean | null>(null);
   const autoPlayAfterSubmitRef = useRef(false);
   const preferredVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
 
@@ -403,6 +412,9 @@ export function PracticePage() {
     setSpellingInput('');
     setWordImageUrl('');
     setWordImageLoading(false);
+    setSpeechChecking(false);
+    setSpeechCheckMessage('');
+    setSpeechCheckPassed(null);
     autoPlayAfterSubmitRef.current = false;
   }, [currentBank, mode, train]);
 
@@ -434,6 +446,7 @@ export function PracticePage() {
   const totalCount = questionFlow.length;
   const currentQuestionId = questionFlow[questionIndex];
   const question = currentQuestionId !== undefined ? questionById.get(currentQuestionId) : undefined;
+  const speechRecognitionSupported = isSpeechRecognitionSupported();
   const isSpellingQuestion = train === 'spelling';
   const isChoiceQuestion = !isSpellingQuestion && Boolean(question && question.type === 'single_choice' && question.options.length > 0);
 
@@ -448,6 +461,9 @@ export function PracticePage() {
     setSelected(existed && existed.selectedIndex >= 0 ? existed.selectedIndex : null);
     setFeedback('');
     setSpellingInput('');
+    setSpeechChecking(false);
+    setSpeechCheckMessage('');
+    setSpeechCheckPassed(null);
   }, [question]);
 
   useEffect(() => {
@@ -577,9 +593,52 @@ export function PracticePage() {
     setSentenceCursor((prev) => (prev + 1) % sentenceList.length);
   };
 
+  const runSpeechCheck = async () => {
+    if (!question) return;
+
+    const targetText = getAudioText(question).trim();
+    if (!targetText) {
+      setSpeechCheckPassed(false);
+      setSpeechCheckMessage('当前题目没有可跟读文本。');
+      return;
+    }
+
+    if (!speechRecognitionSupported) {
+      setSpeechCheckPassed(false);
+      setSpeechCheckMessage('当前浏览器不支持语音识别。iPad 请使用 Safari，并确认已开启 Siri。');
+      return;
+    }
+
+    stopUsWordAudioPlayback();
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+
+    setSpeechChecking(true);
+    setSpeechCheckPassed(null);
+    setSpeechCheckMessage('正在听你读，请开始说英文...');
+
+    const attempt = await recognizeSpeechOnce('en-US', 8000);
+    if (!attempt.ok) {
+      setSpeechChecking(false);
+      setSpeechCheckPassed(false);
+      setSpeechCheckMessage(getSpeechRecognitionErrorMessage(attempt.error));
+      return;
+    }
+
+    const assessment = assessSpokenText(targetText, attempt.transcript);
+    setSpeechChecking(false);
+    setSpeechCheckPassed(assessment.passed);
+    setSpeechCheckMessage(
+      `识别到：${attempt.transcript}。匹配度 ${assessment.score}% · ${assessment.passed ? '判定通过' : '再读一次会更好。'}`,
+    );
+  };
+
   const goPrev = () => {
     if (questionIndex === 0) return;
     setFeedback('');
+    setSpeechCheckMessage('');
+    setSpeechCheckPassed(null);
     autoPlayAfterSubmitRef.current = false;
     setQuestionIndex((v) => v - 1);
   };
@@ -587,6 +646,8 @@ export function PracticePage() {
   const goNext = () => {
     if (questionIndex >= totalCount - 1) return;
     setFeedback('');
+    setSpeechCheckMessage('');
+    setSpeechCheckPassed(null);
     autoPlayAfterSubmitRef.current = false;
     setQuestionIndex((v) => v + 1);
   };
@@ -726,6 +787,11 @@ export function PracticePage() {
     : isSpellingQuestion
       ? spellingInput.trim().length === 0
       : false;
+  const speechCheckClassName = speechCheckPassed === null
+    ? 'speech-check'
+    : speechCheckPassed
+      ? 'speech-check speech-check-pass'
+      : 'speech-check speech-check-warn';
 
   return (
     <main className="page">
@@ -746,7 +812,14 @@ export function PracticePage() {
           <Button variant="ghost" onClick={repeatSingleSentence}>
             逐句重复
           </Button>
+          <Button variant="ghost" onClick={() => void runSpeechCheck()} disabled={speechChecking || !speechRecognitionSupported}>
+            {speechChecking ? '识别中...' : '跟读判定'}
+          </Button>
         </div>
+        {speechCheckMessage ? <p className={speechCheckClassName}>{speechCheckMessage}</p> : null}
+        {!speechRecognitionSupported ? (
+          <p className="speech-check speech-check-warn">当前浏览器不支持语音识别。iPad 请使用 Safari，并确认已开启 Siri。</p>
+        ) : null}
 
         {isSpellingQuestion ? (
           <div className="learning-block">

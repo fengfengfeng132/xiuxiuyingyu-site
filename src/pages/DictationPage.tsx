@@ -4,6 +4,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ProgressBar } from '../components/ProgressBar';
 import { dictationWords, type DictationWord } from '../data/dictationWords';
+import { questionBank } from '../data/loadQuestionBank';
 import {
   fetchUsPhonetic,
   playLocalUsSlowWordAudio,
@@ -16,6 +17,8 @@ import {
   isSpeechRecognitionSupported,
   recognizeSpeechOnce,
 } from '../lib/speechAssessment';
+import { loadState, saveState } from '../lib/storage';
+import { findQuestionIdByPrompt, playWrongAnswerTone, updateWrongBookForQuestion } from '../lib/studyFeedback';
 import { fetchWordImage } from '../lib/wordImage';
 
 type DictationStep =
@@ -193,6 +196,18 @@ export function DictationPage() {
     );
   }, [currentStep, speechRecognitionSupported, stopAudioPlayback]);
 
+  const recordWrongWord = useCallback((word: string) => {
+    const questionId = findQuestionIdByPrompt(questionBank, word);
+    if (questionId === null) return;
+
+    const now = new Date();
+    const state = loadState();
+    const feedbackState = updateWrongBookForQuestion(state.wrongBook, state.reviewTasks, questionId, now);
+    state.wrongBook = feedbackState.wrongBook;
+    state.reviewTasks = feedbackState.reviewTasks;
+    saveState(state);
+  }, []);
+
   useEffect(() => {
     if (!currentStep) return;
 
@@ -301,6 +316,10 @@ export function DictationPage() {
           isCorrect,
         },
       ]);
+      if (!isCorrect) {
+        recordWrongWord(currentStep.word.word);
+        playWrongAnswerTone();
+      }
       setFeedback(isCorrect ? '答对了，继续下一题。' : `答错了，正确意思是“${currentStep.word.meaning}”。`);
       return;
     }
@@ -323,6 +342,10 @@ export function DictationPage() {
         isCorrect,
       },
     ]);
+    if (!isCorrect) {
+      recordWrongWord(currentStep.word.word);
+      playWrongAnswerTone();
+    }
     setFeedback(isCorrect ? '拼写正确，继续下一题。' : `这题先记住，正确拼写是 ${currentStep.word.word}。`);
   };
 
@@ -330,6 +353,22 @@ export function DictationPage() {
     const correctCount = answers.filter((answer) => answer.isCorrect).length;
     const percent = Math.round((correctCount / Math.max(quizTotal, 1)) * 100);
     const wrongAnswers = answers.filter((answer) => !answer.isCorrect);
+    const wrongWordSummary = Array.from(
+      wrongAnswers.reduce<Map<string, { word: string; meaning: string; wrongCount: number }>>((acc, answer) => {
+        const existing = acc.get(answer.word);
+        if (existing) {
+          existing.wrongCount += 1;
+          return acc;
+        }
+
+        acc.set(answer.word, {
+          word: answer.word,
+          meaning: answer.meaning,
+          wrongCount: 1,
+        });
+        return acc;
+      }, new Map()).values(),
+    );
 
     return (
       <main className="page">
@@ -344,11 +383,12 @@ export function DictationPage() {
         {wrongAnswers.length > 0 ? (
           <Card title="这几题还要再看一遍" subtitle="先听，再看意思，再重新拼写。">
             <div className="dictation-summary">
-              {wrongAnswers.map((answer) => (
-                <div key={answer.stepId} className="dictation-summary-item">
+              {wrongWordSummary.map((answer) => (
+                <div key={answer.word} className="dictation-summary-item">
                   <strong>{answer.word}</strong>
                   <span>中文：{answer.meaning}</span>
-                  <span>正确答案：{answer.correctAnswer}</span>
+                  <span>本轮错了：{answer.wrongCount} 次</span>
+                  <span>已加入错题本，建议优先复习。</span>
                 </div>
               ))}
             </div>
@@ -367,6 +407,11 @@ export function DictationPage() {
             <Link className="link-reset" to="/">
               <Button variant="secondary" fullWidth>
                 返回首页
+              </Button>
+            </Link>
+            <Link className="link-reset" to="/wrong">
+              <Button variant="ghost" fullWidth>
+                打开错题本
               </Button>
             </Link>
           </div>

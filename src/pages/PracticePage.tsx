@@ -16,8 +16,9 @@ import {
   isSpeechRecognitionSupported,
   recognizeSpeechOnce,
 } from '../lib/speechAssessment';
-import { pickDailyQuestions, scheduleReviewTasks } from '../lib/practiceUtils';
+import { pickDailyQuestions } from '../lib/practiceUtils';
 import { createSession, loadState, saveState } from '../lib/storage';
+import { playWrongAnswerTone, updateWrongBookForQuestion } from '../lib/studyFeedback';
 import { fetchWordImage } from '../lib/wordImage';
 import type { Question, SessionAnswer } from '../types/schema';
 
@@ -684,8 +685,6 @@ export function PracticePage() {
     if (answerIndex >= 0) session.answers[answerIndex] = answerPayload;
     else session.answers.push(answerPayload);
 
-    const wrongIndex = state.wrongBook.findIndex((item) => item.questionId === question.id);
-
     session.score = session.answers.filter((a) => a.isCorrect).length;
     session.accuracy = totalCount > 0 ? session.score / totalCount : 0;
     session.questionTotal = totalCount;
@@ -697,21 +696,11 @@ export function PracticePage() {
 
     if (!isCorrect) {
       const now = new Date();
-      if (wrongIndex >= 0) {
-        state.wrongBook[wrongIndex].wrongCount += 1;
-        state.wrongBook[wrongIndex].lastWrongAt = now.toISOString();
-        state.wrongBook[wrongIndex].mastered = false;
-      } else {
-        state.wrongBook.push({
-          questionId: question.id,
-          wrongCount: 1,
-          lastWrongAt: now.toISOString(),
-          mastered: false,
-        });
-      }
-
-      state.reviewTasks = scheduleReviewTasks(state.reviewTasks, question.id, now);
+      const feedbackState = updateWrongBookForQuestion(state.wrongBook, state.reviewTasks, question.id, now);
+      state.wrongBook = feedbackState.wrongBook;
+      state.reviewTasks = feedbackState.reviewTasks;
       setStreak(0);
+      playWrongAnswerTone();
 
       nextFeedback = isSpellingQuestion
         ? `答错了，正确拼写是 ${question.prompt}。`

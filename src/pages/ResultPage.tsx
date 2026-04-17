@@ -3,6 +3,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { questionBank } from '../data/loadQuestionBank';
 import { loadState, startSession } from '../lib/storage';
+import { collectWrongWordReviewItems } from '../lib/studyFeedback';
 
 function getTargetCount(score: number, answered: number, storedTotal?: number): number {
   if (typeof storedTotal === 'number' && storedTotal > 0) {
@@ -30,6 +31,7 @@ export function ResultPage() {
   const wrongCount = Math.max(targetCount - latest.score, 0);
   const percent = Math.round((latest.score / targetCount) * 100);
   const isSpellingRound = latest.train === 'spelling';
+  const wrongReviewWords = collectWrongWordReviewItems(latest.answers, questionBank);
 
   const wrongDetails = latest.answers
     .filter((answer) => !answer.isCorrect)
@@ -65,8 +67,18 @@ export function ResultPage() {
         <p>正确率：{percent}%（答对/{targetCount}）</p>
       </Card>
 
+      {wrongReviewWords.length > 0 ? (
+        <Card title="着重复习这些单词" subtitle="这些词已经自动加入错题本，下一轮优先回看。">
+          {wrongReviewWords.map((item, index) => (
+            <p key={item.questionId}>
+              {index + 1}. {item.prompt} · {item.meaning}（本轮错了 {item.wrongCount} 次）
+            </p>
+          ))}
+        </Card>
+      ) : null}
+
       {wrongDetails.length > 0 ? (
-        <Card title="本轮新错题与正确答案">
+        <Card title="本轮错误详情与正确答案">
           {wrongDetails.map((item, index) => (
             <p key={item.id}>
               {index + 1}. {item.prompt} {'→'} {item.correctLabel}. {item.correctOption}

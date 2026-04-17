@@ -3,6 +3,12 @@ import { Card } from '../components/Card';
 import { questionBank } from '../data/loadQuestionBank';
 import { loadState, saveState } from '../lib/storage';
 
+function extractMeaning(explanation?: string): string {
+  if (!explanation) return '暂无释义';
+  const parts = explanation.trim().split(/\s+/);
+  return parts.length >= 2 ? parts.slice(1).join(' ') : explanation;
+}
+
 export function WrongPage() {
   const state = loadState();
   const wrongBook = state.wrongBook;
@@ -36,6 +42,7 @@ export function WrongPage() {
             const q = questionBank.find((x) => x.id === item.questionId);
             return (
               <Card key={item.questionId} title={q?.prompt ?? `题目 #${item.questionId}`} subtitle={q?.stem}>
+                <p>重点词义：{extractMeaning(q?.explanation)}</p>
                 <p>错误次数：{item.wrongCount}</p>
                 <p>状态：{item.mastered ? '已掌握' : '待复习'}</p>
                 <p>最近错题时间：{new Date(item.lastWrongAt).toLocaleString()}</p>

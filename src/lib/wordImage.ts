@@ -1,8 +1,6 @@
-const imageCache = new Map<string, string | null>();
+import { createWordImageCacheKey, getProjectWordImage, normalizeWordImageKey } from './wordImageCatalog';
 
-function normalizeWord(word: string): string {
-  return word.trim().toLowerCase();
-}
+const imageCache = new Map<string, string | null>();
 
 function escapeXml(text: string): string {
   return text
@@ -73,7 +71,7 @@ const wordEmojiMap: Record<string, string> = {
 };
 
 function pickEmoji(word: string, hint = ''): string {
-  const key = normalizeWord(word);
+  const key = normalizeWordImageKey(word);
   if (wordEmojiMap[key]) return wordEmojiMap[key];
 
   const source = `${key} ${hint.toLowerCase()}`;
@@ -142,17 +140,24 @@ async function fetchAiImage(word: string, hint?: string): Promise<string | null>
 }
 
 export async function fetchWordImage(word: string, hint?: string): Promise<string | null> {
-  const key = normalizeWord(word);
+  const key = normalizeWordImageKey(word);
   if (!key) return null;
 
-  if (imageCache.has(key)) {
-    return imageCache.get(key) ?? null;
+  const cacheKey = createWordImageCacheKey(key, hint);
+  if (imageCache.has(cacheKey)) {
+    return imageCache.get(cacheKey) ?? null;
+  }
+
+  const projectImage = getProjectWordImage(key);
+  if (projectImage) {
+    imageCache.set(cacheKey, projectImage);
+    return projectImage;
   }
 
   const fallback = buildSvgDataUrl(pickEmoji(key, hint));
   const aiImage = await fetchAiImage(key, hint);
   const result = aiImage ?? fallback;
 
-  imageCache.set(key, result);
+  imageCache.set(cacheKey, result);
   return result;
 }

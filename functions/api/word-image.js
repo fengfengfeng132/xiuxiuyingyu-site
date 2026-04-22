@@ -1,6 +1,7 @@
 const MODEL = '@cf/black-forest-labs/flux-1-schnell';
 const LONG_CACHE = 'public, max-age=1209600, s-maxage=1209600';
 const SHORT_CACHE = 'public, max-age=900, s-maxage=900';
+const CACHE_VERSION = 'ai-v4-hint-seeded';
 
 const wordEmojiMap = {
   keyboard: '⌨️',
@@ -138,10 +139,11 @@ function fallbackResponse(word, hint, status = 200) {
 }
 
 function buildPrompt(word, hint) {
-  const hintText = hint ? `Meaning hint: ${hint}.` : '';
+  const hintText = hint ? `Use this exact visual meaning hint as the scene: ${hint}.` : '';
   return [
     `A realistic educational photo-style image for the English vocabulary word "${word}".`,
     hintText,
+    'Use the most literal concrete scene for the meaning so a young child can understand it quickly.',
     'One clear subject only, centered composition, natural proportions, realistic textures, soft natural daylight,',
     'light plain background, high detail, child-safe, classroom flashcard style.',
     'No text, no letters, no logos, no watermark, not abstract, not cartoon, not anime.',
@@ -177,7 +179,7 @@ export async function onRequestGet(context) {
   cacheUrl.pathname = '/api/word-image';
   cacheUrl.searchParams.set('word', word);
   if (hint) cacheUrl.searchParams.set('hint', hint);
-  cacheUrl.searchParams.set('v', 'ai-v3-noanswer');
+  cacheUrl.searchParams.set('v', CACHE_VERSION);
 
   const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
   const cache = caches.default;
@@ -198,7 +200,7 @@ export async function onRequestGet(context) {
     const aiResult = await context.env.AI.run(MODEL, {
       prompt,
       steps: 8,
-      seed: hashSeed(word),
+      seed: hashSeed(hint ? `${word}|${hint}` : word),
     });
 
     if (!aiResult || typeof aiResult !== 'object' || typeof aiResult.image !== 'string') {

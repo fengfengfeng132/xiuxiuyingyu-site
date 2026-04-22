@@ -19,8 +19,8 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-function shouldBypassCache(requestUrl) {
-  return requestUrl.pathname.startsWith('/api/');
+function shouldBypassCache(request, requestUrl) {
+  return requestUrl.pathname.startsWith('/api/') || requestUrl.pathname.startsWith('/audio/') || request.headers.has('range');
 }
 
 self.addEventListener('fetch', (event) => {
@@ -29,7 +29,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (shouldBypassCache(url)) {
+  if (shouldBypassCache(event.request, url)) {
     event.respondWith(fetch(event.request));
     return;
   }

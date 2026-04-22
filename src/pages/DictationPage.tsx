@@ -7,6 +7,8 @@ import { dictationWords, type DictationWord } from '../data/dictationWords';
 import { questionBank } from '../data/loadQuestionBank';
 import {
   fetchUsPhonetic,
+  getLocalSlowWordAudioFeedback,
+  preloadLocalUsSlowWordAudio,
   playLocalUsSlowWordAudio,
   playUsWordAudio,
   stopUsWordAudioPlayback,
@@ -127,6 +129,7 @@ export function DictationPage() {
   const [speechCheckMessage, setSpeechCheckMessage] = useState('');
   const [speechCheckPassed, setSpeechCheckPassed] = useState<boolean | null>(null);
   const autoPlayStepRef = useRef('');
+  const autoPlayTimerRef = useRef<number | null>(null);
 
   const currentStep = stepIndex < steps.length ? steps[stepIndex] : null;
   const speechRecognitionSupported = isSpeechRecognitionSupported();
@@ -140,31 +143,40 @@ export function DictationPage() {
     }
   }, []);
 
+  const clearAutoPlayTimer = useCallback(() => {
+    if (autoPlayTimerRef.current === null) return;
+    window.clearTimeout(autoPlayTimerRef.current);
+    autoPlayTimerRef.current = null;
+  }, []);
+
   const playCurrentWord = useCallback(async () => {
     if (!currentStep) return;
 
+    clearAutoPlayTimer();
     stopAudioPlayback();
-    const playedWithDictionaryAudio = await playUsWordAudio(currentStep.word.word, 1);
-    if (playedWithDictionaryAudio) {
+    const playback = await playUsWordAudio(currentStep.word.word, 1);
+    if (playback.ok || playback.reason === 'stale') {
       setFeedback('');
       return;
     }
 
     setFeedback('当前单词词典发音加载失败，请稍后重试。');
-  }, [currentStep, stopAudioPlayback]);
+  }, [clearAutoPlayTimer, currentStep, stopAudioPlayback]);
 
   const playSlowWord = useCallback(async () => {
     if (!currentStep) return;
 
+    clearAutoPlayTimer();
     stopAudioPlayback();
-    const playedWithLocalSlowAudio = await playLocalUsSlowWordAudio(currentStep.word.word);
-    if (!playedWithLocalSlowAudio) {
-      setFeedback('当前单词暂无本地慢速语音。');
+    const playback = await playLocalUsSlowWordAudio(currentStep.word.word);
+    if (!playback.ok) {
+      const nextFeedback = getLocalSlowWordAudioFeedback(playback);
+      if (nextFeedback) setFeedback(nextFeedback);
       return;
     }
 
     setFeedback('');
-  }, [currentStep, stopAudioPlayback]);
+  }, [clearAutoPlayTimer, currentStep, stopAudioPlayback]);
 
   const runSpeechCheck = useCallback(async () => {
     if (!currentStep) return;
@@ -223,6 +235,11 @@ export function DictationPage() {
   }, [currentStep]);
 
   useEffect(() => {
+    if (!currentStep) return;
+    void preloadLocalUsSlowWordAudio(currentStep.word.word);
+  }, [currentStep]);
+
+  useEffect(() => {
     if (!currentStep || currentStep.type !== 'study') return;
 
     let canceled = false;
@@ -246,22 +263,26 @@ export function DictationPage() {
     if (autoPlayStepRef.current === autoPlayKey) return;
     autoPlayStepRef.current = autoPlayKey;
 
-    const timer = window.setTimeout(() => {
+    clearAutoPlayTimer();
+    autoPlayTimerRef.current = window.setTimeout(() => {
+      autoPlayTimerRef.current = null;
       void playCurrentWord();
     }, 180);
 
     return () => {
-      window.clearTimeout(timer);
+      clearAutoPlayTimer();
     };
-  }, [currentStep, playCurrentWord]);
+  }, [clearAutoPlayTimer, currentStep, playCurrentWord]);
 
   useEffect(() => {
     return () => {
+      clearAutoPlayTimer();
       stopAudioPlayback();
     };
-  }, [stopAudioPlayback]);
+  }, [clearAutoPlayTimer, stopAudioPlayback]);
 
   const resetStepUi = () => {
+    clearAutoPlayTimer();
     stopAudioPlayback();
     setSelectedMeaning(null);
     setSpellingInput('');

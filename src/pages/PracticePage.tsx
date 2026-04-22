@@ -6,6 +6,8 @@ import { ProgressBar } from '../components/ProgressBar';
 import { questionBank } from '../data/loadQuestionBank';
 import {
   fetchUsPhonetic,
+  getLocalSlowWordAudioFeedback,
+  preloadLocalUsSlowWordAudio,
   playLocalUsSlowWordAudio,
   playUsWordAudio,
   stopUsWordAudioPlayback,
@@ -491,6 +493,13 @@ export function PracticePage() {
   }, [question]);
 
   useEffect(() => {
+    if (!question) return;
+    if (!question.tags.includes(DAILY_DICTATION_TAG)) return;
+    if (!isSingleEnglishWord(question.prompt)) return;
+    void preloadLocalUsSlowWordAudio(question.prompt);
+  }, [question]);
+
+  useEffect(() => {
     if (!question || !isSpellingQuestion || !isSingleEnglishWord(question.prompt)) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setWordImageUrl('');
@@ -521,20 +530,21 @@ export function PracticePage() {
       const isDailyDictationWord = Boolean(question?.tags.includes(DAILY_DICTATION_TAG));
       if (isDailyDictationWord) {
         if (rate < 1) {
-          const playedWithLocalSlowAudio = await playLocalUsSlowWordAudio(text);
-          if (playedWithLocalSlowAudio) return;
-          setFeedback('当前单词暂无本地慢速语音。');
+          const playback = await playLocalUsSlowWordAudio(text);
+          if (playback.ok || playback.reason === 'stale') return;
+          const nextFeedback = getLocalSlowWordAudioFeedback(playback);
+          if (nextFeedback) setFeedback(nextFeedback);
           return;
         }
 
-        const playedWithDictionaryAudio = await playUsWordAudio(text, 1);
-        if (playedWithDictionaryAudio) return;
+        const playback = await playUsWordAudio(text, 1);
+        if (playback.ok || playback.reason === 'stale') return;
         setFeedback('当前单词词典发音加载失败，请稍后重试。');
         return;
       }
 
-      const playedWithDictionaryAudio = await playUsWordAudio(text, rate);
-      if (playedWithDictionaryAudio) return;
+      const playback = await playUsWordAudio(text, rate);
+      if (playback.ok || playback.reason === 'stale') return;
     }
 
     if (!('speechSynthesis' in window)) {

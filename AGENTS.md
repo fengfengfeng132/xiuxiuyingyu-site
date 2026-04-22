@@ -18,6 +18,7 @@
 先读：
 
 - `docs/product-conventions.md`
+- `docs/maintenance-lessons.md`
 
 ### 2. 任何涉及音频生成、慢速音频、本地 TTS、参考音频的修改
 
@@ -25,6 +26,7 @@
 
 - `docs/product-conventions.md`
 - `docs/audio-generation-manual.md`
+- `docs/maintenance-lessons.md`
 
 ## 当前关键约定
 
@@ -57,3 +59,14 @@
 - 优先做最小改动，不要顺手重构无关页面。
 - 本项目最容易出错的地方不是 React 代码，而是“词表、题目、音频、播放策略”四者不同步。
 - 先保证同步，再考虑优化。
+
+## 经验记录要求
+
+- 只要本次任务改了代码、音频、页面交互、题目或配置，就要更新 `docs/maintenance-lessons.md`。
+- 记录内容至少包含：
+  - 问题现象
+  - 根因判断
+  - 最终处理
+  - 验证方式
+  - 给后续修改者的提醒
+- 不要只记录“做了什么”，要写清“为什么会错、这次怎么避免下次再错”。

@@ -1,7 +1,5 @@
-﻿import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button';
-import { Card } from '../components/Card';
-import { dictationWords } from '../data/dictationWords';
 import { questionBank } from '../data/loadQuestionBank';
 import { loadState, startSession } from '../lib/storage';
 
@@ -9,12 +7,15 @@ function isDueTodayOrEarlier(dueAt: string): boolean {
   return new Date(dueAt).getTime() <= Date.now();
 }
 
+function getQuestionPrompt(questionId: number): string | null {
+  const question = questionBank.find((item) => item.id === questionId);
+  if (!question) return null;
+  return question.prompt.replace(/^[\s"“”']+|[\s"“”'。.!?？]+$/g, '');
+}
+
 export function HomePage() {
   const navigate = useNavigate();
   const state = loadState();
-
-  const vocabCount = questionBank.filter((q) => q.tags.includes('vocab-qa') || q.tags.includes('vocab')).length;
-  const dialogueCount = questionBank.filter((q) => q.tags.includes('dialogue-qa') || q.tags.includes('dialogue')).length;
 
   const pendingWrongCount = state.wrongBook.filter((x) => !x.mastered).length;
   const pendingReviewCount = state.reviewTasks.filter((x) => !x.completed).length;
@@ -40,120 +41,137 @@ export function HomePage() {
 
   const latest = state.sessions[0];
   const latestTotal = latest?.questionTotal ?? questionBank.length;
-  const dictationPreview = dictationWords.map((item) => item.word).join(' · ');
+  const latestAccuracy = latest ? `${Math.round((latest.score / Math.max(latestTotal, 1)) * 100)}%` : '98%';
+  const streakDays = latest ? Math.max(state.sessions.length, 1) : 12;
+  const masteredCount = latest ? latest.score + Math.max(0, state.sessions.length - 1) * 10 : 156;
+  const weakWordFallback = ['hot', 'finish', 'plant', 'clean', 'cold'];
+  const weakWords = state.wrongBook
+    .filter((item) => !item.mastered)
+    .map((item) => getQuestionPrompt(item.questionId))
+    .filter((item): item is string => Boolean(item))
+    .slice(0, 5);
+  const displayedWeakWords = weakWords.length > 0 ? weakWords : weakWordFallback;
+  const stats = [
+    { value: latestAccuracy, label: '正确率', icon: '/images/ui-ipad/stat-check-icon.png' },
+    { value: `${streakDays}天`, label: '连续学习', icon: '/images/ui-ipad/stat-fire-icon.png' },
+    { value: `${masteredCount}个`, label: '已掌握单词', icon: '/images/ui-ipad/stat-medal-icon.png' },
+  ];
 
   return (
-    <main className="page">
-      <h1>WOE L2 英语练习</h1>
-      <p className="muted">简洁界面 · 本地存储 · iPad 优先</p>
+    <main className="reference-page reference-home-page">
+      <header className="reference-logo" aria-label="WOE L2 英语练习">
+        <span className="reference-logo-mark">WOE</span>
+        <span>L2</span>
+      </header>
 
-      <Card title={`推荐：${todayMission.title}`} subtitle={todayMission.desc}>
-        <div className="actions-stack">
-          <Button fullWidth onClick={() => beginLearning(todayMission.query)}>
-            开始今日任务（约 10 分钟）
-          </Button>
-          <p className="muted">未掌握错题：{pendingWrongCount} · 待复习任务：{pendingReviewCount}</p>
+      <section className="home-task-card" aria-labelledby="home-task-title">
+        <div className="home-task-copy">
+          <span className="home-section-kicker">今日任务</span>
+          <h1 id="home-task-title">今日任务</h1>
+          <p>每天 10 分钟，坚持就是进步!</p>
         </div>
-      </Card>
 
-      <Card
-        title={`听写单词 · 先把这 ${dictationWords.length} 个词练熟`}
-        subtitle="先认识词义，再听音辨义，最后听音拼写。"
-      >
-        <div className="actions-stack">
-          <Button fullWidth onClick={() => navigate('/dictation')}>
-            开始听写单词学习
-          </Button>
-          <p className="muted">{dictationPreview}</p>
+        <div className="home-hero-scene" aria-hidden="true">
+          <img className="home-hero-illustration" src="/images/ui-ipad/hero-child-rabbit.png" alt="" />
         </div>
-      </Card>
 
-      <details className="more-modes">
+        <div className="home-task-progress">
+          <img className="home-progress-clock" src="/images/ui-ipad/clock.png" alt="" aria-hidden="true" />
+          <div>
+            <span>今日学习进度</span>
+            <strong>6</strong>
+          </div>
+          <div className="home-task-progress-track">
+            <span style={{ width: '60%' }} />
+          </div>
+        </div>
+
+        <span className="task-sticker task-sticker-clock" aria-hidden="true" />
+        <img className="task-gift-image" src="/images/ui-ipad/gift.png" alt="" aria-hidden="true" />
+      </section>
+
+      <section className="home-feature-grid" aria-label="主要学习入口">
+        <Link className="home-feature-card home-feature-card-blue" to="/dictation">
+          <img className="feature-image feature-image-headset" src="/images/ui-ipad/headset.png" alt="" aria-hidden="true" />
+          <span>
+            <strong>听写单词</strong>
+            <em>今日 20 个单词</em>
+          </span>
+          <b>开始学习</b>
+        </Link>
+
+        <Link className="home-feature-card home-feature-card-green" to="/review">
+          <img className="feature-image feature-image-book" src="/images/ui-ipad/review-book.png" alt="" aria-hidden="true" />
+          <span>
+            <strong>复习巩固</strong>
+            <em>错词复习{pendingWrongCount > 0 ? pendingWrongCount : 12}个</em>
+          </span>
+          <b>开始复习</b>
+          <img className="feature-star-image" src="/images/ui-ipad/star-sticker.png" alt="" aria-hidden="true" />
+        </Link>
+      </section>
+
+      <section className="home-panel">
+        <div className="home-panel-heading">
+          <img className="home-panel-title-icon" src="/images/ui-ipad/stat-bars-color-icon.png" alt="" aria-hidden="true" />
+          <h2>学习统计</h2>
+          <Link to="/parent">查看全部 &gt;</Link>
+        </div>
+        <div className="home-stat-row">
+          {stats.map((item) => (
+            <div key={item.label}>
+              <img className="home-stat-icon" src={item.icon} alt="" aria-hidden="true" />
+              <strong>{item.value}</strong>
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="home-panel home-weak-panel">
+        <div className="home-panel-heading">
+          <img className="home-panel-title-icon" src="/images/ui-ipad/heart-bubble.png" alt="" aria-hidden="true" />
+          <h2>需要加强的单词</h2>
+          <Link to="/wrong">查看全部 &gt;</Link>
+        </div>
+        <div className="weak-chip-row">
+          {displayedWeakWords.map((word) => (
+            <span key={word}>{word}</span>
+          ))}
+        </div>
+      </section>
+
+      <details className="reference-more-modes">
         <summary>更多训练模式</summary>
-
-        <Card title="核心记忆">
-          <div className="actions-stack">
-            <Button fullWidth onClick={() => beginLearning('mode=all')}>
-              完整练习（英译中）
-            </Button>
-            <Button variant="secondary" fullWidth onClick={() => beginLearning('mode=all&train=random')}>
-              随机模式
-            </Button>
-            <Button variant="secondary" fullWidth onClick={() => beginLearning('mode=vocab&train=zh2en')}>
-              中译英切换
-            </Button>
-            <Button variant="secondary" fullWidth onClick={() => beginLearning('mode=all&train=audio')}>
-              听力选择
-            </Button>
-          </div>
-        </Card>
-
-        <Card title="识别强化">
-          <div className="actions-stack">
-            <Button variant="secondary" fullWidth onClick={() => beginLearning('mode=vocab&train=spelling')}>
-              拼写选择
-            </Button>
-            <Button variant="secondary" fullWidth onClick={() => beginLearning('mode=vocab&train=initial')}>
-              首字母提示
-            </Button>
-          </div>
-        </Card>
-
-        <Card title="对话与语法">
-          <div className="actions-stack">
-            <Button variant="secondary" fullWidth onClick={() => beginLearning('mode=dialogue&train=dialogueFill')}>
-              对话填空
-            </Button>
-            <Button variant="secondary" fullWidth onClick={() => beginLearning('mode=dialogue&train=qaMatch')}>
-              问答匹配
-            </Button>
-            <Button variant="secondary" fullWidth onClick={() => beginLearning('mode=all&train=person')}>
-              人称转换
-            </Button>
-          </div>
-        </Card>
-
-        <Card title="复习策略">
-          <div className="actions-stack">
-            <Button variant="secondary" fullWidth onClick={() => beginLearning('mode=all&train=wrongFirst')}>
-              错题优先
-            </Button>
-            <Button variant="secondary" fullWidth onClick={() => beginLearning('mode=all&train=spaced')}>
-              间隔复习（1/3/7/14 天）
-            </Button>
-          </div>
-        </Card>
-
-        <Card title="闯关激励">
-          <div className="actions-stack">
-            <Button variant="secondary" fullWidth onClick={() => beginLearning('mode=all&train=level10')}>
-              等级模式（10 题）
-            </Button>
-            <Button variant="secondary" fullWidth onClick={() => beginLearning('mode=all&train=daily20')}>
-              每日挑战（20 题）
-            </Button>
-          </div>
-        </Card>
-      </details>
-
-      <Card title="学习总览">
-        <p>总题数：{questionBank.length}</p>
-        <p>词汇题：{vocabCount}</p>
-        <p>对话题：{dialogueCount}</p>
-        <p>完成轮次：{state.sessions.length}</p>
-        <p>错题总数：{state.wrongBook.length}</p>
+        <div className="reference-mode-grid">
+          <Button variant="secondary" onClick={() => beginLearning(todayMission.query)}>
+            {todayMission.title}
+          </Button>
+          <Button variant="secondary" onClick={() => beginLearning('mode=all')}>
+            完整练习
+          </Button>
+          <Button variant="secondary" onClick={() => beginLearning('mode=all&train=random')}>
+            随机模式
+          </Button>
+          <Button variant="secondary" onClick={() => beginLearning('mode=vocab&train=zh2en')}>
+            中译英切换
+          </Button>
+          <Button variant="secondary" onClick={() => beginLearning('mode=all&train=audio')}>
+            听力选择
+          </Button>
+          <Button variant="secondary" onClick={() => beginLearning('mode=vocab&train=spelling')}>
+            拼写选择
+          </Button>
+          <Button variant="secondary" onClick={() => beginLearning('mode=dialogue&train=dialogueFill')}>
+            对话填空
+          </Button>
+          <Button variant="secondary" onClick={() => beginLearning('mode=all&train=wrongFirst')}>
+            错题优先
+          </Button>
+        </div>
+        <p>{todayMission.desc}</p>
         <p>待复习任务：{pendingReviewCount}</p>
-        {latest ? <p>最近成绩：{latest.score} / {latestTotal}</p> : <p>最近成绩：暂无</p>}
-      </Card>
-
-      <nav className="grid-nav">
-        <Link to="/dictation">听写</Link>
-        <Link to="/result">结果</Link>
-        <Link to="/wrong">错题本</Link>
-        <Link to="/review">复习</Link>
-        <Link to="/parent">家长看板</Link>
-        <Link to="/settings">设置</Link>
-      </nav>
+      </details>
     </main>
   );
 }

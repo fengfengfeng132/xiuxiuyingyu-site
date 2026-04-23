@@ -59,16 +59,37 @@ export function ResultPage() {
 
   return (
     <main className="page">
-      <h1>结果</h1>
-      <Card title="本轮总结">
-        <p>作答：{answered} / {targetCount}</p>
-        <p>答对：{latest.score}</p>
-        <p>答错：{wrongCount}</p>
-        <p>正确率：{percent}%（答对/{targetCount}）</p>
+      <section className="page-hero page-hero-compact">
+        <p className="page-eyebrow">结果页</p>
+        <h1>本轮学习总结</h1>
+        <p className="page-lead">先看这轮做得怎么样，再决定是回错题、继续做题，还是直接回首页。</p>
+      </section>
+
+      <Card className="card-tone-blue" title="本轮总结">
+        <div className="stats-grid stats-grid-compact">
+          <div className="stat-card stat-card-white">
+            <span className="stat-label">作答</span>
+            <strong className="stat-value">
+              {answered} / {targetCount}
+            </strong>
+          </div>
+          <div className="stat-card stat-card-white">
+            <span className="stat-label">答对</span>
+            <strong className="stat-value">{latest.score}</strong>
+          </div>
+          <div className="stat-card stat-card-white">
+            <span className="stat-label">答错</span>
+            <strong className="stat-value">{wrongCount}</strong>
+          </div>
+          <div className="stat-card stat-card-white">
+            <span className="stat-label">正确率</span>
+            <strong className="stat-value">{percent}%</strong>
+          </div>
+        </div>
       </Card>
 
       {wrongReviewWords.length > 0 ? (
-        <Card title="着重复习这些单词" subtitle="这些词已经自动加入错题本，下一轮优先回看。">
+        <Card className="card-tone-coral" title="着重复习这些单词" subtitle="这些词已经自动加入错题本，下一轮优先回看。">
           {wrongReviewWords.map((item, index) => (
             <p key={item.questionId}>
               {index + 1}. {item.prompt} · {item.meaning}（本轮错了 {item.wrongCount} 次）
@@ -78,7 +99,7 @@ export function ResultPage() {
       ) : null}
 
       {wrongDetails.length > 0 ? (
-        <Card title="本轮错误详情与正确答案">
+        <Card className="card-tone-neutral" title="本轮错误详情与正确答案">
           {wrongDetails.map((item, index) => (
             <p key={item.id}>
               {index + 1}. {item.prompt} {'→'} {item.correctLabel}. {item.correctOption}
@@ -87,7 +108,7 @@ export function ResultPage() {
         </Card>
       ) : null}
 
-      <Card title="下一步">
+      <Card className="card-tone-yellow" title="下一步">
         <div style={{ display: 'grid', gap: 10 }}>
           <Link className="link-reset" to="/wrong">
             <Button variant="secondary" fullWidth>

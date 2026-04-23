@@ -7,7 +7,9 @@ const initialState: AppState = {
   activeSession: null,
   sessions: [],
   wrongBook: [],
+  dictationHistory: [],
   reviewTasks: [],
+  starRecords: [],
   localAudioFiles: {},
 };
 

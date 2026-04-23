@@ -26,15 +26,31 @@ export function ReviewPage() {
 
   return (
     <main className="page">
-      <h1>复习任务</h1>
-      <Card title="自动生成复习任务">
-        <p>待完成任务：{pending.length}</p>
-        <p>当前到期：{dueNow.length}</p>
-        <p>即将到期：{upcoming.length}</p>
+      <section className="page-hero page-hero-compact">
+        <p className="page-eyebrow">复习任务</p>
+        <h1>按到期顺序复习</h1>
+        <p className="page-lead">先处理今天到期的任务，后面再看即将到来的安排，页面会把数量直接说清楚。</p>
+      </section>
+
+      <Card className="card-tone-blue" title="自动生成复习任务">
+        <div className="stats-grid stats-grid-compact">
+          <div className="stat-card stat-card-white">
+            <span className="stat-label">待完成任务</span>
+            <strong className="stat-value">{pending.length}</strong>
+          </div>
+          <div className="stat-card stat-card-white">
+            <span className="stat-label">当前到期</span>
+            <strong className="stat-value">{dueNow.length}</strong>
+          </div>
+          <div className="stat-card stat-card-white">
+            <span className="stat-label">即将到期</span>
+            <strong className="stat-value">{upcoming.length}</strong>
+          </div>
+        </div>
       </Card>
 
       {pending.length === 0 ? (
-        <Card title="今天已完成">
+        <Card className="card-tone-mint" title="今天已完成">
           <p>暂无待复习任务。</p>
         </Card>
       ) : (
@@ -42,7 +58,7 @@ export function ReviewPage() {
           .slice()
           .sort((a, b) => a.dueAt.localeCompare(b.dueAt))
           .map((task) => (
-            <Card key={task.id} title={`到期时间：${new Date(task.dueAt).toLocaleString()}`}>
+            <Card className="card-tone-yellow" key={task.id} title={`到期时间：${new Date(task.dueAt).toLocaleString()}`}>
               <p>题目数量：{task.questionIds.length}</p>
               <p>题号：{task.questionIds.map((qid) => `#${qid}`).join(', ')}</p>
               <p>
@@ -61,7 +77,7 @@ export function ReviewPage() {
       )}
 
       {upcoming.length > 0 ? (
-        <Card title="即将到来的复习计划">
+        <Card className="card-tone-neutral" title="即将到来的复习计划">
           {upcoming
             .slice()
             .sort((a, b) => a.dueAt.localeCompare(b.dueAt))

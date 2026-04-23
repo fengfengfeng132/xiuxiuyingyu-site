@@ -61,6 +61,21 @@
 - `src/pages/PracticePage.tsx`
 - `src/pages/DictationPage.tsx`
 
+## 星星奖励约定
+
+- 右上角星星数量必须读取本地真实记录，不允许继续写死展示数字。
+- 每满分完成一次训练，增加 1 颗星。
+- 同一轮训练只能发放一次星星，刷新结果页或重复保存不能重复增加。
+- 点击右上角星星进入 `/stars`，查看每颗星的获得时间、训练来源和满分记录。
+
+相关文件：
+
+- `src/lib/starRewards.ts`
+- `src/pages/ModeHubPage.tsx`
+- `src/pages/StarsPage.tsx`
+- `src/pages/PracticePage.tsx`
+- `src/pages/DictationPage.tsx`
+
 ## 错题反馈约定
 
 - 练习或听写答错后，要有错误提示音。

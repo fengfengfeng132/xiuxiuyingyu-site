@@ -16,9 +16,14 @@ export function SettingsPage() {
 
   return (
     <main className="page">
-      <h1>设置</h1>
-      <Card title="当前规则">
-        <ul>
+      <section className="page-hero page-hero-compact">
+        <p className="page-eyebrow">设置</p>
+        <h1>导出、查看和清理</h1>
+        <p className="page-lead">把当前规则、数据导出和数据管理集中放到一起，减少来回找入口的负担。</p>
+      </section>
+
+      <Card className="card-tone-neutral" title="当前规则">
+        <ul className="detail-bullets">
           <li>每日推荐：10 分钟任务</li>
           <li>正确率公式：答对数 / 本轮题目数</li>
           <li>录音：本地占位（后续可接入 MediaRecorder）</li>
@@ -26,7 +31,7 @@ export function SettingsPage() {
         </ul>
       </Card>
 
-      <Card title="导出数据">
+      <Card className="card-tone-blue" title="导出数据">
         <div className="actions-stack">
           <Button variant="secondary" fullWidth onClick={exportSessionsAsCsv}>
             导出 CSV
@@ -37,7 +42,7 @@ export function SettingsPage() {
         </div>
       </Card>
 
-      <Card title="数据管理">
+      <Card className="card-tone-coral" title="数据管理">
         <Button variant="secondary" fullWidth onClick={clearAll}>
           清空本地记录
         </Button>

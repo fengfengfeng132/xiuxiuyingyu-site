@@ -41,6 +41,28 @@ export interface WrongItem {
   mastered: boolean;
 }
 
+export interface DictationHistoryWord {
+  word: string;
+  meaning: string;
+  meaningWrongCount: number;
+  spellingWrongCount: number;
+}
+
+export interface DictationHistoryEntry {
+  id: string;
+  finishedAt: string;
+  wrongWords: DictationHistoryWord[];
+}
+
+export interface DictationWeeklyWordSummary {
+  word: string;
+  meaning: string;
+  totalWrongCount: number;
+  meaningWrongCount: number;
+  spellingWrongCount: number;
+  primaryWeakness: 'meaning' | 'spelling' | 'both';
+}
+
 export interface ReviewTask {
   id: string;
   questionIds: number[];
@@ -48,10 +70,22 @@ export interface ReviewTask {
   completed: boolean;
 }
 
+export interface StarRecord {
+  id: string;
+  earnedAt: string;
+  sourceType: 'practice' | 'dictation';
+  sourceId: string;
+  title: string;
+  score: number;
+  total: number;
+}
+
 export interface AppState {
   activeSession: StudySession | null;
   sessions: StudySession[];
   wrongBook: WrongItem[];
+  dictationHistory: DictationHistoryEntry[];
   reviewTasks: ReviewTask[];
+  starRecords: StarRecord[];
   localAudioFiles: Record<string, string>;
 }

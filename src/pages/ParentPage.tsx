@@ -110,18 +110,33 @@ export function ParentPage() {
   const goalsReached = [weeklyRounds >= WEEKLY_ROUND_GOAL, weeklyAccuracy >= WEEKLY_ACCURACY_GOAL].filter(Boolean).length;
 
   const latestTotal = latest ? getSessionTargetCount(latest, totalQuestions) : totalQuestions;
+  const overviewStats = [
+    { label: '总练习轮次', value: totalRounds },
+    { label: '平均答对题数', value: avgScore },
+    { label: '最佳答对题数', value: bestScore },
+    { label: '错题总数', value: state.wrongBook.length },
+  ];
 
   return (
     <main className="page">
-      <h1>家长看板</h1>
-      <Card title="总体概览">
-        <p>总练习轮次：{totalRounds}</p>
-        <p>平均答对题数：{avgScore}</p>
-        <p>最佳答对题数：{bestScore}</p>
-        <p>错题总数：{state.wrongBook.length}</p>
+      <section className="page-hero page-hero-compact">
+        <p className="page-eyebrow">家长看板</p>
+        <h1>学习走势一眼看懂</h1>
+        <p className="page-lead">把轮次、正确率、薄弱点和学习时长放到同一页里，方便家长快速判断最近节奏。</p>
+      </section>
+
+      <Card className="card-tone-blue" title="总体概览">
+        <div className="stats-grid">
+          {overviewStats.map((item) => (
+            <div key={item.label} className="stat-card stat-card-white">
+              <span className="stat-label">{item.label}</span>
+              <strong className="stat-value">{item.value}</strong>
+            </div>
+          ))}
+        </div>
       </Card>
 
-      <Card title="本周目标进度">
+      <Card className="card-tone-mint" title="本周目标进度">
         <p>已达成目标：{goalsReached} / 2</p>
         <p>轮次目标：{weeklyRounds} / {WEEKLY_ROUND_GOAL}</p>
         <div className="trend-track">
@@ -133,7 +148,7 @@ export function ParentPage() {
         </div>
       </Card>
 
-      <Card title="最近一轮">
+      <Card className="card-tone-neutral" title="最近一轮">
         {latest ? (
           <>
             <p>完成时间：{latest.finishedAt ? new Date(latest.finishedAt).toLocaleString() : '进行中'}</p>
@@ -146,7 +161,7 @@ export function ParentPage() {
         )}
       </Card>
 
-      <Card title="最近 7 轮趋势">
+      <Card className="card-tone-neutral" title="最近 7 轮趋势">
         {recent7.length === 0 ? (
           <p>暂无数据。</p>
         ) : (
@@ -168,7 +183,7 @@ export function ParentPage() {
         )}
       </Card>
 
-      <Card title="单元进度">
+      <Card className="card-tone-yellow" title="单元进度">
         {unitProgress.map((u) => (
           <div className="trend-item" key={`unit-${u.unit}`}>
             <div className="trend-meta">
@@ -184,7 +199,7 @@ export function ParentPage() {
         ))}
       </Card>
 
-      <Card title="薄弱标签（前 5）">
+      <Card className="card-tone-coral" title="薄弱标签（前 5）">
         {weakTags.length === 0 ? (
           <p>当前没有明显薄弱标签。</p>
         ) : (
@@ -192,13 +207,24 @@ export function ParentPage() {
         )}
       </Card>
 
-      <Card title="掌握层级">
-        <p>新词：{mastery.newWords}</p>
-        <p>熟悉中：{mastery.familiar}</p>
-        <p>已掌握：{mastery.mastered}</p>
+      <Card className="card-tone-neutral" title="掌握层级">
+        <div className="stats-grid stats-grid-compact">
+          <div className="stat-card stat-card-white">
+            <span className="stat-label">新词</span>
+            <strong className="stat-value">{mastery.newWords}</strong>
+          </div>
+          <div className="stat-card stat-card-white">
+            <span className="stat-label">熟悉中</span>
+            <strong className="stat-value">{mastery.familiar}</strong>
+          </div>
+          <div className="stat-card stat-card-white">
+            <span className="stat-label">已掌握</span>
+            <strong className="stat-value">{mastery.mastered}</strong>
+          </div>
+        </div>
       </Card>
 
-      <Card title="学习时长与频次">
+      <Card className="card-tone-neutral" title="学习时长与频次">
         <p>总学习时长：{Math.round(totalMinutes)} 分钟</p>
         <p>学习天数：{Object.keys(dayFreq).length}</p>
         {Object.entries(dayFreq)

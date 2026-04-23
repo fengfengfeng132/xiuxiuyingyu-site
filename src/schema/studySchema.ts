@@ -1,4 +1,4 @@
-import type { AppState, SessionAnswer, StudySession } from '../types/schema';
+import type { AppState, DictationHistoryEntry, DictationHistoryWord, SessionAnswer, StarRecord, StudySession } from '../types/schema';
 import { parseReviewTasks } from './reviewSchema';
 import { parseWrongBook } from './wrongBookSchema';
 
@@ -46,6 +46,55 @@ function parseSessions(value: unknown): StudySession[] {
   }));
 }
 
+function isDictationHistoryWord(value: unknown): value is DictationHistoryWord {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Record<string, unknown>;
+
+  return (
+    typeof item.word === 'string' &&
+    typeof item.meaning === 'string' &&
+    typeof item.meaningWrongCount === 'number' &&
+    typeof item.spellingWrongCount === 'number'
+  );
+}
+
+function isDictationHistoryEntry(value: unknown): value is DictationHistoryEntry {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Record<string, unknown>;
+
+  return (
+    typeof item.id === 'string' &&
+    typeof item.finishedAt === 'string' &&
+    Array.isArray(item.wrongWords) &&
+    item.wrongWords.every(isDictationHistoryWord)
+  );
+}
+
+function parseDictationHistory(value: unknown): DictationHistoryEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isDictationHistoryEntry);
+}
+
+function isStarRecord(value: unknown): value is StarRecord {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Record<string, unknown>;
+
+  return (
+    typeof item.id === 'string' &&
+    typeof item.earnedAt === 'string' &&
+    (item.sourceType === 'practice' || item.sourceType === 'dictation') &&
+    typeof item.sourceId === 'string' &&
+    typeof item.title === 'string' &&
+    typeof item.score === 'number' &&
+    typeof item.total === 'number'
+  );
+}
+
+function parseStarRecords(value: unknown): StarRecord[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isStarRecord);
+}
+
 export function parseAppState(value: unknown, fallback: AppState): AppState {
   if (!value || typeof value !== 'object') return fallback;
 
@@ -58,7 +107,9 @@ export function parseAppState(value: unknown, fallback: AppState): AppState {
     : null;
   const sessions = parseSessions(raw.sessions);
   const wrongBook = parseWrongBook(raw.wrongBook);
+  const dictationHistory = parseDictationHistory(raw.dictationHistory);
   const reviewTasks = parseReviewTasks(raw.reviewTasks);
+  const starRecords = parseStarRecords(raw.starRecords);
   const localAudioFiles =
     raw.localAudioFiles && typeof raw.localAudioFiles === 'object' && !Array.isArray(raw.localAudioFiles)
       ? (raw.localAudioFiles as Record<string, string>)
@@ -69,7 +120,9 @@ export function parseAppState(value: unknown, fallback: AppState): AppState {
     activeSession,
     sessions,
     wrongBook,
+    dictationHistory,
     reviewTasks,
+    starRecords,
     localAudioFiles,
   };
 }

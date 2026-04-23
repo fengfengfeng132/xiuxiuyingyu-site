@@ -19,6 +19,7 @@ import {
   recognizeSpeechOnce,
 } from '../lib/speechAssessment';
 import { pickDailyQuestions } from '../lib/practiceUtils';
+import { awardPerfectTrainingStar } from '../lib/starRewards';
 import { createSession, loadState, saveState } from '../lib/storage';
 import { playWrongAnswerTone, updateWrongBookForQuestion } from '../lib/studyFeedback';
 import { fetchWordImage } from '../lib/wordImage';
@@ -46,6 +47,27 @@ const PREFERRED_US_VOICE_NAMES = [
   'Microsoft Aria Online (Natural) - English (United States)',
   'Samantha',
 ];
+
+const TRAIN_TITLE_MAP: Record<string, string> = {
+  normal: '标准',
+  random: '随机',
+  zh2en: '中译英',
+  audio: '听力',
+  wrongFirst: '错题优先',
+  spelling: '拼写',
+  initial: '首字母',
+  dialogueFill: '对话填空',
+  qaMatch: '问答匹配',
+  person: '人称转换',
+  daily20: '每日20题',
+  today10: '今日10分钟',
+  level10: '等级10题',
+  spaced: '间隔复习',
+};
+
+function getTrainTitle(train: string): string {
+  return TRAIN_TITLE_MAP[train] || '标准训练';
+}
 
 function pickUsVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   for (const preferredName of PREFERRED_US_VOICE_NAMES) {
@@ -585,7 +607,7 @@ export function PracticePage() {
   }, []);
 
   if (!question || totalCount === 0) {
-    return <main className="page">当前模式暂无可练习内容。</main>;
+    return <main className="reference-page practice-learning-page">当前模式暂无可练习内容。</main>;
   }
 
   const playFullAudio = (rate: number) => {
@@ -735,10 +757,24 @@ export function PracticePage() {
     session.currentQuestionIndex = Math.max(session.currentQuestionIndex, nextIndex);
 
     if (questionIndex >= nextFlow.length - 1) {
-      session.finishedAt = new Date().toISOString();
-      state.activeSession = null;
-      state.sessions = [session, ...state.sessions].slice(0, 30);
-      saveState(state);
+      const finishedAt = new Date().toISOString();
+      session.finishedAt = finishedAt;
+      const rewarded = awardPerfectTrainingStar(
+        {
+          ...state,
+          activeSession: null,
+          sessions: [session, ...state.sessions].slice(0, 30),
+        },
+        {
+          sourceType: 'practice',
+          sourceId: session.id,
+          title: getTrainTitle(train),
+          score: session.score,
+          total: session.questionTotal ?? totalCount,
+          earnedAt: finishedAt,
+        },
+      );
+      saveState(rewarded.state);
       navigate('/result');
       return;
     }
@@ -755,23 +791,6 @@ export function PracticePage() {
   };
 
   const modeTitle = mode === 'vocab' ? '词汇' : mode === 'dialogue' ? '对话' : '全部';
-  const trainTitleMap: Record<string, string> = {
-    normal: '标准',
-    random: '随机',
-    zh2en: '中译英',
-    audio: '听力',
-    wrongFirst: '错题优先',
-    spelling: '拼写',
-    initial: '首字母',
-    dialogueFill: '对话填空',
-    qaMatch: '问答匹配',
-    person: '人称转换',
-    daily20: '每日20题',
-    today10: '今日10分钟',
-    level10: '等级10题',
-    spaced: '间隔复习',
-  };
-
   const cardTitle =
     train === 'audio'
       ? '先点击播放，再作答'
@@ -793,13 +812,32 @@ export function PracticePage() {
       : 'speech-check speech-check-warn';
 
   return (
-    <main className="page">
-      <h1>
-        练习 - {modeTitle} - {trainTitleMap[train] || '标准'}
-      </h1>
+    <main className="reference-page practice-learning-page">
+      <section className="page-hero page-hero-compact">
+        <p className="page-eyebrow">练习模式</p>
+        <h1>{modeTitle}训练</h1>
+        <p className="page-lead">
+          当前训练：{getTrainTitle(train)}。{train === 'audio' ? '先听，再判断。' : '按当前节奏稳稳往前做。'}
+        </p>
+        <div className="badge-row">
+          <span className="info-pill">共 {totalCount} 题</span>
+          <span className="info-pill">连续答对 {streak} 题</span>
+          <span className={`info-pill ${speechRecognitionSupported ? '' : 'info-pill-warn'}`}>
+            {speechRecognitionSupported ? '支持跟读判定' : '当前浏览器不支持跟读'}
+          </span>
+        </div>
+        <img className="practice-hero-illustration" src="/images/ui-ipad/hero-child-rabbit.png" alt="" aria-hidden="true" />
+      </section>
       <ProgressBar current={questionIndex + 1} total={totalCount} />
-      <Card title={cardTitle} subtitle={cardSubtitle}>
-        {phonetic ? <p className="muted">美式音标：{phonetic}</p> : null}
+      <Card className={isSpellingQuestion ? 'card-tone-yellow' : 'card-tone-blue'} title={cardTitle} subtitle={cardSubtitle}>
+        <div className="card-chip-row">
+          <span className="section-chip">{getTrainTitle(train)}</span>
+          <span className="muted">
+            第 {questionIndex + 1} 题 / 共 {totalCount} 题
+          </span>
+        </div>
+        <img className="practice-card-dog" src="/images/ui-ipad/dog.png" alt="" aria-hidden="true" />
+        {phonetic ? <p className="field-note">美式音标：{phonetic}</p> : null}
 
         <div className="listen-controls">
           <Button variant="ghost" onClick={() => playFullAudio(1)}>
@@ -862,18 +900,17 @@ export function PracticePage() {
 
         {feedback ? <p className="feedback">{feedback}</p> : null}
 
-        <div className="actions-row">
+        <div className="practice-action-dock">
           <Button variant="secondary" onClick={goPrev} disabled={questionIndex === 0}>
             上一题
+          </Button>
+          <Button onClick={submit} disabled={submitDisabled}>
+            {isChoiceQuestion || isSpellingQuestion ? '提交' : '我会了，下一题'}
           </Button>
           <Button variant="secondary" onClick={goNext} disabled={questionIndex >= totalCount - 1}>
             下一题
           </Button>
         </div>
-
-        <Button onClick={submit} disabled={submitDisabled} fullWidth>
-          {isChoiceQuestion || isSpellingQuestion ? '提交' : '我会了，下一题'}
-        </Button>
       </Card>
     </main>
   );

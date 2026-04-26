@@ -20,6 +20,12 @@ import {
 } from '../lib/speechAssessment';
 import { loadState, saveState } from '../lib/storage';
 import { findQuestionIdByPrompt, playWrongAnswerTone, updateWrongBookForQuestion } from '../lib/studyFeedback';
+import {
+  getDictationHintText,
+  getDictationWordCardTitle,
+  shouldShowDictationMeaningLine,
+  shouldShowDictationPhoneticLine,
+} from '../lib/dictationDisplay';
 import { createDictationHistoryEntry, summarizeWeeklyDictationHistory } from '../lib/dictationHistory';
 import { summarizeWrongDictationAnswers, type DictationAnswerRecord } from '../lib/dictationSummary';
 import { buildSpellingFeedback, type SpellingFeedback as SpellingFeedbackData } from '../lib/spellingFeedback';
@@ -318,7 +324,7 @@ export function DictationPage() {
       return;
     }
 
-    if (feedback) {
+    if (hasSubmittedCurrentStep) {
       moveNext();
       return;
     }
@@ -378,7 +384,7 @@ export function DictationPage() {
   const skipStep = () => {
     if (!currentStep) return;
 
-    if (feedback || currentStep.type === 'study') {
+    if (hasSubmittedCurrentStep || currentStep.type === 'study') {
       moveNext();
       return;
     }
@@ -531,12 +537,16 @@ export function DictationPage() {
   const isStudyStep = currentStep.type === 'study';
   const isChooseStep = currentStep.type === 'listenChoose';
   const isSpellStep = currentStep.type === 'listenSpell';
+  const hasSubmittedCurrentStep = answers.some((answer) => answer.stepId === currentStep.id);
   const displayProgressCurrent = Math.min(stepIndex + 5, 20);
   const displayProgressTotal = 20;
   const currentProgress = Math.round((displayProgressCurrent / displayProgressTotal) * 100);
   const meaningLine = currentStep.word.word === 'hot' ? 'adj. 热的；烫的' : `释义：${currentStep.word.meaning}`;
-  const hintText = currentStep.word.note || `提示：试着用 ${currentStep.word.word} 说一个短句。`;
-  const primaryLabel = isStudyStep ? '我记住了' : feedback ? '下一题' : '提交';
+  const shouldShowMeaningLine = shouldShowDictationMeaningLine(currentStep.type, hasSubmittedCurrentStep);
+  const shouldShowPhoneticLine = shouldShowDictationPhoneticLine(currentStep.type, hasSubmittedCurrentStep);
+  const wordCardTitle = getDictationWordCardTitle(currentStep.type, currentStep.word.word, hasSubmittedCurrentStep);
+  const hintText = getDictationHintText(currentStep.type, currentStep.word, hasSubmittedCurrentStep);
+  const primaryLabel = isStudyStep ? '我记住了' : hasSubmittedCurrentStep ? '下一题' : '提交';
   const speechCheckClassName = speechCheckPassed === null
     ? 'speech-check'
     : speechCheckPassed
@@ -549,7 +559,7 @@ export function DictationPage() {
       classes.push('lesson-choice-option-selected');
     }
 
-    if (currentStep.type === 'listenChoose' && feedback) {
+    if (currentStep.type === 'listenChoose' && hasSubmittedCurrentStep) {
       if (option === currentStep.word.meaning) {
         classes.push('lesson-choice-option-correct');
       } else if (selectedMeaning === option) {
@@ -587,9 +597,9 @@ export function DictationPage() {
       <section className="lesson-word-card">
         <span className="lesson-new-chip">{isStudyStep ? '新词' : isChooseStep ? '辨义' : '拼写'}</span>
         <p className="lesson-stage">{getStageLabel(currentStep)}</p>
-        <h1>{currentStep.word.word}</h1>
-        <p className="lesson-phonetic">{phonetic || '/.../'}</p>
-        <p className="lesson-meaning">{meaningLine}</p>
+        <h1>{wordCardTitle}</h1>
+        {shouldShowPhoneticLine ? <p className="lesson-phonetic">{phonetic || '/.../'}</p> : null}
+        {shouldShowMeaningLine ? <p className="lesson-meaning">{meaningLine}</p> : null}
 
         <div className="lesson-audio-row" aria-label="播放控制">
           <button className="lesson-audio-button" type="button" onClick={() => void playCurrentWord()}>
@@ -637,7 +647,7 @@ export function DictationPage() {
                 className={getChoiceOptionClassName(option)}
                 type="button"
                 onClick={() => {
-                  if (feedback) return;
+                  if (hasSubmittedCurrentStep) return;
                   setSelectedMeaning(option);
                 }}
               >
@@ -689,8 +699,8 @@ export function DictationPage() {
           className="lesson-primary-action"
           onClick={submitStep}
           disabled={
-            (isChooseStep && !selectedMeaning && !feedback) ||
-            (isSpellStep && spellingInput.trim().length === 0 && !feedback)
+            (isChooseStep && !selectedMeaning && !hasSubmittedCurrentStep) ||
+            (isSpellStep && spellingInput.trim().length === 0 && !hasSubmittedCurrentStep)
           }
         >
           ✓ {primaryLabel}

@@ -973,3 +973,40 @@
 
 - 以后修听写页展示逻辑时，不要只在本地改到“看起来对”，必须确认补丁已经提交、推送并完成部署。
 - 对“辨义 / 拼写 / 学习”三种阶段，显示内容要分开约束，不能共用同一套默认词卡展示。
+
+---
+
+## 2026-04-26 Cloudflare Pages 部署步骤依赖隐式 Wrangler 版本
+
+### 范围
+
+- GitHub Actions 部署流程
+- `.github/workflows/pages-deploy.yml`
+
+### 问题现象
+
+- 本地 `lint / test / build` 全部通过。
+- GitHub Actions 里的 `Install deps` 和 `Build` 也通过了，但 `Deploy to Cloudflare Pages` 单独失败，导致修复代码虽然进了 `main`，站点却没有更新。
+
+### 根因
+
+1. 工作流把 `wrangler-action` 的运行细节完全交给默认值处理，没有显式固定 Wrangler 主版本。
+2. 该 action 还会根据仓库锁文件自动判断包管理器，出问题时日志信息很少，定位成本高。
+
+### 处理
+
+1. 在部署步骤里显式指定：
+   - `wranglerVersion: "4"`
+   - `packageManager: "npm"`
+2. 保持其余部署命令不变，只收紧最容易漂移的默认配置。
+
+### 验证
+
+- 确认 GitHub Actions 重新触发 `pages-deploy.yml`
+- 确认最新 run 针对修复 commit 重新执行
+- 部署成功后再抓线上 HTML 校验静态资源 hash 更新
+
+### 后续提醒
+
+- 以后如果 Cloudflare 部署只在 `Deploy` 步骤报错，先看是不是 action 的默认 Wrangler 版本或包管理器推断漂移了。
+- 对这种第三方部署 action，能显式写清楚的关键版本尽量不要完全依赖默认值。

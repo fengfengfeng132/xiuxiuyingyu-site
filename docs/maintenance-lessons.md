@@ -19,6 +19,278 @@
 
 ---
 
+## 2026-04-26 听写和日常学习同步切换到 11 个新词
+
+### 范围
+
+- 今日听写页 `/dictation`
+- 日常学习题库 `/practice`
+- `src/data/dictationWords.ts`
+- `src/data/dailyLearningQuestions.ts`
+- `public/audio/words/us/*.wav`
+- `public/audio/words/us-slow/*.wav`
+- `tests/dailyWordSync.test.ts`
+
+### 问题现象
+
+- 用户要求把之前听写单词模块对应的词，同步换进日常学习，并整体替换成 `full / empty / same / different / gate / cave / safe / heavy / light / short / tall`。
+- 仓库里原来的听写词表、日常学习题目、本地普通音频、本地慢速音频还是上一轮的 12 个旧词。
+- 如果只改题库不改音频，听写页和练习页的慢速播放会直接命中缺失文件。
+
+### 根因
+
+1. 项目把“听写词表”和“日常学习题目”分在两个独立数据文件里维护，手改时很容易漏掉其中一个入口。
+2. 本地普通/慢速音频的文件名由英文单词本身决定，只要词表变了，`public/audio/words/us` 和 `public/audio/words/us-slow` 就必须同步替换。
+3. IndexTTS2 用慢速参考提示批量生成单词时，个别单词的首轮慢速版本仍可能比普通版短，不能直接整批入库。
+
+### 处理
+
+1. 先新增 `tests/dailyWordSync.test.ts`，锁住三件事：
+   - 听写词表必须等于这 11 个新词
+   - 日常学习题目必须复用同一套词
+   - 普通/慢速本地音频文件名必须与当前词表完全一致
+2. 更新 `src/data/dictationWords.ts`，把 11 个词的释义、提示文案和 `imageHint` 全部切成新集合。
+3. 更新 `src/data/dailyLearningQuestions.ts`，把 `prompt / explanation / audioText` 和选择题选项一起切到同一套词。
+4. 先用 `tools/New-IndexTtsReferencePrompts.ps1` 生成 `Microsoft Zira Desktop` 的普通/慢速参考提示音频。
+5. 用本机 `D:\\AI\\index-tts-nolfs` 的 IndexTTS2 先在 `tmp/generated-daily-audio/` 生成全部 22 个候选，再整体替换正式目录，避免中途失败造成新旧混杂。
+6. 对 `empty / full / light / tall` 的慢速版本额外用更高 `length_penalty` 再生成一轮候选，替换掉首轮不够慢或几乎不慢的版本。
+
+### 验证
+
+- 先运行 `npm run test -- tests/dailyWordSync.test.ts`，确认旧词状态下测试失败。
+- 改完数据和音频后，同一组回归测试通过。
+- 核对 `public/audio/words/us` 与 `public/audio/words/us-slow`，两边都只剩这 11 个词的 `.wav`。
+- 用脚本检查最终音频时长，慢速版全部不短于普通版，例如：
+  - `empty` 从 `normal=1.091s / slow=0.778s` 的首轮异常，修正到 `slow=2.148s`
+  - `tall` 从 `normal=1.207s / slow=1.068s` 的首轮异常，修正到 `slow=1.753s`
+
+### 后续提醒
+
+- 以后再换每日词汇时，先补“词表 + 题库 + 音频目录”的同步测试，再动正式数据，能明显减少漏改。
+- IndexTTS2 的慢速批量生成不要默认首轮全收；至少抽查一下“慢速版是否真的比普通版更长”。
+- 如果后续还要追求词图稳定性，除了换词和换音频，也要补齐对应固定图片资源，否则新词会回退到在线/本地兜底出图。
+
+## 2026-04-25 练习模块增加返回入口并限制每轮 10 题
+
+### 范围
+
+- 练习页 `/practice`
+- 学习中心 `/`
+- 听力选择、拼写练习、中译英、对话填空等 PracticePage 训练入口
+- `src/lib/practiceUtils.ts`
+- `src/pages/PracticePage.tsx`
+- `src/pages/ModeHubPage.tsx`
+- `src/index.css`
+- `tests/practiceUtils.test.ts`
+- `tests/practicePageStructure.test.ts`
+
+### 问题现象
+
+- 从学习中心进入听力选择、拼写练习等训练后，页面顶部没有明确的返回按钮，孩子只能依赖底部导航或浏览器返回。
+- 部分训练直接拿完整题库或 20 题入口进入，一轮太长，不适合低龄孩子一次完成。
+- 学习中心文案仍显示“每日 20 题 / 今日 20 题”，和新的短练习节奏不一致。
+
+### 根因
+
+1. `PracticePage` 原来只提供上一题、提交、下一题操作，没有像听写页那样提供稳定的“返回首页”入口。
+2. 题目数量控制分散在 `today10`、`daily20`、`level10` 等少数分支里，听力选择、拼写练习等模式没有统一的会话题量上限。
+3. 入口文案和实际练习轮次没有集中维护，容易出现“页面说 20 题，产品要求每次 10 题”的错位。
+
+### 处理
+
+1. 新增 `pickPracticeSessionQuestions`，所有 PracticePage 模式在生成当前题库后统一抽取最多 10 题。
+2. 将 `daily20` 旧入口保留为兼容 query，但展示标题和实际题量都改成 10 题。
+3. 在练习页和空状态页加入 `.practice-back-button`，统一返回首页。
+4. 学习中心把听力选择、中译英、对话填空等入口文案改为 10 题节奏。
+5. 新增回归测试锁住抽样数量、题库不被原地修改、练习页返回入口和学习中心文案。
+
+### 验证
+
+- 先运行新增回归测试，确认旧行为失败：`npm run test -- tests/practiceUtils.test.ts tests/practicePageStructure.test.ts`
+- 实现后同一组回归测试通过。
+- `npm run lint` 通过。
+- `npm run test` 通过：13 个测试文件、44 个测试。
+- `npm run build` 通过。
+- 浏览器检查 `/practice?mode=all&train=audio` 与 `/practice?mode=vocab&train=spelling`，确认页面有“返回首页”，并显示“共 10 题 / 第 1 题 / 共 10 题”。
+
+### 后续提醒
+
+- 后续新增 PracticePage 训练分支时，不要在分支里各自写题量规则，最后统一走 `pickPracticeSessionQuestions`。
+- 如果保留历史 query 名称（例如 `daily20`），要同步确认展示文案、实际题量和结果页总题数一致。
+- 低龄练习页的返回入口要显式可见，不要只依赖底部导航或浏览器返回。
+
+---
+
+## 2026-04-25 听写拼写阶段隐藏答案并放大输入区
+
+### 范围
+
+- 今日听写页 `/dictation`
+- 第 3 轮“听音拼写”
+- `src/pages/DictationPage.tsx`
+- `src/lib/dictationDisplay.ts`
+- `src/index.css`
+
+### 问题现象
+
+- 进入拼写阶段时，页面主标题直接显示要拼的英文单词，例如 `too`。
+- 音标、中文释义和词条 note 也会在提交前显示，孩子不需要听写就能推断答案。
+- 大屏样式里输入单词的位置偏小，短视口下固定底部操作条容易跑到输入区附近，视觉顺序不稳定。
+
+### 根因
+
+1. 听写三轮共用同一个单词卡标题，`<h1>` 始终渲染 `currentStep.word.word`。
+2. 上一轮只隐藏了辨义阶段的释义，没有把拼写阶段也纳入“提交前隐藏答案线索”的规则。
+3. 提示文案继续复用 `word.note`，而 note 常常直接包含英文单词和中文释义。
+4. iPad 大屏输入框沿用早期占位条尺寸，短视口仍使用固定底部操作条，容易和卡片内容抢位置。
+
+### 处理
+
+1. 新增 `getDictationWordCardTitle`：拼写题提交前标题显示“听音拼写”，提交后才显示正确单词。
+2. 调整 `shouldShowDictationMeaningLine`：只有学习阶段或已提交答案后才显示释义。
+3. 新增 `shouldShowDictationPhoneticLine`：拼写题提交前隐藏音标。
+4. 拼写题提交前提示改为通用文案“听发音，把这个单词拼出来。”，不再复用含答案的 note。
+5. 大屏拼写输入区放大到 `760px × 96px`，输入文字加大到 `34px`。
+6. 在 `max-height: 900px` 的大屏短视口下，让底部操作条回到内容流，避免盖住或跑到输入框前面。
+7. 更新回归测试，锁住拼写提交前不泄题、输入区尺寸和短视口操作条布局。
+
+### 验证
+
+- 先运行新增/调整的回归测试，确认旧行为失败。
+- `npm run test -- tests/dictationMeaningReveal.test.ts tests/dictationSpellInputVisibility.test.ts` 通过。
+- `npm run test -- tests/dictationVisualLayout.test.ts` 通过。
+- Chrome headless 进入第 3 轮拼写，确认标题为“听音拼写”，音标和释义数量为 0，提示不包含答案，输入框为 `760 × 108`、输入字号 `34px`。
+- Chrome headless 复查 `1024 × 768` 短视口，提交按钮位于卡片后方，不再压在输入区上。
+
+### 后续提醒
+
+- 拼写阶段提交前不要展示英文单词、音标、中文释义或包含答案的 note。
+- 听写页的固定底部操作条要同时检查高屏和短屏，短屏优先保证输入区和操作区的阅读顺序。
+
+---
+
+## 2026-04-25 听写非拼写阶段移除输入占位并下移小狗
+
+### 范围
+
+- 今日听写页 `/dictation`
+- “听写单词”模块第 1 轮认识、第 2 轮辨义、第 3 轮拼写
+- `src/pages/DictationPage.tsx`
+- `src/index.css`
+
+### 问题现象
+
+- “点击输入你听到的单词”在认识和辨义阶段也显示，但这两个阶段不能输入，视觉上像一个摆设。
+- 辨义阶段小狗位置偏上，压到右侧选项区域，干扰孩子选答案。
+
+### 根因
+
+1. 页面用 `isSpellStep ? 输入框 : 占位条` 渲染，导致所有非拼写阶段都会出现占位条。
+2. 小狗虽然已经从单词卡内容里移到页面背景层，但大屏 `top` 坐标仍靠上，和辨义选项区域太接近。
+3. 选项网格没有显式层级，背景小狗靠近时容易视觉上压住可点击选项。
+
+### 处理
+
+1. 改成只有拼写阶段渲染 `.lesson-spell-field`，认识和辨义阶段不再渲染输入占位。
+2. 删除不用的 `.lesson-answer-placeholder` 样式，避免后续误用。
+3. 大屏小狗从 `top: 760px` 下移到 `top: 900px`，默认小屏位置也下移到草地区域。
+4. 给 `.lesson-choice-grid` 加 `position: relative; z-index: 2;`，确保选项始终在背景装饰之上。
+5. 新增 `tests/dictationSpellInputVisibility.test.ts`，锁住“听到的单词输入框只在拼写阶段出现”。
+
+### 验证
+
+- `npm run test -- tests/dictationVisualLayout.test.ts tests/dictationSpellInputVisibility.test.ts` 通过
+- Chrome headless 跳到第 2 轮“辨义”确认占位条不存在，小狗位于选项下方草地/爱心区域
+
+### 后续提醒
+
+- 非交互控件不要用“像输入框”的样式占位，孩子会误以为可以点。
+- 背景装饰图靠近题目选项时，必须给选项显式层级并截图确认不遮挡。
+
+---
+
+## 2026-04-24 听音辨义阶段隐藏释义答案
+
+### 范围
+
+- 今日听写页 `/dictation`
+- “听写单词”模块第 2 轮“听音辨义”
+- `src/pages/DictationPage.tsx`
+- `src/lib/dictationDisplay.ts`
+
+### 问题现象
+
+- 进入“辨义”阶段时，单词下方直接显示 `释义：软的`，孩子还没作答就能看到正确答案。
+- 词条提示里也可能出现 `soft 表示柔软` 这类说明，等于另一处泄题。
+
+### 根因
+
+1. `.lesson-meaning` 之前在所有阶段统一渲染，没有区分“认识单词”和“听音辨义”。
+2. 提示文案直接复用词表 `note`，而 `note` 本身包含中文释义或近义说明。
+3. 页面把普通提示 `feedback` 和“本题已提交答案”混在一起判断，音频加载失败这类普通提示也可能误触发答案展示。
+
+### 处理
+
+1. 新增 `shouldShowDictationMeaningLine`：听音辨义未提交前不显示释义，提交后才允许展示。
+2. 新增 `getDictationHintText`：听音辨义未提交前使用通用提示“听发音，选出它的意思。”，不复用含答案的词条 note。
+3. 用当前题是否已有答题记录判断“已提交”，不再用普通 `feedback` 判断答案是否可见。
+4. 新增 `tests/dictationMeaningReveal.test.ts`，锁住辨义未提交前不泄露释义和提示答案。
+
+### 验证
+
+- `npm run test -- tests/dictationMeaningReveal.test.ts` 通过
+- Chrome headless 跳到第 2 轮“辨义”后确认 `.lesson-meaning` 为空，提示为通用提示
+
+### 后续提醒
+
+- 听音辨义阶段所有中文释义、词条 note、选项高亮都必须等孩子提交后再展示。
+- 不要再用普通 `feedback` 代表“已答题”，因为它也承载音频失败、播放失败等非答题提示。
+
+---
+
+## 2026-04-24 今日听写小狗放回听写页背景层
+
+### 范围
+
+- 今日听写页 `/dictation`
+- “听写单词”模块小狗插画层级、背景位置与滚动行为
+- `src/pages/DictationPage.tsx`
+- `src/index.css`
+
+### 问题现象
+
+- 听写单词模块里的小狗插画会跟着页面内容滑动。
+- 用户期望小狗放在提示文案右侧的小爱心旁、草地上方的位置，不要跟底部 UI 栏绑定。
+- 后续调整时曾用 `position: fixed` + `bottom` 贴视口底部，导致小狗看起来又和底部按钮、底部导航绑定在一起。
+
+### 根因
+
+1. 小狗图片原来挂在 `.lesson-word-card` 内部，天然属于单词卡内容层。
+2. 大屏样式虽然给了 `position: fixed`，但坐标仍靠上，视觉上没有贴到用户标注的模块右下位置。
+3. 小屏样式没有单独接管小狗位置，结构一挪动就容易变成普通流式图片。
+4. `fixed + bottom` 和底部操作区共用视口底部坐标系，视觉上会被误认为绑定到 UI 栏。
+
+### 处理
+
+1. 把小狗图片移到听写页根节点下，和单词卡分离。
+2. 用 `.dictation-lesson-page > .lesson-dog-image` 做页面背景层定位，让小狗脱离单词卡内容层。
+3. 大屏下改用 `absolute + top/right` 锚到听写模块背景右下：小爱心右侧、草地上方，不再使用 `bottom` 贴底栏。
+4. 将播放区层级抬高，避免小狗盖住乌龟慢速播放图标；底部操作仍保持最高层。
+5. 新增 `tests/dictationVisualLayout.test.ts`，用静态回归测试锁住“小狗不在单词卡内”和“大屏背景坐标不用 bottom”的约束。
+
+### 验证
+
+- `npm run test -- tests/dictationVisualLayout.test.ts` 通过
+- Chrome headless 截图确认小狗在听写单词模块背景右下、小爱心旁边，没有贴着底部 UI 栏
+
+### 后续提醒
+
+- 后续再调听写页陪伴插画时，不要把小狗重新塞回 `.lesson-word-card`。
+- 听写页背景小狗不要用 `bottom` 贴视口底部，否则会再次看起来和底部按钮、底部导航绑定。
+- 调小狗位置时要先确认和播放按钮、底部按钮、底部导航的层级关系，避免装饰图盖住可点击控件。
+
+---
+
 ## 2026-04-23 右上角星星接入真实奖励记录
 
 ### 范围

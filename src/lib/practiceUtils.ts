@@ -1,6 +1,7 @@
 import type { Question, ReviewTask } from '../types/schema';
 
 export const REVIEW_DAY_OFFSETS = [1, 3, 7, 14] as const;
+export const PRACTICE_SESSION_QUESTION_COUNT = 10;
 
 export function getLocalDaySeed(date: Date = new Date()): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -17,6 +18,24 @@ export function pickDailyQuestions(bank: Question[], count: number, date: Date =
       return aScore - bScore;
     })
     .slice(0, Math.min(count, bank.length));
+}
+
+export function pickPracticeSessionQuestions(
+  bank: Question[],
+  options: { random?: () => number; count?: number } = {},
+): Question[] {
+  const count = options.count ?? PRACTICE_SESSION_QUESTION_COUNT;
+  if (bank.length <= count) return [...bank];
+
+  const random = options.random ?? Math.random;
+  const shuffled = [...bank];
+
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled.slice(0, count);
 }
 
 export function cloneReviewTasks(tasks: ReviewTask[]): ReviewTask[] {

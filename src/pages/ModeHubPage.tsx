@@ -22,9 +22,9 @@ const routeSteps = [
     query: 'mode=all&train=today10',
   },
   {
-    title: '每日 20 题',
+    title: '每日 10 题',
     desc: '巩固提升',
-    meta: '8/20 题',
+    meta: '8/10 题',
     icon: '/images/ui-ipad/review-book.png',
     query: 'mode=all&train=daily20',
   },
@@ -48,7 +48,7 @@ const modeCards: ModeCard[] = [
   },
   {
     title: '听力选择',
-    desc: '每日 20 题',
+    desc: '每次 10 题',
     action: '开始练习',
     tone: 'orange',
     icon: '/images/ui-ipad/slow-turtle-icon.png',
@@ -64,7 +64,7 @@ const modeCards: ModeCard[] = [
   },
   {
     title: '中译英',
-    desc: '今日 20 题',
+    desc: '今日 10 题',
     action: '开始练习',
     tone: 'purple',
     icon: '/images/ui-ipad/pencil-icon.png',
@@ -72,7 +72,7 @@ const modeCards: ModeCard[] = [
   },
   {
     title: '对话填空',
-    desc: '每日 15 题',
+    desc: '每次 10 题',
     action: '开始练习',
     tone: 'blue',
     icon: '/images/ui-ipad/heart-bubble.png',

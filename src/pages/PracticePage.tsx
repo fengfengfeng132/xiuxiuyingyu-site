@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ProgressBar } from '../components/ProgressBar';
@@ -18,7 +18,7 @@ import {
   isSpeechRecognitionSupported,
   recognizeSpeechOnce,
 } from '../lib/speechAssessment';
-import { pickDailyQuestions } from '../lib/practiceUtils';
+import { pickDailyQuestions, pickPracticeSessionQuestions } from '../lib/practiceUtils';
 import { awardPerfectTrainingStar } from '../lib/starRewards';
 import { createSession, loadState, saveState } from '../lib/storage';
 import { playWrongAnswerTone, updateWrongBookForQuestion } from '../lib/studyFeedback';
@@ -59,7 +59,7 @@ const TRAIN_TITLE_MAP: Record<string, string> = {
   dialogueFill: '对话填空',
   qaMatch: '问答匹配',
   person: '人称转换',
-  daily20: '每日20题',
+  daily20: '每日10题',
   today10: '今日10分钟',
   level10: '等级10题',
   spaced: '间隔复习',
@@ -271,7 +271,7 @@ export function PracticePage() {
     }
 
     if (train === 'daily20') {
-      bank = pickDailyLearningSet(bank, 20);
+      bank = pickDailyLearningSet(bank, 10);
     }
 
     if (train === 'level10') {
@@ -389,7 +389,7 @@ export function PracticePage() {
       });
     }
 
-    return bank;
+    return pickPracticeSessionQuestions(bank);
   }, [mode, train, nowForSpaced]);
 
   const questionById = useMemo(() => {
@@ -607,7 +607,14 @@ export function PracticePage() {
   }, []);
 
   if (!question || totalCount === 0) {
-    return <main className="reference-page practice-learning-page">当前模式暂无可练习内容。</main>;
+    return (
+      <main className="reference-page practice-learning-page">
+        <Link className="practice-back-button" to="/" aria-label="返回首页">
+          返回首页
+        </Link>
+        当前模式暂无可练习内容。
+      </main>
+    );
   }
 
   const playFullAudio = (rate: number) => {
@@ -813,6 +820,9 @@ export function PracticePage() {
 
   return (
     <main className="reference-page practice-learning-page">
+      <Link className="practice-back-button" to="/" aria-label="返回首页">
+        返回首页
+      </Link>
       <section className="page-hero page-hero-compact">
         <p className="page-eyebrow">练习模式</p>
         <h1>{modeTitle}训练</h1>

@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 .omx/
+.worktrees/
 
 # Editor directories and files
 .vscode/*

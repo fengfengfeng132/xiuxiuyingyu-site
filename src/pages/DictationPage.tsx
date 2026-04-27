@@ -572,6 +572,8 @@ export function DictationPage() {
 
   return (
     <main className="reference-page dictation-lesson-page">
+      <img className="lesson-dog-image" src="/images/ui-ipad/dog.png" alt="" aria-hidden="true" />
+
       <header className="lesson-topbar">
         <Link className="lesson-back-button" to="/" aria-label="返回首页">
           ‹
@@ -597,7 +599,7 @@ export function DictationPage() {
       <section className="lesson-word-card">
         <span className="lesson-new-chip">{isStudyStep ? '新词' : isChooseStep ? '辨义' : '拼写'}</span>
         <p className="lesson-stage">{getStageLabel(currentStep)}</p>
-        <h1>{wordCardTitle}</h1>
+        <h1 className={isSpellStep && !hasSubmittedCurrentStep ? 'lesson-spell-title' : undefined}>{wordCardTitle}</h1>
         {shouldShowPhoneticLine ? <p className="lesson-phonetic">{phonetic || '/.../'}</p> : null}
         {shouldShowMeaningLine ? <p className="lesson-meaning">{meaningLine}</p> : null}
 
@@ -635,9 +637,7 @@ export function DictationPage() {
               disabled={Boolean(feedback)}
             />
           </label>
-        ) : (
-          <div className="lesson-answer-placeholder">点击输入你听到的单词</div>
-        )}
+        ) : null}
 
         {isChooseStep ? (
           <div className="lesson-choice-grid">
@@ -691,7 +691,6 @@ export function DictationPage() {
           </div>
         ) : null}
 
-        <img className="lesson-dog-image" src="/images/ui-ipad/dog.png" alt="" aria-hidden="true" />
       </section>
 
       <div className="lesson-bottom-action">

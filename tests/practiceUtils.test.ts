@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { cloneReviewTasks, getLocalDaySeed, pickDailyQuestions, scheduleReviewTasks } from "../src/lib/practiceUtils";
+import {
+  PRACTICE_SESSION_QUESTION_COUNT,
+  cloneReviewTasks,
+  getLocalDaySeed,
+  pickDailyQuestions,
+  pickPracticeSessionQuestions,
+  scheduleReviewTasks,
+} from "../src/lib/practiceUtils";
 import type { Question, ReviewTask } from "../src/types/schema";
 
 function makeQuestion(id: number): Question {
@@ -38,6 +45,27 @@ describe("practiceUtils", () => {
 
     expect(resultA).toEqual(resultB);
     expect(resultA).not.toEqual(resultNextDay);
+  });
+
+  it("samples a practice session down to ten questions without mutating the bank", () => {
+    const bank = Array.from({ length: 18 }, (_, idx) => makeQuestion(idx + 1));
+    const originalOrder = bank.map((item) => item.id);
+    const randomValues = [0.95, 0.05, 0.5, 0.2, 0.8, 0.1, 0.7, 0.3, 0.6, 0.4, 0.9, 0.15, 0.75, 0.25, 0.65, 0.35, 0.55];
+    let cursor = 0;
+
+    const picked = pickPracticeSessionQuestions(bank, {
+      random: () => randomValues[cursor++] ?? 0,
+    });
+
+    expect(picked).toHaveLength(PRACTICE_SESSION_QUESTION_COUNT);
+    expect(new Set(picked.map((item) => item.id))).toHaveProperty("size", PRACTICE_SESSION_QUESTION_COUNT);
+    expect(bank.map((item) => item.id)).toEqual(originalOrder);
+  });
+
+  it("keeps short practice banks intact", () => {
+    const bank = Array.from({ length: 6 }, (_, idx) => makeQuestion(idx + 1));
+
+    expect(pickPracticeSessionQuestions(bank)).toEqual(bank);
   });
 
   it("supports review task rollback snapshot without mutation side effects", () => {

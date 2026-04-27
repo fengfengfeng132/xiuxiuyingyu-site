@@ -588,6 +588,24 @@ ul {
   gap: 10px;
 }
 
+.practice-back-button {
+  position: relative;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: max-content;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(203, 189, 159, 0.75);
+  color: #26304a;
+  background: rgba(255, 252, 241, 0.9);
+  box-shadow: 0 8px 18px rgba(114, 87, 33, 0.12);
+  font-weight: 900;
+  text-decoration: none;
+}
+
 .star-record-list {
   display: grid;
   gap: 12px;
@@ -1599,10 +1617,30 @@ body {
 }
 
 .dictation-lesson-page {
+  position: relative;
+  isolation: isolate;
   gap: 14px;
   background:
     radial-gradient(circle at 52% 42%, rgba(255, 219, 117, 0.22), transparent 24%),
     linear-gradient(180deg, #fff7df 0%, #ffedbf 72%, #f3d997 100%);
+}
+
+.dictation-lesson-page > .lesson-topbar,
+.dictation-lesson-page > .lesson-progress-card {
+  position: relative;
+  z-index: 2;
+}
+
+.dictation-lesson-page > .lesson-dog-image {
+  position: absolute;
+  right: max(18px, calc((100vw - 430px) / 2 + 12px));
+  top: 680px;
+  z-index: 1;
+  width: 96px;
+  height: auto;
+  object-fit: contain;
+  opacity: 0.9;
+  filter: drop-shadow(0 12px 18px rgba(104, 83, 42, 0.16));
 }
 
 .lesson-topbar {
@@ -1713,6 +1751,14 @@ body {
   letter-spacing: -0.08em;
 }
 
+.lesson-word-card h1.lesson-spell-title {
+  width: auto;
+  max-width: 100%;
+  font-size: 2rem;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
 .lesson-phonetic {
   margin-top: 8px;
   color: #6a86a8;
@@ -1728,6 +1774,8 @@ body {
 }
 
 .lesson-audio-row {
+  position: relative;
+  z-index: 2;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
@@ -1813,31 +1861,29 @@ body {
   cursor: not-allowed;
 }
 
-.lesson-answer-placeholder,
 .lesson-spell-field {
   display: grid;
   align-items: center;
-  min-height: 54px;
-  margin-top: 16px;
+  min-height: 96px;
+  margin-top: 18px;
   border-radius: 20px;
   color: #97a1b3;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(180, 153, 96, 0.2);
-  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(126, 166, 232, 0.34);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.9),
+    0 12px 24px rgba(84, 116, 170, 0.1);
   font-weight: 900;
 }
 
-.lesson-answer-placeholder {
-  padding: 0 17px;
-}
-
 .lesson-spell-field {
-  gap: 7px;
-  padding: 11px 15px;
+  gap: 10px;
+  padding: 18px 22px;
 }
 
 .lesson-spell-field span {
-  font-size: 0.8rem;
+  color: #6f86a6;
+  font-size: 1rem;
 }
 
 .lesson-spell-field input {
@@ -1846,11 +1892,13 @@ body {
   outline: 0;
   color: #26304a;
   background: transparent;
-  font-size: 1.2rem;
+  font-size: 1.85rem;
   font-weight: 1000;
 }
 
 .lesson-choice-grid {
+  position: relative;
+  z-index: 2;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
@@ -2561,6 +2609,7 @@ body {
   .dictation-lesson-page::after {
     content: '';
     position: absolute;
+    z-index: 0;
     left: 0;
     right: 0;
     bottom: 112px;
@@ -2643,7 +2692,6 @@ body {
 
   .lesson-word-card {
     position: relative;
-    z-index: 2;
     min-height: 760px;
     margin-top: 26px;
     padding: 72px 58px 34px;
@@ -2681,6 +2729,13 @@ body {
     font-size: 152px;
     text-align: center;
     line-height: 1;
+  }
+
+  .lesson-word-card h1.lesson-spell-title {
+    width: 500px;
+    font-size: 48px;
+    line-height: 1.08;
+    letter-spacing: 0;
   }
 
   .lesson-phonetic {
@@ -2767,22 +2822,25 @@ body {
     display: none;
   }
 
-  .lesson-answer-placeholder,
   .lesson-spell-field {
-    width: 670px;
-    min-height: 64px;
-    margin: 26px 0 0 28px;
-    border-radius: 14px;
+    width: min(820px, 100%);
+    min-height: 132px;
+    margin: 34px auto 0;
+    border-radius: 24px;
     font-size: 24px;
     background: rgba(255, 254, 251, 0.96);
   }
 
-  .lesson-answer-placeholder {
-    padding-left: 76px;
+  .lesson-spell-field {
+    padding: 24px 48px;
   }
 
-  .lesson-spell-field {
-    padding-left: 76px;
+  .lesson-spell-field span {
+    font-size: 22px;
+  }
+
+  .lesson-spell-field input {
+    font-size: 46px;
   }
 
   .lesson-hint {
@@ -2820,14 +2878,15 @@ body {
     z-index: 3;
   }
 
-  .lesson-dog-image {
-    position: fixed;
-    left: calc(50% + 300px);
-    bottom: 348px;
-    z-index: 4;
-    width: 178px;
+  .dictation-lesson-page > .lesson-dog-image {
+    position: absolute;
+    right: 24px;
+    top: 900px;
+    z-index: 1;
+    width: 160px;
     height: auto;
     object-fit: contain;
+    opacity: 1;
   }
 
   .lesson-bottom-action {
@@ -3273,5 +3332,20 @@ body {
 
   .practice-learning-page .practice-action-dock {
     margin-top: 14px;
+  }
+}
+
+@media (min-width: 768px) and (max-height: 900px) {
+  .dictation-lesson-page {
+    padding-bottom: 220px;
+  }
+
+  .lesson-bottom-action {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    width: 700px;
+    max-width: 100%;
+    margin: 24px auto 0;
   }
 }

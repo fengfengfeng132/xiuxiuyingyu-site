@@ -19,6 +19,104 @@
 
 ---
 
+## 2026-05-10 听写词同步到日常学习并替换本地音频
+
+### 范围
+
+- 今日听写词表
+- 日常学习题
+- 本地单词音频
+- `src/data/dictationWords.ts`
+- `src/data/dailyLearningQuestions.ts`
+- `public/audio/words/us`
+- `public/audio/words/us-slow`
+- `tests/dailyWordSync.test.ts`
+- `tools/New-DailyWordAudio.ps1`
+- `tools/generate_daily_word_audio.py`
+
+### 问题现象
+
+- 用户要求把听写单词放入日常学习，并替换为 `tag / frisbee / hide-and-seek / limboo / we / put / to / king / long / hand`，随后确认 `limboo` 要改为标准拼写 `limbo`。
+- 只改词表会让日常学习、听写页、本地慢速音频不同步。
+
+### 根因
+
+1. 每日听写和日常学习是两份数据源，需要同时替换。
+2. 本地慢速播放依赖 `public/audio/words/us-slow` 的文件名，换词后必须同步音频目录。
+3. 本次尝试使用 IndexTTS2 生成新音频时，模型加载阶段触发 Windows 虚拟内存不足 `os error 1455`，未生成 WAV。
+
+### 处理
+
+1. 先更新 `dailyWordSync` 测试为新的 10 个词，并确认红灯能抓到旧词表和旧音频。
+2. 同步替换 `dictationWords` 和 `dailyLearningQuestions`。
+3. 使用固定本机女声 `Microsoft Zira Desktop` 生成正常/慢速两套 WAV 到临时目录，再整体替换正式音频目录。
+4. 先按用户给定拼写保留 `limboo`，后续确认后已统一改为 `limbo` 并重生对应音频。
+
+### 验证
+
+- `npm run test -- tests/dailyWordSync.test.ts`
+- 正式音频时长检查：10 个词的慢速版均明显长于正常版。
+- `npm run lint`
+- `npm run test`
+- `npm run build`
+
+### 后续提醒
+
+- 换每日词时继续先改同步测试，红灯后再改数据和音频。
+- 如果 IndexTTS2 再次报 `os error 1455`，不要硬等；先确认没有残留 Python 进程，再考虑分批、释放内存或使用固定系统女声作为临时兜底。
+- `hide-and-seek` 的音频生成需要按 `hide and seek` 朗读，但文件名和题目文本必须保留连字符。
+
+---
+
+## 2026-04-28 题库音频按 10 个一组接入本地统一语音
+
+### 范围
+
+- 题库单词正常/慢速音频
+- `public/audio/question-bank/us`
+- `public/audio/question-bank/us-slow`
+- `src/lib/phonetic.ts`
+- `src/pages/PracticePage.tsx`
+- `src/data/questionBankLocalAudio.ts`
+- `tools/generate_question_bank_audio_batch.py`
+- `tools/repair_question_bank_slow_audio.py`
+
+### 问题现象
+
+- 每日听写词已经使用本地统一音频，但普通题库里的其他单词和句子仍然混用词典接口或浏览器语音。
+- 同一套练习里发音来源不统一，慢速播放也不方便逐批质检。
+
+### 根因
+
+1. 本地音频映射只覆盖了每日听写词，题库音频没有独立 catalog。
+2. 练习页播放逻辑没有先查题库本地音频，所以即使生成了文件也不会自动使用。
+3. IndexTTS2 生成慢速短词时偶尔会输出比正常版更短或等长的音频，不能只检查“文件存在”。
+
+### 处理
+
+1. 新增题库音频生成脚本，按题库顺序排除每日听写词，默认每批最多 10 个。
+2. 先生成第 1 批：`keyboard / guitar / trumpet / drum / xylophone / recorder / violin / piano / throw / catch`。
+3. 新增题库本地音频 catalog，练习页播放时优先使用本地生成音频，缺失时再回退到原有词典/浏览器语音。
+4. 对慢速音频做时长质检，要求慢速至少明显长于正常版；`trumpet / xylophone / throw` 的慢速初稿不合格，已用同一模型生成的本地正常 WAV 做离线慢速修复。
+5. 新增测试，锁定题库本地音频映射、文件存在和慢速时长规则。
+
+### 验证
+
+- 题库音频时长检查：10 个词全部通过，慢速均大于正常版 1.1 倍。
+- `npm run test -- tests/questionBankLocalAudio.test.ts`
+- `npm run lint`
+- `npm run test`
+- `npm run build`
+
+### 后续提醒
+
+- 后续继续按 10 个一组生成，不要一次性跑完 81 个题库音频，避免模型初始化或推理长时间卡住。
+- 每批生成后必须跑慢速时长检查；不能只看 WAV 文件是否存在。
+- 继续下一批时，需要把新条目追加到 `questionBankLocalAudioEntries`，否则前端仍会回退到词典或浏览器语音。
+- 句子题后续也要按同样方式进入 catalog；重复朗读如果拆成多句，需要确认播放文本和 catalog 文本完全一致。
+
+---
+
 ## 2026-04-27 听写拼写态输入区过小
 
 ### 范围

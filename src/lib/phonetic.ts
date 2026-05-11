@@ -1,4 +1,5 @@
 import { dictationWords } from '../data/dictationWords';
+import { questionBankLocalAudioEntries } from '../data/questionBankLocalAudio';
 
 const DICTIONARY_API = 'https://api.dictionaryapi.dev/api/v2/entries/en';
 
@@ -40,9 +41,19 @@ const localSlowWordAudioMap = new Map(
     return [key, `${LOCAL_SLOW_WORD_AUDIO_BASE}/${encodeURIComponent(key)}.wav`] as const;
   }),
 );
+const localQuestionBankAudioMap = new Map(
+  questionBankLocalAudioEntries.map((item) => {
+    const key = normalizeAudioText(item.text);
+    return [key, item] as const;
+  }),
+);
 
 function normalizeWord(word: string): string {
   return word.trim().toLowerCase();
+}
+
+function normalizeAudioText(text: string): string {
+  return text.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
 function nextWordAudioRequestId(): number {
@@ -197,6 +208,12 @@ export function fetchLocalUsSlowAudioUrl(word: string): string | null {
   return localSlowWordAudioMap.get(normalizeWord(word)) ?? null;
 }
 
+export function fetchLocalQuestionBankAudioUrl(text: string, rate = 1): string | null {
+  const entry = localQuestionBankAudioMap.get(normalizeAudioText(text));
+  if (!entry) return null;
+  return rate < 1 ? entry.slow : entry.normal;
+}
+
 function preloadAudioUrl(url: string | null): Promise<boolean> {
   if (!url || typeof window === 'undefined') return Promise.resolve(false);
 
@@ -244,6 +261,10 @@ function preloadAudioUrl(url: string | null): Promise<boolean> {
 
 export function preloadLocalUsSlowWordAudio(word: string): Promise<boolean> {
   return preloadAudioUrl(fetchLocalUsSlowAudioUrl(word));
+}
+
+export function preloadLocalQuestionBankAudio(text: string, rate = 1): Promise<boolean> {
+  return preloadAudioUrl(fetchLocalQuestionBankAudioUrl(text, rate));
 }
 
 function getWordAudioPlayer(): HTMLAudioElement | null {
@@ -312,6 +333,17 @@ export async function playLocalUsWordAudio(word: string): Promise<WordAudioPlayb
 export async function playLocalUsSlowWordAudio(word: string): Promise<WordAudioPlaybackResult> {
   const requestId = nextWordAudioRequestId();
   const url = fetchLocalUsSlowAudioUrl(word);
+  if (!url) return { ok: false, reason: 'missing' };
+  await preloadAudioUrl(url);
+  if (!isLatestWordAudioRequest(requestId)) {
+    return { ok: false, reason: 'stale' };
+  }
+  return playAudioUrl(url, 1, requestId);
+}
+
+export async function playLocalQuestionBankAudio(text: string, rate = 1): Promise<WordAudioPlaybackResult> {
+  const requestId = nextWordAudioRequestId();
+  const url = fetchLocalQuestionBankAudioUrl(text, rate);
   if (!url) return { ok: false, reason: 'missing' };
   await preloadAudioUrl(url);
   if (!isLatestWordAudioRequest(requestId)) {

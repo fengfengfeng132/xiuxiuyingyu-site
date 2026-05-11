@@ -8,6 +8,7 @@ import {
   fetchUsPhonetic,
   getLocalSlowWordAudioFeedback,
   preloadLocalUsSlowWordAudio,
+  playLocalQuestionBankAudio,
   playLocalUsSlowWordAudio,
   playUsWordAudio,
   stopUsWordAudioPlayback,
@@ -547,6 +548,9 @@ export function PracticePage() {
 
   const speakAudio = useCallback(async (text: string, rate: number) => {
     if (!text) return;
+
+    const localQuestionBankPlayback = await playLocalQuestionBankAudio(text, rate);
+    if (localQuestionBankPlayback.ok || localQuestionBankPlayback.reason === 'stale') return;
 
     if (isSingleEnglishWord(text)) {
       const isDailyDictationWord = Boolean(question?.tags.includes(DAILY_DICTATION_TAG));

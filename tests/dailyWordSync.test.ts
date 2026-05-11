@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { dailyLearningQuestions } from '../src/data/dailyLearningQuestions';
 import { dictationWords } from '../src/data/dictationWords';
 
-const expectedWords = ['full', 'empty', 'same', 'different', 'gate', 'cave', 'safe', 'heavy', 'light', 'short', 'tall'];
-const expectedMeanings = ['满的', '空的', '相同的', '不同的', '大门', '山洞', '安全的', '重的', '轻的', '短的', '高的'];
+const expectedWords = ['tag', 'frisbee', 'hide-and-seek', 'limbo', 'we', 'put', 'to', 'king', 'long', 'hand'];
+const expectedMeanings = ['追人游戏', '飞盘', '捉迷藏', '林波舞', '我们', '放', '到', '国王', '长的', '手'];
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(testDir, '..');
@@ -19,12 +19,12 @@ function readAudioWordSet(relativeDir: string): string[] {
 }
 
 describe('daily word sync', () => {
-  it('keeps the dictation word list on the requested 11-word set', () => {
+  it('keeps the dictation word list on the requested 10-word set', () => {
     expect(dictationWords.map((item) => item.word)).toEqual(expectedWords);
     expect(dictationWords.map((item) => item.meaning)).toEqual(expectedMeanings);
   });
 
-  it('reuses the same 11 words in daily learning questions', () => {
+  it('reuses the same 10 words in daily learning questions', () => {
     expect(dailyLearningQuestions).toHaveLength(expectedWords.length);
     expect(dailyLearningQuestions.map((item) => item.prompt)).toEqual(expectedWords);
     expect(dailyLearningQuestions.map((item) => item.audioText)).toEqual(expectedWords);

@@ -1744,11 +1744,14 @@ body {
 }
 
 .lesson-word-card h1 {
+  --lesson-word-title-fit-length: 7;
   margin-top: 16px;
+  max-width: 100%;
   color: #26304a;
-  font-size: 4.9rem;
+  font-size: clamp(2.4rem, calc(34rem / var(--lesson-word-title-fit-length)), 4.9rem);
   line-height: 0.92;
-  letter-spacing: -0.08em;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .lesson-word-card h1.lesson-spell-title {
@@ -2724,9 +2727,9 @@ body {
 
   .lesson-word-card h1 {
     margin: 0 auto;
-    width: 330px;
+    width: min(760px, calc(100% - 96px));
     color: #00184a;
-    font-size: 152px;
+    font-size: clamp(64px, calc(1280px / var(--lesson-word-title-fit-length)), 152px);
     text-align: center;
     line-height: 1;
   }

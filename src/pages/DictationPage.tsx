@@ -1,4 +1,5 @@
 ﻿import { useCallback, useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -545,6 +546,9 @@ export function DictationPage() {
   const shouldShowMeaningLine = shouldShowDictationMeaningLine(currentStep.type, hasSubmittedCurrentStep);
   const shouldShowPhoneticLine = shouldShowDictationPhoneticLine(currentStep.type, hasSubmittedCurrentStep);
   const wordCardTitle = getDictationWordCardTitle(currentStep.type, currentStep.word.word, hasSubmittedCurrentStep);
+  const wordTitleStyle = {
+    '--lesson-word-title-fit-length': Math.max(1, wordCardTitle.length),
+  } as CSSProperties;
   const hintText = getDictationHintText(currentStep.type, currentStep.word, hasSubmittedCurrentStep);
   const primaryLabel = isStudyStep ? '我记住了' : hasSubmittedCurrentStep ? '下一题' : '提交';
   const speechCheckClassName = speechCheckPassed === null
@@ -599,7 +603,9 @@ export function DictationPage() {
       <section className="lesson-word-card">
         <span className="lesson-new-chip">{isStudyStep ? '新词' : isChooseStep ? '辨义' : '拼写'}</span>
         <p className="lesson-stage">{getStageLabel(currentStep)}</p>
-        <h1 className={isSpellStep && !hasSubmittedCurrentStep ? 'lesson-spell-title' : undefined}>{wordCardTitle}</h1>
+        <h1 className={isSpellStep && !hasSubmittedCurrentStep ? 'lesson-spell-title' : undefined} style={wordTitleStyle}>
+          {wordCardTitle}
+        </h1>
         {shouldShowPhoneticLine ? <p className="lesson-phonetic">{phonetic || '/.../'}</p> : null}
         {shouldShowMeaningLine ? <p className="lesson-meaning">{meaningLine}</p> : null}
 

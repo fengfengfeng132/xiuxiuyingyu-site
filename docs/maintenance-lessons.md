@@ -19,6 +19,84 @@
 
 ---
 
+## 2026-05-16 今日听写长单词标题换行
+
+### 范围
+
+- 今日听写新词卡片
+- `src/pages/DictationPage.tsx`
+- `src/index.css`
+- `tests/dictationVisualLayout.test.ts`
+
+### 问题现象
+
+- `hide-and-seek` 在今日听写“新词”大标题里被拆成多行显示。
+- 小朋友看词时需要先认完整单词，拆行会破坏整体词形，也让页面显得拥挤。
+
+### 根因
+
+1. 大标题在 iPad 布局里固定 `width: 330px`，短词可以居中展示，但带连字符的长词会在连字符处自动换行。
+2. 之前只处理了字母间距，没有同时处理“长词需要缩字号并保持一行”的规则。
+
+### 处理
+
+1. 给词卡标题传入 `--lesson-word-title-fit-length`，让 CSS 可以按当前标题长度计算字号。
+2. `.lesson-word-card h1` 增加 `white-space: nowrap`，禁止 `hide-and-seek` 这类词在连字符处断开。
+3. 大屏布局将标题宽度从固定 330px 改为更宽的安全区域，并用 `clamp()` 对长词自动缩小字号。
+4. 补充视觉布局回归测试，锁定长词必须单行且大屏使用长度变量缩放。
+
+### 验证
+
+- `npm run test -- tests/dictationVisualLayout.test.ts`
+- `npm run lint`
+- `npm run test`
+- `npm run build`
+
+### 后续提醒
+
+- 以后新增带连字符或更长的听写单词时，要同时检查新词阶段的大标题是否一行显示完。
+- 只调字距不能解决长词排版，长词要同时考虑不换行、可用宽度和字号缩放。
+
+---
+
+## 2026-05-16 今日听写新词大标题字母过挤
+
+### 范围
+
+- 今日听写新词卡片
+- `src/index.css`
+- `tests/dictationVisualLayout.test.ts`
+
+### 问题现象
+
+- 今日听写“新词”阶段的大号英文单词字母间距太小。
+- `frisbee` 这类单词在大字号下看起来字母连在一起，影响小朋友辨认。
+
+### 根因
+
+1. `.lesson-word-card h1` 使用了 `letter-spacing: -0.08em`，在超大字号下会把字母压得过紧。
+2. 拼写题标题需要保持正常紧凑排版，但新词学习态的大英文词更需要清晰可读。
+
+### 处理
+
+1. 将 `.lesson-word-card h1` 的字距改为 `0.02em`，给大号英文词留出更清楚的字母间隔。
+2. 保留 `.lesson-word-card h1.lesson-spell-title` 的 `letter-spacing: 0`，避免影响“听音拼写”标题。
+3. 补充视觉布局测试，锁定新词大标题不再使用负字距。
+
+### 验证
+
+- `npm run test -- tests/dictationVisualLayout.test.ts`
+- `npm run lint`
+- `npm run test`
+- `npm run build`
+
+### 后续提醒
+
+- 今日听写新词大标题使用超大字号时，不要再用明显负字距；优先保证儿童可辨认。
+- 如果后续调整大字号词卡宽度，要同时看 `frisbee / hide-and-seek` 这类较长词的实际效果。
+
+---
+
 ## 2026-05-10 听写词同步到日常学习并替换本地音频
 
 ### 范围

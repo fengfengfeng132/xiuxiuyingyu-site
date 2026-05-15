@@ -33,6 +33,19 @@ describe('dictation visual layout', () => {
     expect(stylesheet).toMatch(/\.lesson-choice-grid\s*{[^}]*z-index:\s*2;/s);
   });
 
+  it('keeps study word letters spaced enough for beginner readers', () => {
+    expect(stylesheet).toMatch(/\.lesson-word-card h1\s*{[^}]*letter-spacing:\s*0\.02em;/s);
+    expect(stylesheet).toMatch(/\.lesson-word-card h1\.lesson-spell-title\s*{[^}]*letter-spacing:\s*0;/s);
+  });
+
+  it('keeps long study words on one line by scaling the title font', () => {
+    expect(dictationPageSource).toContain('--lesson-word-title-fit-length');
+    expect(stylesheet).toMatch(/\.lesson-word-card h1\s*{[^}]*white-space:\s*nowrap;/s);
+    expect(stylesheet).toMatch(
+      /@media \(min-width:\s*768px\)[\s\S]*?\.lesson-word-card h1\s*{[^}]*font-size:\s*clamp\(64px,\s*calc\(1280px \/ var\(--lesson-word-title-fit-length\)\),\s*152px\);/,
+    );
+  });
+
   it('keeps the large-screen action bar in content flow on short viewports', () => {
     expect(stylesheet).toMatch(/@media \(min-width:\s*768px\) and \(max-height:\s*900px\)\s*{[\s\S]*?\.lesson-bottom-action\s*{[^}]*position:\s*relative;/);
     expect(stylesheet).toMatch(/@media \(min-width:\s*768px\) and \(max-height:\s*900px\)\s*{[\s\S]*?\.lesson-bottom-action\s*{[^}]*bottom:\s*auto;/);

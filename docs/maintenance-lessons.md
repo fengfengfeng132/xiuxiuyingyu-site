@@ -19,6 +19,50 @@
 
 ---
 
+## 2026-05-16 听写普通播放误走词典接口
+
+### 范围
+
+- 今日听写播放发音
+- `src/pages/DictationPage.tsx`
+- `src/lib/phonetic.ts`
+- `docs/product-conventions.md`
+- `tests/dictationAudioRouting.test.ts`
+- `tests/phonetic.test.ts`
+
+### 问题现象
+
+- 听写单词已经生成了本地普通音频和慢速音频，但点击“播放发音”时仍可能提示“当前单词词典发音加载失败”。
+- 这会让用户以为本地生成音频没有生效，也会造成普通播放和慢速播放声音来源不统一。
+
+### 根因
+
+1. `DictationPage` 的普通播放仍调用 `playUsWordAudio(...)`，该函数会请求线上词典接口。
+2. 只有“慢速播放”调用了本地 `playLocalUsSlowWordAudio(...)`。
+3. 之前虽然同步生成了 `public/audio/words/us/*.wav`，但听写页普通播放入口没有切到这套本地资源。
+
+### 处理
+
+1. 将听写页普通播放改为调用 `playLocalUsWordAudio(...)`。
+2. 新增 `getLocalWordAudioFeedback(...)`，普通本地音频缺失或播放失败时显示本地语音相关提示，不再提示词典接口失败。
+3. 补充音频路由测试，锁定听写页普通播放必须使用本地生成音频。
+4. 更新产品约定：听写单词模块普通和慢速播放都走本地生成音频。
+
+### 验证
+
+- `npm run test -- tests/dictationAudioRouting.test.ts tests/phonetic.test.ts`
+- `npm run lint`
+- `npm run test`
+- `npm run build`
+- 本地 `/dictation` 页面打开后，播放请求不再访问词典音频接口
+
+### 后续提醒
+
+- 听写单词模块不要再把普通播放改回 `playUsWordAudio(...)`，否则会重新出现词典接口不稳定和声音不统一。
+- 更新听写词表时，仍要同步维护 `public/audio/words/us` 和 `public/audio/words/us-slow` 两套文件。
+
+---
+
 ## 2026-05-16 今日听写长单词标题换行
 
 ### 范围

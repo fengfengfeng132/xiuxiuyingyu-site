@@ -8,9 +8,10 @@ import { questionBank } from '../data/loadQuestionBank';
 import {
   fetchUsPhonetic,
   getLocalSlowWordAudioFeedback,
+  getLocalWordAudioFeedback,
   preloadLocalUsSlowWordAudio,
+  playLocalUsWordAudio,
   playLocalUsSlowWordAudio,
-  playUsWordAudio,
   stopUsWordAudioPlayback,
 } from '../lib/phonetic';
 import {
@@ -146,13 +147,13 @@ export function DictationPage() {
 
     clearAutoPlayTimer();
     stopAudioPlayback();
-    const playback = await playUsWordAudio(currentStep.word.word, 1);
+    const playback = await playLocalUsWordAudio(currentStep.word.word);
     if (playback.ok || playback.reason === 'stale') {
       setFeedback('');
       return;
     }
 
-    setFeedback('当前单词词典发音加载失败，请稍后重试。');
+    setFeedback(getLocalWordAudioFeedback(playback));
   }, [clearAutoPlayTimer, currentStep, stopAudioPlayback]);
 
   const playSlowWord = useCallback(async () => {

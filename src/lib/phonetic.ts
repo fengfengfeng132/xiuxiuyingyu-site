@@ -98,6 +98,12 @@ export function getLocalSlowWordAudioFeedback(result: WordAudioPlaybackResult): 
   return '本地慢速语音暂时没播出来，请再试一次。';
 }
 
+export function getLocalWordAudioFeedback(result: WordAudioPlaybackResult): string {
+  if (result.ok || result.reason === 'stale') return '';
+  if (result.reason === 'missing') return '当前单词暂无本地语音。';
+  return '本地语音暂时没播出来，请再试一次。';
+}
+
 function isUsAudio(audio: string): boolean {
   const normalized = audio.toLowerCase();
   return normalized.includes('/us') || normalized.includes('-us') || normalized.includes('_us');

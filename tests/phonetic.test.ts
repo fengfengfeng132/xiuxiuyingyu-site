@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyWordAudioFailure, getLocalSlowWordAudioFeedback } from '../src/lib/phonetic';
+import { classifyWordAudioFailure, getLocalSlowWordAudioFeedback, getLocalWordAudioFeedback } from '../src/lib/phonetic';
 
 describe('phonetic', () => {
   it('treats interrupted playback as a stale request instead of a missing file', () => {
@@ -15,5 +15,11 @@ describe('phonetic', () => {
     expect(getLocalSlowWordAudioFeedback({ ok: false, reason: 'missing' })).toBe('当前单词暂无本地慢速语音。');
     expect(getLocalSlowWordAudioFeedback({ ok: false, reason: 'stale' })).toBe('');
     expect(getLocalSlowWordAudioFeedback({ ok: false, reason: 'failed' })).toBe('本地慢速语音暂时没播出来，请再试一次。');
+  });
+
+  it('reports normal local word audio failures without mentioning the dictionary service', () => {
+    expect(getLocalWordAudioFeedback({ ok: false, reason: 'missing' })).toBe('当前单词暂无本地语音。');
+    expect(getLocalWordAudioFeedback({ ok: false, reason: 'stale' })).toBe('');
+    expect(getLocalWordAudioFeedback({ ok: false, reason: 'failed' })).toBe('本地语音暂时没播出来，请再试一次。');
   });
 });

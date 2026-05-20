@@ -19,6 +19,54 @@
 
 ---
 
+## 2026-05-20 听写词和日常学习替换为游戏与代词词组
+
+### 范围
+
+- 今日听写词表
+- 日常学习题
+- 本地普通/慢速单词音频
+- `src/data/dictationWords.ts`
+- `src/data/dailyLearningQuestions.ts`
+- `public/audio/words/us`
+- `public/audio/words/us-slow`
+- `tests/dailyWordSync.test.ts`
+
+### 问题现象
+
+- 用户要求把听写单词模块里的词同步放入日常学习，并替换为 `video games / board games / win / lose / want / ring / song / bang / them / they / you / her`。
+- 这批词包含两个带空格的短语，如果只改词表不改音频，听写普通播放会找不到本地生成的 wav。
+
+### 根因
+
+1. 听写页和日常学习使用两份数据源，必须同时替换。
+2. 听写普通播放和慢速播放都已切到本地音频，所以 `public/audio/words/us` 与 `public/audio/words/us-slow` 也必须只保留当前词表对应文件。
+3. IndexTTS2 本次生成到第 2 个短语后超过 15 分钟仍未完成，且临时生成的 `board games` 慢速版比普通版短，不适合入库。
+
+### 处理
+
+1. 先更新 `dailyWordSync` 测试到新的 12 个词，并确认旧词表、旧题目、旧音频会触发红灯。
+2. 替换 `dictationWords` 和 `dailyLearningQuestions`，为每个词补儿童化释义、提示和单选题。
+3. 尝试使用 IndexTTS2 生成到 `tmp/daily-word-audio-index`，超时后停止残留 Python 进程，未采用不完整候选。
+4. 使用已验证的 `tools/New-DailyWordAudio.ps1` 生成完整普通/慢速两套 Zira 音频到临时目录，再整体替换正式音频目录。
+5. 短语音频文件保留空格文件名，例如 `video games.wav`，前端会通过 `encodeURIComponent` 请求为 `/audio/words/us/video%20games.wav`。
+
+### 验证
+
+- `npm run test -- tests/dailyWordSync.test.ts`
+- 12 个慢速 wav 均大于普通版 1.1 倍
+- `npm run lint`
+- `npm run test`
+- `npm run build`
+
+### 后续提醒
+
+- 新词里如果有空格短语，不要改成连字符文件名；当前本地音频映射会按原词生成带空格的 wav，并由浏览器 URL 编码请求。
+- IndexTTS2 超过合理时间仍未完整生成时，不要继续硬等；先检查临时文件时长和残留 Python 进程，再走已验证的兜底脚本。
+- 整体替换音频目录时，通配符复制不要用 `-LiteralPath` 搭配 `*.wav`，否则不会展开文件。
+
+---
+
 ## 2026-05-16 听写普通播放误走词典接口
 
 ### 范围

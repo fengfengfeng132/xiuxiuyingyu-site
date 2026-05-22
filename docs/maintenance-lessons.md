@@ -19,6 +19,57 @@
 
 ---
 
+## 2026-05-22 iPad 首次打开卡顿排查与加载优化
+
+### 范围
+
+- 生产站 `https://xiuxiuyingyu.pages.dev/` 的 iPad 首屏加载
+- Service Worker 注册与缓存策略
+- 学习中心首屏图片加载
+- `src/main.tsx`
+- `public/sw.js`
+- `src/pages/ModeHubPage.tsx`
+- `src/components/AppLayout.tsx`
+- `index.html`
+- `tests/performanceLoading.test.ts`
+
+### 问题现象
+
+- iPad 打开站点时体感较卡，像是页面刚打开又停住重新加载。
+- 线上测量时，同一批 HTML、JS、CSS 和首屏图片请求出现两轮，请求数量和资源解码压力被放大。
+
+### 根因
+
+1. `main.tsx` 监听 `navigator.serviceWorker` 的 `controllerchange` 后直接 `window.location.reload()`。
+2. `sw.js` 使用 `skipWaiting()` 和 `clients.claim()`，首次安装或更新 Service Worker 时会更容易触发控制权切换；配合前端 reload 监听，就会造成打开/更新时自动刷新一遍。
+3. 学习中心首屏同时渲染多张 PNG 图标，默认都按普通图片加载和解码；iPad Safari 在网络与图片解码同时发生时体感更明显。
+4. 静态资源线上响应头偏向 `must-revalidate`，原 Service Worker 对多数资源是 network-first，重复打开时仍会先走网络确认。
+
+### 处理
+
+1. 移除 `controllerchange` 自动刷新逻辑，也不再每次 load 后手动 `registration.update()`。
+2. Service Worker 改为静态资源 `cacheFirst` 并后台刷新缓存，只对页面导航等继续使用 network-first；`/audio/`、`/api/` 和 Range 请求仍直接放行，避免影响音频播放。
+3. Service Worker 更新时不再主动 `skipWaiting()` / `clients.claim()` 抢占当前页面，降低当前页面中途换控制器的概率。
+4. 学习中心关键 hero 图标记 `fetchPriority="high"` 和异步解码；路线/模式/底部导航图标增加 `decoding="async"`，非关键模式图标延后 lazy 加载。
+5. 补充 `mobile-web-app-capable`，消除 Chromium 对旧 Apple-only PWA meta 的兼容警告。
+6. 新增性能回归测试，锁住“不再自动 reload”“静态资源 cache-first”“装饰图不阻塞关键解码路径”。
+
+### 验证
+
+- 先运行 `npm run test -- tests/performanceLoading.test.ts`，确认旧实现下 3 条测试失败。
+- 修改后同一组测试通过。
+- `npm run lint`
+- `npm run test`：28 个测试文件、94 个测试通过。
+- `npm run build`
+
+### 后续提醒
+
+- 不要为了“让用户马上拿到新版”再把 `controllerchange -> reload` 加回来；儿童学习场景里首次打开稳定比热更新即时性更重要。
+- 继续改 Service Worker 时，音频路径 `/audio/` 和 Range 请求必须保持绕过缓存代理，否则会重新影响单词播放首播稳定性。
+- 新增首页/学习中心图片时，先判断是否首屏关键图；装饰图默认 `decoding="async"`，非关键图尽量 lazy。
+
+---
+
 ## 2026-05-20 听写词和日常学习替换为游戏与代词词组
 
 ### 范围

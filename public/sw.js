@@ -1,4 +1,4 @@
-const CACHE_NAME = 'woe-l2-cache-v2';
+const CACHE_NAME = 'woe-l2-cache-v3';
 const URLS = ['/', '/index.html', '/manifest.webmanifest'];
 
 self.addEventListener('install', (event) => {
@@ -6,7 +6,6 @@ self.addEventListener('install', (event) => {
     caches
       .open(CACHE_NAME)
       .then((cache) => cache.addAll(URLS))
-      .then(() => self.skipWaiting()),
   );
 });
 
@@ -14,13 +13,57 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
-      .then(() => self.clients.claim()),
+      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))),
   );
 });
 
 function shouldBypassCache(request, requestUrl) {
   return requestUrl.pathname.startsWith('/api/') || requestUrl.pathname.startsWith('/audio/') || request.headers.has('range');
+}
+
+function isStaticAssetRequest(request, requestUrl) {
+  return (
+    request.destination === 'script' ||
+    request.destination === 'style' ||
+    request.destination === 'image' ||
+    requestUrl.pathname.startsWith('/assets/') ||
+    requestUrl.pathname.startsWith('/images/') ||
+    requestUrl.pathname === '/favicon.svg'
+  );
+}
+
+function cacheResponse(request, response) {
+  if (response.ok) {
+    const cloned = response.clone();
+    caches.open(CACHE_NAME).then((cache) => cache.put(request, cloned));
+  }
+
+  return response;
+}
+
+function cacheFirst(request) {
+  return caches.match(request).then((cached) => {
+    if (cached) {
+      fetch(request)
+        .then((response) => cacheResponse(request, response))
+        .catch(() => undefined);
+      return cached;
+    }
+
+    return fetch(request).then((response) => cacheResponse(request, response));
+  });
+}
+
+function networkFirst(request) {
+  return fetch(request)
+    .then((response) => cacheResponse(request, response))
+    .catch(() =>
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
+        if (request.mode === 'navigate') return caches.match('/index.html');
+        return new Response('', { status: 504, statusText: 'Offline' });
+      }),
+    );
 }
 
 self.addEventListener('fetch', (event) => {
@@ -34,21 +77,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response.ok) {
-          const cloned = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, cloned));
-        }
-        return response;
-      })
-      .catch(() =>
-        caches.match(event.request).then((cached) => {
-          if (cached) return cached;
-          if (event.request.mode === 'navigate') return caches.match('/index.html');
-          return new Response('', { status: 504, statusText: 'Offline' });
-        }),
-      ),
-  );
+  if (isStaticAssetRequest(event.request, url)) {
+    event.respondWith(cacheFirst(event.request));
+    return;
+  }
+
+  event.respondWith(networkFirst(event.request));
 });

@@ -30,7 +30,14 @@ export function AppLayout() {
           const active = item.paths.includes(location.pathname);
           return (
             <Link key={item.to} to={item.to} className={`bottom-nav-item ${active ? 'active' : ''}`}>
-              <img className="bottom-nav-image-icon" src={item.image} alt="" aria-hidden="true" />
+              <img
+                className="bottom-nav-image-icon"
+                src={item.image}
+                alt=""
+                aria-hidden="true"
+                loading="lazy"
+                decoding="async"
+              />
               <span className={`bottom-nav-icon bottom-nav-icon-${item.icon}`} aria-hidden="true" />
               {item.label}
             </Link>

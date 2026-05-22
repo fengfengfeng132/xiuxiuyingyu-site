@@ -141,7 +141,13 @@ export function ModeHubPage() {
           <h1>学习中心</h1>
           <p>每天进步一点点，英语更出色!</p>
         </div>
-        <img src="/images/ui-ipad/hero-child-rabbit.png" alt="" aria-hidden="true" />
+        <img
+          src="/images/ui-ipad/hero-child-rabbit.png"
+          alt=""
+          aria-hidden="true"
+          decoding="async"
+          fetchPriority="high"
+        />
       </section>
 
       <section className="mode-route-panel">
@@ -150,7 +156,7 @@ export function ModeHubPage() {
           {routeSteps.map((step, index) => (
             <button key={step.title} type="button" onClick={() => beginLearning(step.query)}>
               <span className="mode-step-number">{index + 1}</span>
-              <img src={step.icon} alt="" aria-hidden="true" />
+              <img src={step.icon} alt="" aria-hidden="true" decoding="async" />
               <strong>{step.title}</strong>
               <em>{step.desc}</em>
               <b>{step.meta}</b>
@@ -167,7 +173,7 @@ export function ModeHubPage() {
         <div className="mode-card-grid">
           {modeCards.map((card) => (
             <article key={card.title} className={`mode-card mode-card-${card.tone}`}>
-              <img src={card.icon} alt="" aria-hidden="true" />
+              <img src={card.icon} alt="" aria-hidden="true" loading="lazy" decoding="async" />
               <div>
                 <h3>{card.title}</h3>
                 <p>{card.desc}</p>

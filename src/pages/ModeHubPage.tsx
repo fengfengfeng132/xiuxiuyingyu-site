@@ -40,7 +40,7 @@ const routeSteps = [
 const modeCards: ModeCard[] = [
   {
     title: '听写单词',
-    desc: '今日 20 词',
+    desc: '今日 8 词',
     action: '开始学习',
     tone: 'blue',
     icon: '/images/ui-ipad/headset.png',

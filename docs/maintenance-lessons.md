@@ -19,6 +19,57 @@
 
 ---
 
+## 2026-05-29 听写词同步替换为零食与基础功能词
+
+### 范围
+
+- 今日听写词表
+- 日常学习题
+- 学习中心听写入口文案
+- 本地普通/慢速单词音频
+- `src/data/dictationWords.ts`
+- `src/data/dailyLearningQuestions.ts`
+- `src/pages/ModeHubPage.tsx`
+- `public/audio/words/us`
+- `public/audio/words/us-slow`
+- `tests/dailyWordSync.test.ts`
+
+### 问题现象
+
+- 用户要求把听写单词同步放入日常学习，并替换为 `potato chips / cupcake / balloon / from / for / yes / cube / time`。
+- 这批词里包含 `potato chips` 这种带空格短语，如果只改数据不改音频目录，听写普通/慢速播放会找不到对应 wav。
+
+### 根因
+
+1. 听写页和日常学习页仍然分别从 `dictationWords` 与 `dailyLearningQuestions` 读取，必须两边同步。
+2. 本地音频文件名直接跟英文词一致，短语要保留空格文件名。
+3. 学习中心入口文案之前写死为“今日 20 词”，换成 8 个词后也要一起改，不然入口数量会误导。
+
+### 处理
+
+1. 先更新 `dailyWordSync` 测试到 8 个新词，并确认旧词表、旧题目、旧音频和旧入口文案都会触发红灯。
+2. 替换 `dictationWords`，为每个词补儿童化释义、note 和 `imageHint`。
+3. 替换 `dailyLearningQuestions`，让日常学习直接复用同一套 8 个词、释义和播放文本。
+4. 学习中心听写入口改成“今日 8 词”。
+5. 使用已验证的 `tools/New-DailyWordAudio.ps1` 生成 `Microsoft Zira Desktop` 普通/慢速两套音频，再整体替换正式目录。
+
+### 验证
+
+- `npm run test -- tests/dailyWordSync.test.ts`
+- PowerShell WAV 头检查：8 个慢速音频都长于普通音频，慢速/普通时长比约 1.55。
+- `npm run lint`
+- `npm run test`
+- `npm run build`
+- `System.Media.SoundPlayer` 播放 `potato chips.wav` 普通版与慢速版，确认文件可正常打开播放。
+
+### 后续提醒
+
+- 带空格短语继续保留空格文件名，例如 `potato chips.wav`，不要改成连字符或下划线。
+- 新词暂未补固定 `public/images/dictation-words/*.webp` 词图，页面会继续按 `imageHint` 走现有在线/缓存出图链路；如果用户反馈词图不稳定，再单独补固定图片。
+- 后续再改每日词，不要忘记入口文案里的词数。
+
+---
+
 ## 2026-05-22 iPad 首次打开卡顿排查与加载优化
 
 ### 范围

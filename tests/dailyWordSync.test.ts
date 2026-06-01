@@ -6,24 +6,26 @@ import { dailyLearningQuestions } from '../src/data/dailyLearningQuestions';
 import { dictationWords } from '../src/data/dictationWords';
 
 const expectedWords = [
+  'chocolate',
+  'sandwich',
+  'nuts',
+  'candy',
   'potato chips',
   'cupcake',
-  'balloon',
-  'from',
-  'for',
-  'yes',
-  'cube',
-  'time',
+  'dive',
+  'nose',
+  'ride',
 ];
 const expectedMeanings = [
+  '巧克力',
+  '三明治',
+  '坚果',
+  '糖果',
   '薯片',
   '纸杯蛋糕',
-  '气球',
-  '从',
-  '为了/给',
-  '是的',
-  '立方体',
-  '时间',
+  '跳水/潜水',
+  '鼻子',
+  '骑/乘坐',
 ];
 
 const testDir = dirname(fileURLToPath(import.meta.url));
@@ -37,12 +39,12 @@ function readAudioWordSet(relativeDir: string): string[] {
 }
 
 describe('daily word sync', () => {
-  it('keeps the dictation word list on the requested 8-word set', () => {
+  it('keeps the dictation word list on the requested 9-word set', () => {
     expect(dictationWords.map((item) => item.word)).toEqual(expectedWords);
     expect(dictationWords.map((item) => item.meaning)).toEqual(expectedMeanings);
   });
 
-  it('reuses the same 8 words in daily learning questions', () => {
+  it('reuses the same 9 words in daily learning questions', () => {
     expect(dailyLearningQuestions).toHaveLength(expectedWords.length);
     expect(dailyLearningQuestions.map((item) => item.prompt)).toEqual(expectedWords);
     expect(dailyLearningQuestions.map((item) => item.audioText)).toEqual(expectedWords);
@@ -59,7 +61,7 @@ describe('daily word sync', () => {
   it('shows the current dictation word count on the mode hub', () => {
     const modeHubSource = readFileSync(resolve(projectRoot, 'src/pages/ModeHubPage.tsx'), 'utf8');
 
-    expect(modeHubSource).toContain('今日 8 词');
+    expect(modeHubSource).toContain('今日 9 词');
     expect(modeHubSource).not.toContain('今日 20 词');
   });
 });

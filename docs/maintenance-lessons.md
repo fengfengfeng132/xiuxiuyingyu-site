@@ -19,6 +19,55 @@
 
 ---
 
+## 2026-06-01 听写词同步替换为零食与动作词
+
+### 范围
+
+- 今日听写词表
+- 日常学习题
+- 学习中心听写入口文案
+- 本地普通/慢速单词音频
+- `src/data/dictationWords.ts`
+- `src/data/dailyLearningQuestions.ts`
+- `src/pages/ModeHubPage.tsx`
+- `public/audio/words/us`
+- `public/audio/words/us-slow`
+- `tests/dailyWordSync.test.ts`
+
+### 问题现象
+
+- 用户要求把听写单词里的词放入日常学习，并替换为 `chocolate / sandwich / nuts / candy / potato chips / cupcake / dive / nose / ride`。
+- 这次仍包含 `potato chips` 这种带空格短语，如果只改数据不改音频目录，听写播放会继续找旧 wav 或缺少新 wav。
+
+### 根因
+
+1. 听写页和日常学习页分别读取 `dictationWords` 与 `dailyLearningQuestions`，需要双入口同步。
+2. 听写普通播放和慢速播放都依赖本地 wav，文件名必须和词表英文完全一致。
+3. 学习中心入口文案写死了今日词数，词表从 8 个改成 9 个后也要一起更新。
+
+### 处理
+
+1. 先把 `dailyWordSync` 测试改成 9 个目标词，确认旧词表、旧日常题、旧音频和旧入口词数都会触发失败。
+2. 重建 `dictationWords`，为 9 个词补儿童化中文释义、note 和 `imageHint`。
+3. 替换 `dailyLearningQuestions`，让日常学习直接使用同一套 9 个词、中文释义和 `audioText`。
+4. 学习中心听写入口改成“今日 9 词”。
+5. 使用 `tools/New-DailyWordAudio.ps1` 生成 `Microsoft Zira Desktop` 普通/慢速两套 wav，再整体替换正式音频目录。
+
+### 验证
+
+- `npm run test -- tests/dailyWordSync.test.ts`
+- PowerShell WAV 头检查：9 个慢速音频都长于普通音频，慢速/普通时长比约 1.55。
+- 后续执行完整 `npm run lint`、`npm run test`、`npm run build`。
+- 使用 `System.Media.SoundPlayer` 试听至少 1 个普通版和 1 个慢速版音频。
+
+### 后续提醒
+
+- `potato chips.wav` 继续保留空格文件名，不要改成 `potato-chips.wav` 或 `potato_chips.wav`。
+- 新词暂未补固定 `public/images/dictation-words/*.webp` 词图，页面会继续按 `imageHint` 走现有出图链路；如果反馈词图不稳定，再单独补固定图。
+- 每次改每日词，都要同步检查入口词数和两套音频目录，不要只看 TypeScript 数据。
+
+---
+
 ## 2026-05-29 听写词同步替换为零食与基础功能词
 
 ### 范围

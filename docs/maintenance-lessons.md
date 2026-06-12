@@ -19,6 +19,45 @@
 
 ---
 
+## 2026-06-12 星期词播放无声的大小写修复
+
+### 范围
+
+- 听写页本地普通/慢速单词播放
+- 本地音频 URL 映射
+- `src/lib/phonetic.ts`
+- `tests/dailyWordSync.test.ts`
+
+### 问题现象
+
+- 用户反馈新替换的星期词点击播放没有声音。
+- 当前音频目录里存在 `Monday.wav / Tuesday.wav / Wednesday.wav / Thursday.wav`，但线上播放仍然失败。
+
+### 根因
+
+1. `phonetic.ts` 生成本地音频 URL 时把单词统一转成小写，因此 `Monday` 实际请求的是 `/audio/words/us/monday.wav`。
+2. 这次入库的文件名保留首字母大写，例如 `Monday.wav`。
+3. Windows 本地文件系统大小写不敏感，简单用 `existsSync('monday.wav')` 会误判通过；Cloudflare Pages 静态资源路径大小写敏感，所以线上会 404。
+
+### 处理
+
+1. 保留查找 key 的小写归一化，确保传入 `Monday` 或 `monday` 都能命中。
+2. URL 文件名改用词表里的原始单词文本，生成 `/audio/words/us/Monday.wav` 和 `/audio/words/us-slow/Monday.wav`。
+3. 在 `dailyWordSync` 测试里新增精确文件名检查：本地音频 URL 解码后的文件名必须和目录里的 wav 文件名字符串完全一致，避免再被 Windows 大小写容错掩盖。
+
+### 验证
+
+- `npm run test -- tests/dailyWordSync.test.ts`
+- `npm run test -- tests/phonetic.test.ts tests/dictationAudioRouting.test.ts`
+- 后续执行完整 `npm run lint`、`npm run test`、`npm run build`。
+
+### 后续提醒
+
+- 对线上静态资源，不能只用 Windows 的文件存在检查验证大小写；要用目录文件名集合做精确字符串匹配。
+- 如果未来词表再次使用大写、空格或特殊字符，必须同时检查“生成的 URL 文件名”和“真实 wav 文件名”完全一致。
+
+---
+
 ## 2026-06-11 听写词同步替换为星期词
 
 ### 范围

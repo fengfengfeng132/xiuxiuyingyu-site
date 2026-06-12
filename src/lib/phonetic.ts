@@ -32,13 +32,15 @@ const localAudioWarmupCache = new Map<string, Promise<boolean>>();
 const localNormalWordAudioMap = new Map(
   dictationWords.map((item) => {
     const key = item.word.trim().toLowerCase();
-    return [key, `${LOCAL_NORMAL_WORD_AUDIO_BASE}/${encodeURIComponent(key)}.wav`] as const;
+    const fileName = item.word.trim();
+    return [key, `${LOCAL_NORMAL_WORD_AUDIO_BASE}/${encodeURIComponent(fileName)}.wav`] as const;
   }),
 );
 const localSlowWordAudioMap = new Map(
   dictationWords.map((item) => {
     const key = item.word.trim().toLowerCase();
-    return [key, `${LOCAL_SLOW_WORD_AUDIO_BASE}/${encodeURIComponent(key)}.wav`] as const;
+    const fileName = item.word.trim();
+    return [key, `${LOCAL_SLOW_WORD_AUDIO_BASE}/${encodeURIComponent(fileName)}.wav`] as const;
   }),
 );
 const localQuestionBankAudioMap = new Map(

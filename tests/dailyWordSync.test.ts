@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { dailyLearningQuestions } from '../src/data/dailyLearningQuestions';
 import { dictationWords } from '../src/data/dictationWords';
+import { fetchLocalUsAudioUrl, fetchLocalUsSlowAudioUrl } from '../src/lib/phonetic';
 
 const expectedWords = ['Monday', 'Tuesday', 'Wednesday', 'Thursday'];
 const expectedMeanings = ['星期一', '星期二', '星期三', '星期四'];
@@ -16,6 +17,14 @@ function readAudioWordSet(relativeDir: string): string[] {
     .filter((name) => name.endsWith('.wav'))
     .map((name) => name.replace(/\.wav$/u, ''))
     .sort();
+}
+
+function readAudioFileNameSet(relativeDir: string): Set<string> {
+  return new Set(readdirSync(resolve(projectRoot, relativeDir)).filter((name) => name.endsWith('.wav')));
+}
+
+function audioFileNameFromUrl(url: string): string {
+  return decodeURIComponent(url.split('/').at(-1) ?? '');
 }
 
 describe('daily word sync', () => {
@@ -36,6 +45,21 @@ describe('daily word sync', () => {
   it('keeps normal and slow local audio filenames synced with the current word set', () => {
     expect(readAudioWordSet('public/audio/words/us')).toEqual([...expectedWords].sort());
     expect(readAudioWordSet('public/audio/words/us-slow')).toEqual([...expectedWords].sort());
+  });
+
+  it('maps each current word to local audio URLs that exist on disk', () => {
+    const normalFileNames = readAudioFileNameSet('public/audio/words/us');
+    const slowFileNames = readAudioFileNameSet('public/audio/words/us-slow');
+
+    expectedWords.forEach((word) => {
+      const normalUrl = fetchLocalUsAudioUrl(word);
+      const slowUrl = fetchLocalUsSlowAudioUrl(word);
+
+      expect(normalUrl).toBeTruthy();
+      expect(slowUrl).toBeTruthy();
+      expect(normalFileNames.has(audioFileNameFromUrl(normalUrl ?? ''))).toBe(true);
+      expect(slowFileNames.has(audioFileNameFromUrl(slowUrl ?? ''))).toBe(true);
+    });
   });
 
   it('shows the current dictation word count on the mode hub', () => {

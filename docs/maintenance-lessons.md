@@ -19,6 +19,55 @@
 
 ---
 
+## 2026-06-16 听写词同步替换为周末与自然身体词
+
+### 范围
+
+- 今日听写词表
+- 日常学习题
+- 学习中心听写入口文案
+- 本地普通/慢速单词音频
+- `src/data/dictationWords.ts`
+- `src/data/dailyLearningQuestions.ts`
+- `src/pages/ModeHubPage.tsx`
+- `public/audio/words/us`
+- `public/audio/words/us-slow`
+- `tests/dailyWordSync.test.ts`
+
+### 问题现象
+
+- 用户要求把听写单词里的词放入日常学习，并替换为 `Friday / Saturday / Sunday / teeth / peel / leaf`。
+- 如果只改词表或题目，不替换两套本地 wav，听写页普通播放和慢速播放会继续使用上一轮星期词音频。
+
+### 根因
+
+1. 听写词、日常学习题、入口词数和本地音频是四处独立维护，必须一起同步。
+2. 本地音频 URL 会按词表文本生成文件名，本次 `Friday / Saturday / Sunday` 保留首字母大写，`teeth / peel / leaf` 保留小写。
+3. 学习中心入口文案写死今日词数，4 个词换成 6 个词后需要同步改成“今日 6 词”。
+
+### 处理
+
+1. 先把 `dailyWordSync` 测试改为 6 个目标词，并确认旧词表、旧日常题、旧音频和旧入口文案都会触发失败。
+2. 替换 `dictationWords`，为 6 个词补儿童化释义、note 和 `imageHint`。
+3. 替换 `dailyLearningQuestions`，让日常学习直接复用同一套 6 个词、中文释义和播放文本。
+4. 学习中心听写入口改成“今日 6 词”。
+5. 使用 `tools/New-DailyWordAudio.ps1` 生成 `Microsoft Zira Desktop` 普通/慢速两套 wav，再整体替换正式音频目录。
+
+### 验证
+
+- `npm run test -- tests/dailyWordSync.test.ts`
+- PowerShell WAV 头检查：6 个慢速音频都长于普通音频，慢速/普通时长比约 1.55 到 1.56。
+- 后续执行完整 `npm run lint`、`npm run test`、`npm run build`。
+- 使用 `System.Media.SoundPlayer` 试听至少 1 个普通版和 1 个慢速版音频。
+
+### 后续提醒
+
+- 大小写继续以词表文本为准，音频文件名必须和 URL 映射完全一致。
+- 新词暂未补固定 `public/images/dictation-words/*.webp` 词图，页面会继续按 `imageHint` 走现有出图链路；如果反馈词图不稳定，再单独补固定图。
+- 每次改每日词，先让同步测试红灯，再改数据和音频，能避免只替换一边入口。
+
+---
+
 ## 2026-06-12 星期词播放无声的大小写修复
 
 ### 范围

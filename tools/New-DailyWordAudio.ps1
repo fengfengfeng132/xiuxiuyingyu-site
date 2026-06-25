@@ -9,7 +9,7 @@ Add-Type -AssemblyName System.Speech
 
 $repoRoot = Resolve-Path -LiteralPath "."
 $dictationPath = Join-Path $repoRoot.Path "src\data\dictationWords.ts"
-$source = Get-Content -LiteralPath $dictationPath -Raw
+$source = Get-Content -LiteralPath $dictationPath -Raw -Encoding UTF8
 $words = [regex]::Matches($source, "word:\s*'([^']+)'") | ForEach-Object { $_.Groups[1].Value }
 
 if ($words.Count -eq 0) {

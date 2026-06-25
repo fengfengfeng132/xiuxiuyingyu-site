@@ -19,6 +19,57 @@
 
 ---
 
+## 2026-06-25 听写词同步替换为整点时间短语
+
+### 范围
+
+- 今日听写词表
+- 日常学习题
+- 本地普通/慢速单词音频
+- 音频生成脚本 UTF-8 读取
+- `src/data/dictationWords.ts`
+- `src/data/dailyLearningQuestions.ts`
+- `public/audio/words/us`
+- `public/audio/words/us-slow`
+- `tools/New-DailyWordAudio.ps1`
+- `tests/dailyWordSync.test.ts`
+- `tests/dailyWordAudioScript.test.ts`
+
+### 问题现象
+
+- 用户要求把听写单词里的词放入日常学习，并替换为 `seven o’clock / ten o’clock / eight o’clock / eleven o’clock / nine o’clock / twelve o’clock`。
+- 这批词包含弯引号 `’`，如果音频脚本按 Windows PowerShell 默认编码读取 TypeScript 文件，会把 `o’clock` 读成乱码文件名。
+
+### 根因
+
+1. 听写词、日常学习题和两套本地音频需要同步替换。
+2. 本地音频 URL 会按词表文本生成文件名，`o’clock` 这类 Unicode 文件名必须和真实 wav 文件名精确一致。
+3. `tools/New-DailyWordAudio.ps1` 之前用 `Get-Content -Raw` 读取词表，未显式指定 UTF-8，在 Windows PowerShell 里会把弯引号误读成乱码。
+
+### 处理
+
+1. 先把 `dailyWordSync` 测试改为 6 个整点时间短语，并确认旧词表、旧日常题和旧音频会触发失败。
+2. 替换 `dictationWords`，为 6 个短语补儿童化释义、note 和 `imageHint`。
+3. 替换 `dailyLearningQuestions`，让日常学习复用同一套 6 个短语、中文释义和播放文本。
+4. 修复 `New-DailyWordAudio.ps1`：读取词表时使用 `-Encoding UTF8`。
+5. 新增脚本编码测试，锁住音频脚本必须按 UTF-8 读取词表。
+6. 重新生成普通/慢速两套 wav，确认文件名保留正确的 `o’clock`。
+
+### 验证
+
+- `npm run test -- tests/dailyWordSync.test.ts tests/dailyWordAudioScript.test.ts`
+- PowerShell WAV 头检查：6 个慢速音频都长于普通音频，慢速/普通时长比约 1.55 到 1.56。
+- 后续执行完整 `npm run lint`、`npm run test`、`npm run build`。
+- 使用 `System.Media.SoundPlayer` 试听至少 1 个普通版和 1 个慢速版音频。
+
+### 后续提醒
+
+- 后续如果词表里出现弯引号、重音符号、中文或其它 Unicode，音频脚本必须保持 UTF-8 读取。
+- PowerShell 里弯引号也可能被当成引号解析，手写检查命令时优先用双引号包包含 `’` 的字符串。
+- 本地音频 URL 文件名和真实 wav 文件名要继续做精确字符串匹配，不能只依赖 Windows 文件系统的宽松匹配。
+
+---
+
 ## 2026-06-16 听写词同步替换为周末与自然身体词
 
 ### 范围

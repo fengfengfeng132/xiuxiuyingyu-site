@@ -6,8 +6,15 @@ import { dailyLearningQuestions } from '../src/data/dailyLearningQuestions';
 import { dictationWords } from '../src/data/dictationWords';
 import { fetchLocalUsAudioUrl, fetchLocalUsSlowAudioUrl } from '../src/lib/phonetic';
 
-const expectedWords = ['Friday', 'Saturday', 'Sunday', 'teeth', 'peel', 'leaf'];
-const expectedMeanings = ['星期五', '星期六', '星期日', '牙齿', '剥皮', '叶子'];
+const expectedWords = [
+  'seven o’clock',
+  'ten o’clock',
+  'eight o’clock',
+  'eleven o’clock',
+  'nine o’clock',
+  'twelve o’clock',
+];
+const expectedMeanings = ['七点', '十点', '八点', '十一点', '九点', '十二点'];
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(testDir, '..');

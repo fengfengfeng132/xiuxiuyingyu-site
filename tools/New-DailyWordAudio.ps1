@@ -66,6 +66,35 @@ function Write-SapiWave($Speaker, [string]$Path, [string]$Text, [int]$Rate) {
   }
 }
 
+function Normalize-PcmWaveHeader([string]$Path) {
+  $bytes = [System.IO.File]::ReadAllBytes($Path)
+  $offset = 12
+
+  while ($offset -lt ($bytes.Length - 8)) {
+    $chunkId = [System.Text.Encoding]::ASCII.GetString($bytes, $offset, 4)
+    $chunkSize = [BitConverter]::ToInt32($bytes, $offset + 4)
+
+    if ($chunkId -eq "fmt ") {
+      $audioFormat = [BitConverter]::ToInt16($bytes, $offset + 8)
+      $extensionSize = if ($chunkSize -ge 18) { [BitConverter]::ToInt16($bytes, $offset + 24) } else { -1 }
+      if ($audioFormat -ne 1 -or $chunkSize -ne 18 -or $extensionSize -ne 0) {
+        return
+      }
+
+      $trimOffset = $offset + 24
+      $normalized = New-Object byte[] ($bytes.Length - 2)
+      [Array]::Copy($bytes, 0, $normalized, 0, $trimOffset)
+      [Array]::Copy($bytes, $trimOffset + 2, $normalized, $trimOffset, $bytes.Length - $trimOffset - 2)
+      [Array]::Copy([BitConverter]::GetBytes([int]16), 0, $normalized, $offset + 4, 4)
+      [Array]::Copy([BitConverter]::GetBytes([int]($normalized.Length - 8)), 0, $normalized, 4, 4)
+      [System.IO.File]::WriteAllBytes($Path, $normalized)
+      return
+    }
+
+    $offset += 8 + $chunkSize + ($chunkSize % 2)
+  }
+}
+
 foreach ($word in $words) {
   if ($word -eq "read") {
     $spokenText = "red"
@@ -103,6 +132,9 @@ foreach ($word in $words) {
     Write-SystemSpeechWave $systemSpeaker $normalPath $spokenText -1
     Write-SystemSpeechWave $systemSpeaker $slowPath $spokenText -5
   }
+
+  Normalize-PcmWaveHeader $normalPath
+  Normalize-PcmWaveHeader $slowPath
 }
 
 if ($null -ne $systemSpeaker) {

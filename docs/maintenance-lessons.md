@@ -19,6 +19,52 @@
 
 ---
 
+## 2026-07-15 iPad 播放兼容与音标 r 显示修复
+
+### 范围
+
+- 今日听写普通/慢速音频 WAV 头
+- 音频生成脚本
+- 儿童端音标显示
+- `tools/New-DailyWordAudio.ps1`
+- `src/lib/phonetic.ts`
+- `tests/dailyWordSync.test.ts`
+- `tests/phonetic.test.ts`
+
+### 问题现象
+
+- 用户反馈点击播放没有声音。
+- 用户截图里 `rode` 的音标 `/ˈɹoʊd/` 中 `ɹ` 看起来像反过来的字母。
+
+### 根因
+
+1. 线上普通/慢速 wav 请求均返回 `200/206 audio/wav`，浏览器里 `Audio.currentTime` 能正常前进且无媒体错误，说明 URL、部署和前端播放流程没有断。
+2. 新生成的每日词 wav 是 PCM 16-bit/22050Hz，但 `fmt` 块长度为 18；项目里已知稳定音频使用 canonical 16 字节 `fmt` 块。iPad Safari 对 WAV 封装细节更敏感，这成为最可疑的设备兼容差异。
+3. `ɹ` 是英语 /r/ 的标准 IPA 字符，并非 CSS 镜像；但低龄用户容易把它理解成“反了的 r”。
+
+### 处理
+
+1. 在音频脚本里新增 PCM WAV 头规范化：仅当格式为 PCM、`fmt=18` 且扩展长度为 0 时，移除两个空扩展字节并修正 RIFF 长度，输出 canonical `fmt=16`。
+2. 重新生成并替换当前 20 个词的普通/慢速 wav。
+3. 新增 WAV 格式回归测试，要求每日词音频必须是 PCM 且 `fmt` 块为 16 字节。
+4. 新增 `normalizePhoneticForDisplay`，将字典返回的 `ɹ` 显示为儿童更熟悉的 `r`，例如 `/ˈɹoʊd/` 显示为 `/ˈroʊd/`；发音数据和播放不受影响。
+
+### 验证
+
+- 生产站 `rode.wav` 普通/慢速请求返回 200，Range 播放请求返回 206。
+- Playwright 点击“播放发音”后，音频 `currentTime` 从 0 前进到约 1.16 秒，音量为 1，无媒体错误。
+- PCM 能量检查：`rode.wav` 峰值约 -4.7 dB，不是静音文件。
+- `npm run test -- tests/dailyWordSync.test.ts tests/phonetic.test.ts tests/dailyWordAudioScript.test.ts`
+- 后续执行完整 `npm run lint`、`npm run test`、`npm run build`。
+
+### 后续提醒
+
+- System.Speech 生成的 WAV 可能带 18 字节 `fmt` 块；提交每日词音频前继续跑 canonical PCM 格式测试。
+- `ɹ` 技术上是正确 IPA，但本项目面向儿童，显示层统一用 `r`，不要误以为这是发音数据修正。
+- 当前未在真实 iPad Safari 上直接取证，若仍无声，应继续检查设备静音、网页媒体音量和 Safari 单站点设置。
+
+---
+
 ## 2026-07-15 听写词同步替换为过去式、基础词与数字 1-12
 
 ### 范围

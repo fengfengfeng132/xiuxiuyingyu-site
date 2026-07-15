@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { classifyWordAudioFailure, getLocalSlowWordAudioFeedback, getLocalWordAudioFeedback } from '../src/lib/phonetic';
+import {
+  classifyWordAudioFailure,
+  getLocalSlowWordAudioFeedback,
+  getLocalWordAudioFeedback,
+  normalizePhoneticForDisplay,
+} from '../src/lib/phonetic';
 
 describe('phonetic', () => {
+  it('uses a familiar r glyph instead of the reversed-looking IPA glyph for children', () => {
+    expect(normalizePhoneticForDisplay('/ˈɹoʊd/')).toBe('/ˈroʊd/');
+  });
+
   it('treats interrupted playback as a stale request instead of a missing file', () => {
     const error = new Error('The play() request was interrupted by a call to pause().');
     expect(classifyWordAudioFailure(error, true)).toBe('stale');

@@ -117,6 +117,10 @@ function normalizeAudioUrl(audio?: string): string | null {
   return audio;
 }
 
+export function normalizePhoneticForDisplay(phonetic: string): string {
+  return phonetic.replaceAll('ɹ', 'r');
+}
+
 function collectCandidates(entries: RawEntry[]): RawPhonetic[] {
   const candidates: RawPhonetic[] = [];
 
@@ -145,7 +149,8 @@ function pickUsPhonetic(entries: RawEntry[]): string | null {
     return isUsAudio(audio);
   });
 
-  return (usCandidate ?? candidates[0]).text?.trim() ?? null;
+  const phonetic = (usCandidate ?? candidates[0]).text?.trim();
+  return phonetic ? normalizePhoneticForDisplay(phonetic) : null;
 }
 
 function pickUsAudioUrl(entries: RawEntry[]): string | null {

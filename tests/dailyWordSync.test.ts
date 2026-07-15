@@ -69,6 +69,27 @@ function audioFileNameFromUrl(url: string): string {
   return decodeURIComponent(url.split('/').at(-1) ?? '');
 }
 
+function readWavFormat(relativePath: string): { audioFormat: number; fmtSize: number } {
+  const buffer = readFileSync(resolve(projectRoot, relativePath));
+  let offset = 12;
+
+  while (offset + 8 <= buffer.length) {
+    const chunkId = buffer.toString('ascii', offset, offset + 4);
+    const chunkSize = buffer.readUInt32LE(offset + 4);
+
+    if (chunkId === 'fmt ') {
+      return {
+        audioFormat: buffer.readUInt16LE(offset + 8),
+        fmtSize: chunkSize,
+      };
+    }
+
+    offset += 8 + chunkSize + (chunkSize % 2);
+  }
+
+  throw new Error(`Missing fmt chunk: ${relativePath}`);
+}
+
 describe('daily word sync', () => {
   it('keeps the dictation word list on the requested 20-word set', () => {
     expect(dictationWords.map((item) => item.word)).toEqual(expectedWords);
@@ -101,6 +122,17 @@ describe('daily word sync', () => {
       expect(slowUrl).toBeTruthy();
       expect(normalFileNames.has(audioFileNameFromUrl(normalUrl ?? ''))).toBe(true);
       expect(slowFileNames.has(audioFileNameFromUrl(slowUrl ?? ''))).toBe(true);
+    });
+  });
+
+  it('keeps daily word WAV headers in canonical PCM format for iPad Safari', () => {
+    ['public/audio/words/us', 'public/audio/words/us-slow'].forEach((relativeDir) => {
+      expectedWords.forEach((word) => {
+        const format = readWavFormat(`${relativeDir}/${word}.wav`);
+
+        expect(format.audioFormat).toBe(1);
+        expect(format.fmtSize).toBe(16);
+      });
     });
   });
 

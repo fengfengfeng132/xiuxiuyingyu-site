@@ -19,6 +19,62 @@
 
 ---
 
+## 2026-07-15 听写词同步替换为过去式、基础词与数字 1-12
+
+### 范围
+
+- 今日听写词表
+- 日常学习题
+- 学习中心听写入口文案
+- 本地普通/慢速单词音频
+- `read` 过去式音频读音
+- 音频生成脚本语音选择兜底
+- `src/data/dictationWords.ts`
+- `src/data/dailyLearningQuestions.ts`
+- `src/pages/ModeHubPage.tsx`
+- `public/audio/words/us`
+- `public/audio/words/us-slow`
+- `tools/New-DailyWordAudio.ps1`
+- `tests/dailyWordSync.test.ts`
+- `tests/dailyWordAudioScript.test.ts`
+
+### 问题现象
+
+- 用户要求把听写单词里的词放入日常学习，并替换为 `rode / threw / read / wrote / black / flag / sleep / some`，再加数字 `one` 到 `twelve`，共 20 个词。
+- `read` 和 `rode / threw / wrote` 同组，语义是过去式“读了”，音频不能按现在时 `/riːd/` 朗读。
+- 工作区里还保留上一轮未提交的 8 词替换，本轮最新要求需要完整覆盖上一轮词表、题目和音频。
+
+### 根因
+
+1. 听写词、日常学习题、入口词数和两套本地音频是独立维护项，必须同步替换。
+2. TTS 看到单独的 `read` 默认可能读现在时；本课实际是过去式，需要用 `red` 作为朗读文本，但文件名仍保持 `read.wav`。
+3. 本机语音环境里 `System.Speech` 的 Zira 和 SAPI 文件流可能失效，所以生成脚本需要保留多层兜底，避免每日词更新中断。
+
+### 处理
+
+1. 先把 `dailyWordSync` 测试改为 20 个目标词，并确认上一轮词表、题目、音频和入口数量都会触发失败。
+2. 替换 `dictationWords`，为 20 个词补儿童化释义、note 和 `imageHint`。
+3. 替换 `dailyLearningQuestions`，让日常学习复用同一套 20 个词、中文释义和播放文本。
+4. 学习中心听写入口改成“今日 20 词”。
+5. `New-DailyWordAudio.ps1` 对文件名 `read.wav` 使用朗读文本 `red`，并保留 UTF-8 读取与 System.Speech/SAPI 多层兜底。
+6. 重新生成并整体替换普通/慢速两套 wav，旧的整点短语音频不再保留。
+
+### 验证
+
+- `npm run test -- tests/dailyWordSync.test.ts tests/dailyWordAudioScript.test.ts`
+- PowerShell WAV 头检查：20 个慢速音频都长于普通音频，慢速/普通时长比约 1.55 到 1.56。
+- SHA-256 检查：`read.wav` 和 `rode.wav` 哈希不同，排除误复制。
+- 后续执行完整 `npm run lint`、`npm run test`、`npm run build`。
+- 使用 `System.Media.SoundPlayer` 试听至少 1 个普通版和 1 个慢速版音频。
+
+### 后续提醒
+
+- 当前 `read` 明确是过去式；未来如果某轮词表需要现在时读音，要同步调整脚本里的朗读覆盖和测试。
+- 如果英文 Zira 语音再次不可用，脚本会生成可播放 wav，但发音质量可能不如 Zira；用户反馈读音不自然时，优先恢复 Zira/IndexTTS2 生成链路。
+- 每次改每日词都要同步检查词表、题目、入口数量、音频文件名和本地 URL，不能只看 TypeScript 数据。
+
+---
+
 ## 2026-06-25 听写词同步替换为整点时间短语
 
 ### 范围

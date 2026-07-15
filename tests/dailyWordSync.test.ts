@@ -7,14 +7,49 @@ import { dictationWords } from '../src/data/dictationWords';
 import { fetchLocalUsAudioUrl, fetchLocalUsSlowAudioUrl } from '../src/lib/phonetic';
 
 const expectedWords = [
-  'seven o’clock',
-  'ten o’clock',
-  'eight o’clock',
-  'eleven o’clock',
-  'nine o’clock',
-  'twelve o’clock',
+  'rode',
+  'threw',
+  'read',
+  'wrote',
+  'black',
+  'flag',
+  'sleep',
+  'some',
+  'one',
+  'two',
+  'three',
+  'four',
+  'five',
+  'six',
+  'seven',
+  'eight',
+  'nine',
+  'ten',
+  'eleven',
+  'twelve',
 ];
-const expectedMeanings = ['七点', '十点', '八点', '十一点', '九点', '十二点'];
+const expectedMeanings = [
+  '骑了/乘坐了',
+  '扔了',
+  '读了',
+  '写了',
+  '黑色',
+  '旗子',
+  '睡觉',
+  '一些',
+  '一',
+  '二',
+  '三',
+  '四',
+  '五',
+  '六',
+  '七',
+  '八',
+  '九',
+  '十',
+  '十一',
+  '十二',
+];
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(testDir, '..');
@@ -35,12 +70,12 @@ function audioFileNameFromUrl(url: string): string {
 }
 
 describe('daily word sync', () => {
-  it('keeps the dictation word list on the requested 6-word set', () => {
+  it('keeps the dictation word list on the requested 20-word set', () => {
     expect(dictationWords.map((item) => item.word)).toEqual(expectedWords);
     expect(dictationWords.map((item) => item.meaning)).toEqual(expectedMeanings);
   });
 
-  it('reuses the same 6 words in daily learning questions', () => {
+  it('reuses the same 20 words in daily learning questions', () => {
     expect(dailyLearningQuestions).toHaveLength(expectedWords.length);
     expect(dailyLearningQuestions.map((item) => item.prompt)).toEqual(expectedWords);
     expect(dailyLearningQuestions.map((item) => item.audioText)).toEqual(expectedWords);
@@ -72,7 +107,7 @@ describe('daily word sync', () => {
   it('shows the current dictation word count on the mode hub', () => {
     const modeHubSource = readFileSync(resolve(projectRoot, 'src/pages/ModeHubPage.tsx'), 'utf8');
 
-    expect(modeHubSource).toContain('今日 6 词');
-    expect(modeHubSource).not.toContain('今日 20 词');
+    expect(modeHubSource).toContain('今日 20 词');
+    expect(modeHubSource).not.toContain('今日 8 词');
   });
 });

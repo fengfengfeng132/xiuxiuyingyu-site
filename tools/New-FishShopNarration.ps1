@@ -1,4 +1,6 @@
 param(
+  [ValidateSet("natural-child", "slow-full-young-adult")]
+  [string]$Profile = "natural-child",
   [string]$OutputDirectory = ".\deliverables"
 )
 
@@ -14,14 +16,18 @@ $resolvedOutputDirectory = if ([System.IO.Path]::IsPathRooted($OutputDirectory))
 }
 
 $uv = Get-Command uv -ErrorAction Stop
-$wavPath = Join-Path $resolvedOutputDirectory "Fish-Shop-American-Girl-Natural.wav"
-$mp3Path = Join-Path $resolvedOutputDirectory "Fish-Shop-American-Girl-Natural.mp3"
+$outputStem = switch ($Profile) {
+  "natural-child" { "Fish-Shop-American-Girl-Natural" }
+  "slow-full-young-adult" { "Fish-Shop-American-Young-Woman-Slow-Full" }
+}
+$wavPath = Join-Path $resolvedOutputDirectory "$outputStem.wav"
+$mp3Path = Join-Path $resolvedOutputDirectory "$outputStem.mp3"
 
 Push-Location $repoRoot
 try {
   & $uv.Source run --with "edge-tts==7.2.7" python $generator `
-    --output-wav $wavPath `
-    --output-mp3 $mp3Path
+    --profile $Profile `
+    --output-directory $resolvedOutputDirectory
   if ($LASTEXITCODE -ne 0) {
     throw "Fish Shop neural narration generation failed with exit code $LASTEXITCODE"
   }

@@ -7,11 +7,45 @@ import shutil
 import subprocess
 import tempfile
 import wave
+from dataclasses import dataclass
 from pathlib import Path
 
 
-VOICE = "en-US-AnaNeural"
-RATE = "-5%"
+@dataclass(frozen=True)
+class NarrationProfile:
+    voice: str
+    rate: str
+    pitch: str
+    volume: str
+    output_stem: str
+
+
+PROFILES = {
+    "natural-child": NarrationProfile(
+        voice="en-US-AnaNeural",
+        rate="-5%",
+        pitch="+0Hz",
+        volume="+0%",
+        output_stem="Fish-Shop-American-Girl-Natural",
+    ),
+    "slow-full-young-adult": NarrationProfile(
+        voice="en-US-AvaNeural",
+        rate="-10%",
+        pitch="-2Hz",
+        volume="+2%",
+        output_stem="Fish-Shop-American-Young-Woman-Slow-Full",
+    ),
+}
+DEFAULT_PROFILE = "natural-child"
+
+
+def default_output_paths(
+    profile: NarrationProfile, directory: Path
+) -> tuple[Path, Path]:
+    return (
+        directory / f"{profile.output_stem}.wav",
+        directory / f"{profile.output_stem}.mp3",
+    )
 
 SEGMENTS = [
     ("Fish Shop", 700),
@@ -105,7 +139,9 @@ def _run_ffmpeg(arguments: list[str]) -> None:
     )
 
 
-async def synthesize_segments(temporary_directory: Path) -> list[Path]:
+async def synthesize_segments(
+    temporary_directory: Path, profile: NarrationProfile
+) -> list[Path]:
     import edge_tts
 
     wave_paths: list[Path] = []
@@ -113,7 +149,13 @@ async def synthesize_segments(temporary_directory: Path) -> list[Path]:
         mp3_path = temporary_directory / f"segment-{index:02d}.mp3"
         wav_path = temporary_directory / f"segment-{index:02d}.wav"
         print(f"[{index:02d}/{len(SEGMENTS)}] {text}", flush=True)
-        await edge_tts.Communicate(text, VOICE, rate=RATE).save(str(mp3_path))
+        await edge_tts.Communicate(
+            text,
+            profile.voice,
+            rate=profile.rate,
+            pitch=profile.pitch,
+            volume=profile.volume,
+        ).save(str(mp3_path))
         _run_ffmpeg(
             [
                 "-i",
@@ -131,7 +173,12 @@ async def synthesize_segments(temporary_directory: Path) -> list[Path]:
     return wave_paths
 
 
-def generate_narration(output_wav: Path, output_mp3: Path) -> None:
+def generate_narration(
+    output_wav: Path,
+    output_mp3: Path,
+    profile_name: str,
+    profile: NarrationProfile,
+) -> None:
     if shutil.which("ffmpeg") is None:
         raise RuntimeError("ffmpeg is required to generate narration files")
 
@@ -146,7 +193,7 @@ def generate_narration(output_wav: Path, output_mp3: Path) -> None:
     with tempfile.TemporaryDirectory(
         prefix="fish-shop-neural-", dir=temporary_root
     ) as directory:
-        segment_wavs = asyncio.run(synthesize_segments(Path(directory)))
+        segment_wavs = asyncio.run(synthesize_segments(Path(directory), profile))
         combine_pcm_wavs(
             segment_wavs,
             [pause for _, pause in SEGMENTS],
@@ -170,8 +217,11 @@ def generate_narration(output_wav: Path, output_mp3: Path) -> None:
     print(
         json.dumps(
             {
-                "voice": VOICE,
-                "rate": RATE,
+                "profile": profile_name,
+                "voice": profile.voice,
+                "rate": profile.rate,
+                "pitch": profile.pitch,
+                "volume": profile.volume,
                 "durationSeconds": round(duration, 3),
                 "wav": str(output_wav),
                 "mp3": str(output_mp3),
@@ -187,21 +237,23 @@ def build_parser() -> argparse.ArgumentParser:
         description="Generate the Fish Shop story with an American child neural voice."
     )
     parser.add_argument(
-        "--output-wav",
-        type=Path,
-        default=Path("deliverables/Fish-Shop-American-Girl-Natural.wav"),
+        "--profile",
+        choices=tuple(PROFILES),
+        default=DEFAULT_PROFILE,
     )
     parser.add_argument(
-        "--output-mp3",
+        "--output-directory",
         type=Path,
-        default=Path("deliverables/Fish-Shop-American-Girl-Natural.mp3"),
+        default=Path("deliverables"),
     )
     return parser
 
 
 def main() -> int:
     args = build_parser().parse_args()
-    generate_narration(args.output_wav, args.output_mp3)
+    profile = PROFILES[args.profile]
+    output_wav, output_mp3 = default_output_paths(profile, args.output_directory)
+    generate_narration(output_wav, output_mp3, args.profile, profile)
     return 0
 
 

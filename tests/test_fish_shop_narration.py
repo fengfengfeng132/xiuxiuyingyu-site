@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import re
+import sys
 import tempfile
 import unittest
 import wave
@@ -39,6 +40,7 @@ else:
     if SPEC is None or SPEC.loader is None:
         raise RuntimeError(f"Cannot load {SCRIPT}")
     MODULE = importlib.util.module_from_spec(SPEC)
+    sys.modules[SPEC.name] = MODULE
     SPEC.loader.exec_module(MODULE)
 
     class FishShopNarrationTest(unittest.TestCase):
@@ -47,11 +49,54 @@ else:
             source = WRAPPER.read_text(encoding="utf-8")
             self.assertIn("edge-tts==7.2.7", source)
             self.assertIn("generate_fish_shop_narration.py", source)
+            self.assertIn("ValidateSet", source)
+            self.assertIn("natural-child", source)
+            self.assertIn("slow-full-young-adult", source)
+            self.assertIn("--profile", source)
             self.assertNotIn("Zira", source)
 
-        def test_uses_approved_child_voice_and_gentle_rate(self) -> None:
-            self.assertEqual(MODULE.VOICE, "en-US-AnaNeural")
-            self.assertEqual(MODULE.RATE, "-5%")
+        def test_preserves_the_existing_child_profile(self) -> None:
+            self.assertTrue(hasattr(MODULE, "PROFILES"), "Missing narration profiles")
+            profile = MODULE.PROFILES["natural-child"]
+            self.assertEqual(profile.voice, "en-US-AnaNeural")
+            self.assertEqual(profile.rate, "-5%")
+            self.assertEqual(profile.pitch, "+0Hz")
+            self.assertEqual(profile.volume, "+0%")
+            self.assertEqual(profile.output_stem, "Fish-Shop-American-Girl-Natural")
+
+        def test_defines_the_approved_slow_full_young_adult_profile(self) -> None:
+            self.assertTrue(hasattr(MODULE, "PROFILES"), "Missing narration profiles")
+            profile = MODULE.PROFILES["slow-full-young-adult"]
+            self.assertEqual(profile.voice, "en-US-AvaNeural")
+            self.assertEqual(profile.rate, "-10%")
+            self.assertEqual(profile.pitch, "-2Hz")
+            self.assertEqual(profile.volume, "+2%")
+            self.assertEqual(
+                profile.output_stem,
+                "Fish-Shop-American-Young-Woman-Slow-Full",
+            )
+
+        def test_profile_output_paths_do_not_overlap(self) -> None:
+            self.assertTrue(
+                hasattr(MODULE, "default_output_paths"),
+                "Missing profile output path builder",
+            )
+            directory = Path("deliverables")
+            child = MODULE.default_output_paths(
+                MODULE.PROFILES["natural-child"], directory
+            )
+            adult = MODULE.default_output_paths(
+                MODULE.PROFILES["slow-full-young-adult"], directory
+            )
+            self.assertNotEqual(child, adult)
+            self.assertEqual(
+                adult[0].name,
+                "Fish-Shop-American-Young-Woman-Slow-Full.wav",
+            )
+            self.assertEqual(
+                adult[1].name,
+                "Fish-Shop-American-Young-Woman-Slow-Full.mp3",
+            )
 
         def test_segments_preserve_every_source_word_in_order(self) -> None:
             actual = " ".join(text for text, _ in MODULE.SEGMENTS)

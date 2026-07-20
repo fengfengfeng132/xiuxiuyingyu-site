@@ -68,7 +68,7 @@ else:
             self.assertTrue(hasattr(MODULE, "PROFILES"), "Missing narration profiles")
             profile = MODULE.PROFILES["slow-full-young-adult"]
             self.assertEqual(profile.voice, "en-US-AvaNeural")
-            self.assertEqual(profile.rate, "-10%")
+            self.assertEqual(profile.rate, "-33%")
             self.assertEqual(profile.pitch, "-2Hz")
             self.assertEqual(profile.volume, "+2%")
             self.assertEqual(

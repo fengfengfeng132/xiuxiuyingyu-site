@@ -30,7 +30,7 @@ PROFILES = {
     ),
     "slow-full-young-adult": NarrationProfile(
         voice="en-US-AvaNeural",
-        rate="-10%",
+        rate="-33%",
         pitch="-2Hz",
         volume="+2%",
         output_stem="Fish-Shop-American-Young-Woman-Slow-Full",

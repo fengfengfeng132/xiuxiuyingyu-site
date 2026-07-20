@@ -25,7 +25,7 @@
 - Modify: `tests/test_fish_shop_narration.py`
 - Test: `tests/test_fish_shop_narration.py`
 
-- [ ] **Step 1: Replace the single-voice assertion with profile assertions**
+- [x] **Step 1: Replace the single-voice assertion with profile assertions**
 
 Add tests with these exact expectations:
 
@@ -48,7 +48,7 @@ def test_preserves_the_existing_child_profile(self) -> None:
 def test_defines_the_approved_slow_full_young_adult_profile(self) -> None:
     profile = MODULE.PROFILES["slow-full-young-adult"]
     self.assertEqual(profile.voice, "en-US-AvaNeural")
-    self.assertEqual(profile.rate, "-10%")
+    self.assertEqual(profile.rate, "-33%")
     self.assertEqual(profile.pitch, "-2Hz")
     self.assertEqual(profile.volume, "+2%")
     self.assertEqual(
@@ -69,7 +69,7 @@ def test_profile_output_paths_do_not_overlap(self) -> None:
 
 Update the wrapper test to assert that its source contains `ValidateSet`, both profile names, and `--profile` while still containing no `Zira`.
 
-- [ ] **Step 2: Run the focused test and verify the red state**
+- [x] **Step 2: Run the focused test and verify the red state**
 
 Run:
 
@@ -87,7 +87,7 @@ Expected: FAIL because `PROFILES` and `default_output_paths` do not exist and th
 - Modify: `tools/New-FishShopNarration.ps1`
 - Test: `tests/test_fish_shop_narration.py`
 
-- [ ] **Step 1: Add the immutable profile model and values**
+- [x] **Step 1: Add the immutable profile model and values**
 
 Add this model and mapping above `SEGMENTS`:
 
@@ -114,7 +114,7 @@ PROFILES = {
     ),
     "slow-full-young-adult": NarrationProfile(
         voice="en-US-AvaNeural",
-        rate="-10%",
+        rate="-33%",
         pitch="-2Hz",
         volume="+2%",
         output_stem="Fish-Shop-American-Young-Woman-Slow-Full",
@@ -133,7 +133,7 @@ def default_output_paths(profile: NarrationProfile, directory: Path) -> tuple[Pa
     )
 ```
 
-- [ ] **Step 2: Thread the profile through synthesis and generation**
+- [x] **Step 2: Thread the profile through synthesis and generation**
 
 Change `synthesize_segments` to accept `profile: NarrationProfile` and call:
 
@@ -149,7 +149,7 @@ edge_tts.Communicate(
 
 Change `generate_narration` to accept the selected profile and include all four synthesis settings in its JSON result. Keep `SEGMENTS`, `combine_pcm_wavs`, 24000 Hz PCM conversion, and 192 kbps MP3 export unchanged.
 
-- [ ] **Step 3: Add profile-aware CLI and PowerShell entry point**
+- [x] **Step 3: Add profile-aware CLI and PowerShell entry point**
 
 Python CLI arguments:
 
@@ -176,13 +176,13 @@ param(
 
 Compute the returned filenames from the selected profile and retain the nonzero-exit check.
 
-- [ ] **Step 4: Run the focused test and verify green**
+- [x] **Step 4: Run the focused test and verify green**
 
 Run the Task 1 test command again.
 
 Expected: seven tests PASS.
 
-- [ ] **Step 5: Commit the profile refactor**
+- [x] **Step 5: Commit the profile refactor**
 
 Stage only the generator, wrapper, and focused test. Use a Lore commit whose intent is “Let one verified story support distinct voices without duplicated text,” with `Tested:` naming the seven Python tests and `Scope-risk: narrow`.
 
@@ -194,7 +194,7 @@ Stage only the generator, wrapper, and focused test. Use a Lore commit whose int
 - Modify: `docs/maintenance-lessons.md`
 - Modify: `docs/superpowers/plans/2026-07-20-fish-shop-young-adult-slow-full.md`
 
-- [ ] **Step 1: Record existing child hashes before generation**
+- [x] **Step 1: Record existing child hashes before generation**
 
 Run:
 
@@ -211,7 +211,7 @@ WAV 3451C5842B92C3CB3675B717DF66711F6EC560E08B67BDA733B9D9DB4DD6E5DC
 MP3 18BE3A38B1AF872831FAF241A87AB91FEBD9EE7E345855CB6BA0701AF91B902F
 ```
 
-- [ ] **Step 2: Generate the young-adult slow-full profile**
+- [x] **Step 2: Generate the young-adult slow-full profile**
 
 Run:
 
@@ -221,7 +221,9 @@ Run:
 
 Expected: ten segments use AvaNeural and both new delivery files are created without touching the child files.
 
-- [ ] **Step 3: Verify duration, codec, peak, tail, and preserved hashes**
+Execution note: the first full run at `-10%` lasted only 92.528 seconds because Ava's base cadence is faster than Ana's. A representative paragraph measured 17.66 seconds with Ana `-5%`, 14.09 seconds with Ava `-10%`, 18.10 seconds with Ava `-30%`, and 18.91 seconds with Ava `-33%`. The single rate parameter was therefore corrected to `-33%`; the final full narration lasts 121.928 seconds.
+
+- [x] **Step 3: Verify duration, codec, peak, tail, and preserved hashes**
 
 Use FFprobe and the bundled Python/NumPy runtime. Assert:
 
@@ -236,11 +238,11 @@ last 250 ms RMS < 10
 child WAV and MP3 hashes equal the Step 1 values
 ```
 
-- [ ] **Step 4: Update maintenance lessons**
+- [x] **Step 4: Update maintenance lessons**
 
 Record the request for a slightly slower and fuller variant, the chosen Ava profile, why post-EQ was rejected, both new paths, actual duration/signal evidence, preserved child hashes, and the remaining subjective listening check.
 
-- [ ] **Step 5: Run full verification**
+- [x] **Step 5: Run full verification**
 
 Run:
 
@@ -255,6 +257,6 @@ git diff --check
 
 Expected: seven Python tests pass, the isolated branch Vitest baseline passes, lint and build exit 0, and diff check reports no errors.
 
-- [ ] **Step 6: Commit artifacts and evidence**
+- [x] **Step 6: Commit artifacts and evidence**
 
 Stage only both new audio files, maintenance lessons, and this completed plan. Use a Lore commit whose intent is “Offer a fuller slower reading without taking away the child version,” with `Tested:` listing Python/lint/Vitest/build/signal checks and `Not-tested:` recording the user's subjective listening check.

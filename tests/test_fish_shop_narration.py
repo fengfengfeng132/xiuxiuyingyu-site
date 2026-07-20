@@ -10,6 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "tools/generate_fish_shop_narration.py"
+WRAPPER = ROOT / "tools/New-FishShopNarration.ps1"
 
 EXPECTED_TEXT = """Fish Shop
 Hello, everyone. My name is Paisley. Today I want to tell you a story. The story is Fish Shop.
@@ -41,6 +42,13 @@ else:
     SPEC.loader.exec_module(MODULE)
 
     class FishShopNarrationTest(unittest.TestCase):
+        def test_wrapper_uses_pinned_neural_tool_without_zira_fallback(self) -> None:
+            self.assertTrue(WRAPPER.exists(), f"Missing wrapper: {WRAPPER}")
+            source = WRAPPER.read_text(encoding="utf-8")
+            self.assertIn("edge-tts==7.2.7", source)
+            self.assertIn("generate_fish_shop_narration.py", source)
+            self.assertNotIn("Zira", source)
+
         def test_uses_approved_child_voice_and_gentle_rate(self) -> None:
             self.assertEqual(MODULE.VOICE, "en-US-AnaNeural")
             self.assertEqual(MODULE.RATE, "-5%")

@@ -19,6 +19,53 @@
 
 ---
 
+## 2026-07-20 《Fish Shop》朗读机械感与儿童神经女声替换
+
+### 范围
+
+- 作文朗读生成流程
+- `tools/generate_fish_shop_narration.py`
+- `tools/New-FishShopNarration.ps1`
+- `tests/test_fish_shop_narration.py`
+- `deliverables/Fish-Shop-American-Girl-Natural.wav`
+- `deliverables/Fish-Shop-American-Girl-Natural.mp3`
+
+### 问题现象
+
+- 第一版使用 `Microsoft Zira Desktop` 合成后，用户反馈发音不像正常人朗读，整体语调机械。
+- 用户希望声音像“小女孩自然上台讲故事”，既清楚、自信，又不能变成夸张的动画配音。
+
+### 根因
+
+1. `Microsoft Zira Desktop` 是旧式系统语音，连读、重音和音高变化有限。
+2. 第一版整篇使用同一语速，只靠句后插入固定静音，无法产生自然的段落韵律。
+3. 继续调 Zira 的语速或补更多机械停顿只能改变表面节奏，不能解决音色和韵律的根因。
+
+### 处理
+
+1. 改用 Microsoft `en-US-AnaNeural` 美式儿童女声，语速设置为 `-5%`。
+2. 把原稿按标题、开场、故事发展、对话、感悟和结尾拆成 10 个自然段，保留全部英文单词及其顺序。
+3. 每段独立生成，再转成单声道 16-bit / 24000 Hz PCM；用 Python `wave` 插入 300–700 ms 段间静音并无损拼接。
+4. 从最终 PCM WAV 统一导出 192 kbps MP3，不使用播放变速、时间拉伸或 Zira 回退。
+5. 旧版 `Fish-Shop-American-Female.wav` 保持原文件名和原哈希，便于前后对比。
+
+### 验证
+
+- 测试先行：生成器不存在时先确认测试红灯，再实现到 5 项 Python 测试全部通过。
+- 测试覆盖儿童声线、`-5%` 语速、原稿完整词序、段落停顿范围、PCM 静音拼接和无 Zira 回退。
+- 新 WAV 与 MP3 时长均为 118.4 秒；WAV 为单声道 16-bit PCM、24000 Hz。
+- WAV 峰值为 21355，未削波；最后 250 ms 均方根能量为 0，无异常拖尾。
+- 旧版 WAV 的 SHA-256 仍为 `76B8DA74A91D946CF0F2AEF49E723D9E65BDF9F0B654789ED208F768A9493A6C`。
+- 后续执行完整 Python 测试、`npm run lint`、`npm run test`、`npm run build` 和 `git diff --check`。
+
+### 后续提醒
+
+- 用户要求自然儿童朗读时，不要继续用 Zira 微调语速；应从神经儿童音色和自然段落入手。
+- `en-US-AnaNeural` 不可用时要明确失败，不能静默降级到旧系统音色。
+- 自动检查只能证明文本、编码和信号没有明显异常；自然度仍需要用户主观试听确认。
+
+---
+
 ## 2026-07-20 iPad 点击播放丢失用户手势授权
 
 ### 范围

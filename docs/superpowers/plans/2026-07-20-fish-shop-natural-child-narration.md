@@ -25,7 +25,7 @@
 - Create: `tests/test_fish_shop_narration.py`
 - Test: `tests/test_fish_shop_narration.py`
 
-- [ ] **Step 1: Write the failing contract test**
+- [x] **Step 1: Write the failing contract test**
 
 ```python
 from __future__ import annotations
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     unittest.main()
 ```
 
-- [ ] **Step 2: Run the test and verify the red state**
+- [x] **Step 2: Run the test and verify the red state**
 
 Run:
 
@@ -112,7 +112,7 @@ Expected: FAIL because `tools/generate_fish_shop_narration.py` does not exist ye
 - Create: `tools/generate_fish_shop_narration.py`
 - Test: `tests/test_fish_shop_narration.py`
 
-- [ ] **Step 1: Add the approved voice, exact segments, and PCM joiner**
+- [x] **Step 1: Add the approved voice, exact segments, and PCM joiner**
 
 Implement these public contracts exactly:
 
@@ -135,7 +135,7 @@ SEGMENTS = [
 
 `combine_pcm_wavs(inputs, pauses_ms, output)` must copy matching mono 16-bit PCM streams with Python `wave`, insert zero-valued frames using `round(sample_rate * pause_ms / 1000)`, and raise `ValueError` when input formats or list lengths differ.
 
-- [ ] **Step 2: Add synthesis and export**
+- [x] **Step 2: Add synthesis and export**
 
 Inside `async synthesize(...)`, import `edge_tts`, save one MP3 per segment with `edge_tts.Communicate(text, VOICE, rate=RATE)`, then convert each segment using:
 
@@ -159,13 +159,13 @@ subprocess.run(
 
 Fail before synthesis if `ffmpeg` is unavailable. Create output directories but never overwrite or delete the old `Fish-Shop-American-Female.wav` file.
 
-- [ ] **Step 3: Run the focused test and verify green**
+- [x] **Step 3: Run the focused test and verify green**
 
 Run the Task 1 command again.
 
 Expected: four tests PASS.
 
-- [ ] **Step 4: Commit the tested generator**
+- [x] **Step 4: Commit the tested generator**
 
 Stage only the new Python generator and its test. Use a Lore commit whose intent is “Make the story sound like a child speaking naturally,” with `Tested:` naming the four Python unit tests and `Scope-risk: narrow`.
 
@@ -176,7 +176,7 @@ Stage only the new Python generator and its test. Use a Lore commit whose intent
 - Generate: `deliverables/Fish-Shop-American-Girl-Natural.wav`
 - Generate: `deliverables/Fish-Shop-American-Girl-Natural.mp3`
 
-- [ ] **Step 1: Replace the System.Speech implementation with a pinned wrapper**
+- [x] **Step 1: Replace the System.Speech implementation with a pinned wrapper**
 
 The wrapper must resolve the repository root, require `uv`, and invoke:
 
@@ -189,7 +189,7 @@ uv run --with 'edge-tts==7.2.7' python `
 
 Throw when `$LASTEXITCODE -ne 0`. Do not retain Zira fallback logic.
 
-- [ ] **Step 2: Generate the approved narration**
+- [x] **Step 2: Generate the approved narration**
 
 Run:
 
@@ -199,7 +199,7 @@ Run:
 
 Expected: ten neural segments are synthesized, both final files exist, and the old Zira WAV remains unchanged.
 
-- [ ] **Step 3: Verify codec and duration**
+- [x] **Step 3: Verify codec and duration**
 
 Run:
 
@@ -216,15 +216,15 @@ Expected: WAV is `pcm_s16le`, mono, 24000 Hz; MP3 is mono; both durations differ
 - Modify: `docs/maintenance-lessons.md`
 - Test: `tests/test_fish_shop_narration.py`
 
-- [ ] **Step 1: Run signal-quality checks**
+- [x] **Step 1: Run signal-quality checks**
 
 Read the final WAV with the bundled Python runtime and NumPy. Assert peak amplitude is below 32767, the last 250 ms RMS is below 10, duration is between 80 and 150 seconds, and the file uses one channel, two-byte samples, and 24000 Hz.
 
-- [ ] **Step 2: Update maintenance lessons**
+- [x] **Step 2: Update maintenance lessons**
 
 Record the reported mechanical voice, the Zira root cause, the `AnaNeural` paragraph-generation treatment, exact output paths, unit/signal/project verification, and the warning never to silently fall back to Zira.
 
-- [ ] **Step 3: Run full verification**
+- [x] **Step 3: Run full verification**
 
 Run:
 
@@ -236,8 +236,8 @@ npm run build
 git diff --check
 ```
 
-Expected: four Python tests pass, 109 existing Vitest tests pass, lint exits 0, build exits 0, and diff check reports no errors.
+Expected: five Python tests pass, the isolated branch baseline of 73 Vitest tests passes, lint exits 0, build exits 0, and diff check reports no errors.
 
-- [ ] **Step 4: Commit the wrapper, artifacts, and maintenance record**
+- [x] **Step 4: Commit the wrapper, artifacts, and maintenance record**
 
 Stage only `tools/New-FishShopNarration.ps1`, both new delivery files, the implementation plan, and `docs/maintenance-lessons.md`. Use a Lore commit whose intent is “Let learners hear the story in a believable child voice,” with `Rejected:` documenting the Zira fallback, `Tested:` listing Python/lint/Vitest/build/signal checks, and `Not-tested:` stating that subjective listening remains for the user.

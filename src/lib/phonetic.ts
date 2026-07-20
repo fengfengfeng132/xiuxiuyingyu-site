@@ -336,10 +336,6 @@ export async function playLocalUsWordAudio(word: string): Promise<WordAudioPlayb
   const requestId = nextWordAudioRequestId();
   const url = fetchLocalUsAudioUrl(word);
   if (!url) return { ok: false, reason: 'missing' };
-  await preloadAudioUrl(url);
-  if (!isLatestWordAudioRequest(requestId)) {
-    return { ok: false, reason: 'stale' };
-  }
   return playAudioUrl(url, 1, requestId);
 }
 
@@ -347,10 +343,6 @@ export async function playLocalUsSlowWordAudio(word: string): Promise<WordAudioP
   const requestId = nextWordAudioRequestId();
   const url = fetchLocalUsSlowAudioUrl(word);
   if (!url) return { ok: false, reason: 'missing' };
-  await preloadAudioUrl(url);
-  if (!isLatestWordAudioRequest(requestId)) {
-    return { ok: false, reason: 'stale' };
-  }
   return playAudioUrl(url, 1, requestId);
 }
 
@@ -358,9 +350,5 @@ export async function playLocalQuestionBankAudio(text: string, rate = 1): Promis
   const requestId = nextWordAudioRequestId();
   const url = fetchLocalQuestionBankAudioUrl(text, rate);
   if (!url) return { ok: false, reason: 'missing' };
-  await preloadAudioUrl(url);
-  if (!isLatestWordAudioRequest(requestId)) {
-    return { ok: false, reason: 'stale' };
-  }
   return playAudioUrl(url, 1, requestId);
 }

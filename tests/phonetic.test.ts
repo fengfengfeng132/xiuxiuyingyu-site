@@ -1,10 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   classifyWordAudioFailure,
   getLocalSlowWordAudioFeedback,
   getLocalWordAudioFeedback,
   normalizePhoneticForDisplay,
+  playLocalQuestionBankAudio,
+  playLocalUsSlowWordAudio,
+  playLocalUsWordAudio,
 } from '../src/lib/phonetic';
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('phonetic', () => {
   it('uses a familiar r glyph instead of the reversed-looking IPA glyph for children', () => {
@@ -30,5 +37,38 @@ describe('phonetic', () => {
     expect(getLocalWordAudioFeedback({ ok: false, reason: 'missing' })).toBe('当前单词暂无本地语音。');
     expect(getLocalWordAudioFeedback({ ok: false, reason: 'stale' })).toBe('');
     expect(getLocalWordAudioFeedback({ ok: false, reason: 'failed' })).toBe('本地语音暂时没播出来，请再试一次。');
+  });
+
+  it('starts local playback synchronously while the iPad click gesture is still active', () => {
+    let playCalls = 0;
+
+    class FakeAudio {
+      currentTime = 0;
+      oncanplaythrough: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      onloadeddata: (() => void) | null = null;
+      playbackRate = 1;
+      preload = '';
+      src = '';
+
+      load() {}
+      pause() {}
+      play() {
+        playCalls += 1;
+        return Promise.resolve();
+      }
+    }
+
+    vi.stubGlobal('Audio', FakeAudio);
+    vi.stubGlobal('window', {
+      location: { origin: 'https://example.test' },
+      setTimeout: () => 1,
+    });
+
+    void playLocalUsWordAudio('eat');
+    void playLocalUsSlowWordAudio('eat');
+    void playLocalQuestionBankAudio('keyboard');
+
+    expect(playCalls).toBe(3);
   });
 });

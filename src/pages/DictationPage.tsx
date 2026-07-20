@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { DAILY_LEARNING_QUESTION_ID_BASE } from '../data/dailyLearningQuestions';
 import { dictationWords, type DictationWord } from '../data/dictationWords';
 import { questionBank } from '../data/loadQuestionBank';
 import {
@@ -21,7 +22,7 @@ import {
   recognizeSpeechOnce,
 } from '../lib/speechAssessment';
 import { loadState, saveState } from '../lib/storage';
-import { findQuestionIdByPrompt, playWrongAnswerTone, updateWrongBookForQuestion } from '../lib/studyFeedback';
+import { playWrongAnswerTone, updateWrongBookForQuestion } from '../lib/studyFeedback';
 import {
   getDictationHintText,
   getDictationWordCardTitle,
@@ -147,7 +148,7 @@ export function DictationPage() {
 
     clearAutoPlayTimer();
     stopAudioPlayback();
-    const playback = await playLocalUsWordAudio(currentStep.word.word);
+    const playback = await playLocalUsWordAudio(currentStep.word.audioKey);
     if (playback.ok || playback.reason === 'stale') {
       setFeedback('');
       return;
@@ -161,7 +162,7 @@ export function DictationPage() {
 
     clearAutoPlayTimer();
     stopAudioPlayback();
-    const playback = await playLocalUsSlowWordAudio(currentStep.word.word);
+    const playback = await playLocalUsSlowWordAudio(currentStep.word.audioKey);
     if (!playback.ok) {
       const nextFeedback = getLocalSlowWordAudioFeedback(playback);
       if (nextFeedback) setFeedback(nextFeedback);
@@ -201,9 +202,9 @@ export function DictationPage() {
     );
   }, [currentStep, speechRecognitionSupported, stopAudioPlayback]);
 
-  const recordWrongWord = useCallback((word: string) => {
-    const questionId = findQuestionIdByPrompt(questionBank, word);
-    if (questionId === null) return;
+  const recordWrongWord = useCallback((word: DictationWord) => {
+    const questionId = DAILY_LEARNING_QUESTION_ID_BASE + word.id;
+    if (!questionBank.some((question) => question.id === questionId)) return;
 
     const now = new Date();
     const state = loadState();
@@ -215,6 +216,8 @@ export function DictationPage() {
 
   useEffect(() => {
     if (!currentStep) return;
+
+    if (currentStep.word.phonetic) return;
 
     let canceled = false;
     fetchUsPhonetic(currentStep.word.word).then((nextPhonetic) => {
@@ -229,7 +232,7 @@ export function DictationPage() {
 
   useEffect(() => {
     if (!currentStep) return;
-    void preloadLocalUsSlowWordAudio(currentStep.word.word);
+    void preloadLocalUsSlowWordAudio(currentStep.word.audioKey);
   }, [currentStep]);
 
   useEffect(() => {
@@ -348,7 +351,7 @@ export function DictationPage() {
         },
       ]);
       if (!isCorrect) {
-        recordWrongWord(currentStep.word.word);
+        recordWrongWord(currentStep.word);
         playWrongAnswerTone();
       }
       setFeedback(isCorrect ? '答对了，继续下一题。' : `答错了，正确意思是“${currentStep.word.meaning}”。`);
@@ -377,7 +380,7 @@ export function DictationPage() {
       ]);
     setSpellingFeedbackData(isCorrect ? null : nextSpellingFeedback);
     if (!isCorrect) {
-      recordWrongWord(currentStep.word.word);
+      recordWrongWord(currentStep.word);
       playWrongAnswerTone();
     }
     setFeedback(isCorrect ? '拼写正确，继续下一题。' : '拼错了，先看下面红色和绿色提示。');
@@ -404,7 +407,7 @@ export function DictationPage() {
         isCorrect: false,
       },
     ]);
-    recordWrongWord(currentStep.word.word);
+    recordWrongWord(currentStep.word);
     playWrongAnswerTone();
     moveNext();
   };
@@ -540,12 +543,13 @@ export function DictationPage() {
   const isChooseStep = currentStep.type === 'listenChoose';
   const isSpellStep = currentStep.type === 'listenSpell';
   const hasSubmittedCurrentStep = answers.some((answer) => answer.stepId === currentStep.id);
-  const displayProgressCurrent = Math.min(stepIndex + 5, 20);
-  const displayProgressTotal = 20;
+  const displayProgressCurrent = (stepIndex % dictationWords.length) + 1;
+  const displayProgressTotal = dictationWords.length;
   const currentProgress = Math.round((displayProgressCurrent / displayProgressTotal) * 100);
   const meaningLine = currentStep.word.word === 'hot' ? 'adj. 热的；烫的' : `释义：${currentStep.word.meaning}`;
   const shouldShowMeaningLine = shouldShowDictationMeaningLine(currentStep.type, hasSubmittedCurrentStep);
   const shouldShowPhoneticLine = shouldShowDictationPhoneticLine(currentStep.type, hasSubmittedCurrentStep);
+  const displayedPhonetic = currentStep.word.phonetic || phonetic;
   const wordCardTitle = getDictationWordCardTitle(currentStep.type, currentStep.word.word, hasSubmittedCurrentStep);
   const wordTitleStyle = {
     '--lesson-word-title-fit-length': Math.max(1, wordCardTitle.length),
@@ -607,7 +611,8 @@ export function DictationPage() {
         <h1 className={isSpellStep && !hasSubmittedCurrentStep ? 'lesson-spell-title' : undefined} style={wordTitleStyle}>
           {wordCardTitle}
         </h1>
-        {shouldShowPhoneticLine ? <p className="lesson-phonetic">{phonetic || '/.../'}</p> : null}
+        {currentStep.word.grammarLabel ? <p className="lesson-grammar-label">{currentStep.word.grammarLabel}</p> : null}
+        {shouldShowPhoneticLine ? <p className="lesson-phonetic">{displayedPhonetic || '/.../'}</p> : null}
         {shouldShowMeaningLine ? <p className="lesson-meaning">{meaningLine}</p> : null}
 
         <div className="lesson-audio-row" aria-label="播放控制">

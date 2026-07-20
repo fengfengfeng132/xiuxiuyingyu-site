@@ -19,6 +19,58 @@
 
 ---
 
+## 2026-07-20 同拼写 read 双读音与过去式标记
+
+### 范围
+
+- 今日听写 49 个学习条目
+- 日常学习题与入口数量
+- 过去式标签、固定音标和本地普通/慢速音频
+- `read` 现在时与过去式的独立音频路由
+- `src/data/dictationWords.json`
+- `src/data/dailyLearningQuestions.ts`
+- `src/lib/phonetic.ts`
+- `src/pages/DictationPage.tsx`
+- `src/pages/PracticePage.tsx`
+
+### 问题现象
+
+- 新词表同时包含现在时 `read /riːd/` 和过去式 `read /red/`，两项拼写相同但读音不同。
+- 原实现按小写单词文本建立音频 Map，同名条目会覆盖，无法同时保留两个读音。
+- 过去式只写在提示句里，不够醒目；短语 `jump rope` 会跳过单词分支，部分旧题库同名词也会先抢到播放，无法稳定使用本轮本地音频。
+
+### 根因
+
+1. 单词显示文本、听写答案和音频查找键共用同一个 `word` 字段，默认假设拼写唯一。
+2. 音频生成脚本用正则从 TypeScript 中只提取 `word`，无法表达“页面显示 read，但文件名和朗读文本不同”。
+3. 听写页进度和首页入口仍有旧的 20 词硬编码，词表扩到 49 项后会显示错误。
+
+### 处理
+
+1. 把词表改为结构化 JSON，每项显式保存音标、`audioKey` 和 `spokenText`。
+2. 现在时 `read` 使用 `read.wav`、音标 `/riːd/`；过去式 `read` 使用 `read-past.wav`、朗读文本 `red`、音标 `/red/`，两项听写答案仍都是 `read`。
+3. 为 `ate / ran / drew / caught / read / rode / wrote / threw` 增加“过去式”标签，并在听写和日常学习页面显示。
+4. 日常学习题从同一份词表生成，每日词播放优先于旧题库和单词/短语判断，普通和慢速都按 `audioKey` 读取本地文件。
+5. 错题记录按每日题目的唯一 ID 保存，两个 `read` 不再因为同拼写而记到同一项。
+6. 首页、学习中心和听写轮次进度改为读取当前词表长度；音频生成脚本改为结构化读取 JSON。
+7. 重新生成普通/慢速各 49 个 Zira WAV，保留 canonical PCM `fmt=16`，慢速文件时长均大于普通版 10%。
+
+### 验证
+
+- 先运行新增测试并确认旧实现有 12 项失败，覆盖词表、双 `read`、过去式标签、音频键和入口数量。
+- `npm run test -- tests/dailyWordSync.test.ts tests/dailyWordAudioScript.test.ts tests/dictationAudioRouting.test.ts`
+- 检查普通/慢速目录各 49 个 WAV，文件名与 `audioKey` 完全一致。
+- 检查所有 WAV 为 PCM 且 `fmt` 块长度为 16，慢速时长均大于普通版 1.1 倍。
+- 后续执行完整 `npm run lint`、`npm run test`、`npm run build`。
+
+### 后续提醒
+
+- 再遇到同拼写多读音时，不要把“过去式”塞进 `word` 字段，否则会破坏拼写判题；新增独立 `audioKey`。
+- `spokenText` 只用于生成音频，页面显示、拼写答案和跟读目标继续使用 `word`。
+- 更新每日词汇时继续同步检查词表条目数、独立音频键数和两套 WAV 文件数；三者不一定相同，但本轮均为 49。
+
+---
+
 ## 2026-07-15 iPad 播放兼容与音标 r 显示修复
 
 ### 范围

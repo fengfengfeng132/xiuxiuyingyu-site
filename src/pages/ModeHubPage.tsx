@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button';
+import { dictationWords } from '../data/dictationWords';
 import { getStarCount } from '../lib/starRewards';
 import { loadState, startSession } from '../lib/storage';
 
@@ -40,7 +41,7 @@ const routeSteps = [
 const modeCards: ModeCard[] = [
   {
     title: '听写单词',
-    desc: '今日 20 词',
+    desc: `今日 ${dictationWords.length} 词`,
     action: '开始学习',
     tone: 'blue',
     icon: '/images/ui-ipad/headset.png',

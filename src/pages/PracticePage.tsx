@@ -7,9 +7,11 @@ import { questionBank } from '../data/loadQuestionBank';
 import {
   fetchUsPhonetic,
   getLocalSlowWordAudioFeedback,
+  getLocalWordAudioFeedback,
   preloadLocalUsSlowWordAudio,
   playLocalQuestionBankAudio,
   playLocalUsSlowWordAudio,
+  playLocalUsWordAudio,
   playUsWordAudio,
   stopUsWordAudioPlayback,
 } from '../lib/phonetic';
@@ -504,6 +506,8 @@ export function PracticePage() {
       return;
     }
 
+    if (question.phonetic) return;
+
     let canceled = false;
     fetchUsPhonetic(question.prompt).then((result) => {
       if (canceled) return;
@@ -519,7 +523,7 @@ export function PracticePage() {
     if (!question) return;
     if (!question.tags.includes(DAILY_DICTATION_TAG)) return;
     if (!isSingleEnglishWord(question.prompt)) return;
-    void preloadLocalUsSlowWordAudio(question.prompt);
+    void preloadLocalUsSlowWordAudio(question.audioKey ?? question.prompt);
   }, [question]);
 
   useEffect(() => {
@@ -549,26 +553,27 @@ export function PracticePage() {
   const speakAudio = useCallback(async (text: string, rate: number) => {
     if (!text) return;
 
+    const isDailyDictationWord = Boolean(question?.tags.includes(DAILY_DICTATION_TAG));
+    if (isDailyDictationWord) {
+      const audioKey = question?.audioKey ?? text;
+      if (rate < 1) {
+        const playback = await playLocalUsSlowWordAudio(audioKey);
+        if (playback.ok || playback.reason === 'stale') return;
+        const nextFeedback = getLocalSlowWordAudioFeedback(playback);
+        if (nextFeedback) setFeedback(nextFeedback);
+        return;
+      }
+
+      const playback = await playLocalUsWordAudio(audioKey);
+      if (playback.ok || playback.reason === 'stale') return;
+      setFeedback(getLocalWordAudioFeedback(playback));
+      return;
+    }
+
     const localQuestionBankPlayback = await playLocalQuestionBankAudio(text, rate);
     if (localQuestionBankPlayback.ok || localQuestionBankPlayback.reason === 'stale') return;
 
     if (isSingleEnglishWord(text)) {
-      const isDailyDictationWord = Boolean(question?.tags.includes(DAILY_DICTATION_TAG));
-      if (isDailyDictationWord) {
-        if (rate < 1) {
-          const playback = await playLocalUsSlowWordAudio(text);
-          if (playback.ok || playback.reason === 'stale') return;
-          const nextFeedback = getLocalSlowWordAudioFeedback(playback);
-          if (nextFeedback) setFeedback(nextFeedback);
-          return;
-        }
-
-        const playback = await playUsWordAudio(text, 1);
-        if (playback.ok || playback.reason === 'stale') return;
-        setFeedback('当前单词词典发音加载失败，请稍后重试。');
-        return;
-      }
-
       const playback = await playUsWordAudio(text, rate);
       if (playback.ok || playback.reason === 'stale') return;
     }
@@ -810,6 +815,7 @@ export function PracticePage() {
         : question.prompt;
 
   const cardSubtitle = train === 'audio' ? '听音后选择正确选项' : question.stem;
+  const displayedPhonetic = question.phonetic || phonetic;
 
   const submitDisabled = isChoiceQuestion
     ? selected === null
@@ -846,12 +852,13 @@ export function PracticePage() {
       <Card className={isSpellingQuestion ? 'card-tone-yellow' : 'card-tone-blue'} title={cardTitle} subtitle={cardSubtitle}>
         <div className="card-chip-row">
           <span className="section-chip">{getTrainTitle(train)}</span>
+          {question.grammarLabel ? <span className="section-chip section-chip-grammar">{question.grammarLabel}</span> : null}
           <span className="muted">
             第 {questionIndex + 1} 题 / 共 {totalCount} 题
           </span>
         </div>
         <img className="practice-card-dog" src="/images/ui-ipad/dog.png" alt="" aria-hidden="true" />
-        {phonetic ? <p className="field-note">美式音标：{phonetic}</p> : null}
+        {displayedPhonetic ? <p className="field-note">美式音标：{displayedPhonetic}</p> : null}
 
         <div className="listen-controls">
           <Button variant="ghost" onClick={() => playFullAudio(1)}>

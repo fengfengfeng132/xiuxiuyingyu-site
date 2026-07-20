@@ -215,6 +215,12 @@ ul {
   color: #946a14;
 }
 
+.section-chip-grammar {
+  color: #8a4d00;
+  background: #fff4ce;
+  border-color: #f1b24a;
+}
+
 .mission-grid,
 .stats-grid {
   display: grid;
@@ -1769,6 +1775,18 @@ body {
   font-weight: 900;
 }
 
+.lesson-grammar-label {
+  display: inline-flex;
+  margin-top: 10px;
+  padding: 5px 10px;
+  border: 1px solid #f1b24a;
+  border-radius: 6px;
+  color: #8a4d00;
+  background: #fff4ce;
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
 .lesson-meaning {
   margin-top: 7px;
   color: #4b5871;
@@ -2747,6 +2765,13 @@ body {
     font-size: 32px;
     text-align: center;
     font-weight: 500;
+  }
+
+  .lesson-grammar-label {
+    display: table;
+    margin: 14px auto 0;
+    padding: 7px 14px;
+    font-size: 20px;
   }
 
   .lesson-meaning {

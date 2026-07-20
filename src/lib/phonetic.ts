@@ -31,15 +31,15 @@ const LOCAL_SLOW_WORD_AUDIO_BASE = '/audio/words/us-slow';
 const localAudioWarmupCache = new Map<string, Promise<boolean>>();
 const localNormalWordAudioMap = new Map(
   dictationWords.map((item) => {
-    const key = item.word.trim().toLowerCase();
-    const fileName = item.word.trim();
+    const key = item.audioKey.trim().toLowerCase();
+    const fileName = item.audioKey.trim();
     return [key, `${LOCAL_NORMAL_WORD_AUDIO_BASE}/${encodeURIComponent(fileName)}.wav`] as const;
   }),
 );
 const localSlowWordAudioMap = new Map(
   dictationWords.map((item) => {
-    const key = item.word.trim().toLowerCase();
-    const fileName = item.word.trim();
+    const key = item.audioKey.trim().toLowerCase();
+    const fileName = item.audioKey.trim();
     return [key, `${LOCAL_SLOW_WORD_AUDIO_BASE}/${encodeURIComponent(fileName)}.wav`] as const;
   }),
 );

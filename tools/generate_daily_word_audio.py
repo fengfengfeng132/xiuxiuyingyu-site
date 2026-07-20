@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 import sys
 import wave
 from pathlib import Path
@@ -13,9 +12,12 @@ DEFAULT_TTS_ROOT = Path(r"D:\AI\index-tts-nolfs")
 DEFAULT_PROMPT_DIR = Path("tmp/index-tts-prompts")
 
 
-def read_dictation_words(repo_root: Path) -> list[str]:
-    source = (repo_root / "src/data/dictationWords.ts").read_text(encoding="utf-8")
-    return [match.group(1) for match in re.finditer(r"word:\s*'([^']+)'", source)]
+def read_dictation_entries(repo_root: Path) -> list[dict[str, object]]:
+    source = (repo_root / "src/data/dictationWords.json").read_text(encoding="utf-8")
+    data = json.loads(source)
+    if not isinstance(data, list):
+        raise ValueError("dictationWords.json must contain an array")
+    return data
 
 
 def wav_duration_seconds(path: Path) -> float:
@@ -42,7 +44,7 @@ def main() -> int:
     tts_root = args.tts_root.resolve()
     prompt_dir = (repo_root / args.prompt_dir).resolve()
     output_root = (repo_root / args.output_root).resolve()
-    words = read_dictation_words(repo_root)
+    entries = read_dictation_entries(repo_root)
 
     normal_prompt = prompt_dir / "zira-reference.wav"
     slow_prompt = prompt_dir / "zira-reference-slow.wav"
@@ -56,11 +58,13 @@ def main() -> int:
 
     manifest = [
         {
-            "word": word,
-            "normal": str(normal_dir / f"{word}.wav"),
-            "slow": str(slow_dir / f"{word}.wav"),
+            "word": str(entry["word"]),
+            "audioKey": str(entry["audioKey"]),
+            "spokenText": str(entry["spokenText"]),
+            "normal": str(normal_dir / f'{entry["audioKey"]}.wav'),
+            "slow": str(slow_dir / f'{entry["audioKey"]}.wav'),
         }
-        for word in words
+        for entry in entries
     ]
     print(json.dumps({"count": len(manifest), "items": manifest}, ensure_ascii=False, indent=2), flush=True)
 
@@ -93,6 +97,7 @@ def main() -> int:
 
     for item in manifest:
         word = item["word"]
+        spoken_text = item["spokenText"]
         normal_path = Path(item["normal"])
         slow_path = Path(item["slow"])
 
@@ -100,7 +105,7 @@ def main() -> int:
             print(f"[normal] {word} -> {normal_path}", flush=True)
             tts.infer(
                 spk_audio_prompt=str(normal_prompt),
-                text=word,
+                text=spoken_text,
                 output_path=str(normal_path),
                 length_penalty=0.0,
                 **common_kwargs,
@@ -110,7 +115,7 @@ def main() -> int:
             print(f"[slow] {word} -> {slow_path}", flush=True)
             tts.infer(
                 spk_audio_prompt=str(slow_prompt),
-                text=word,
+                text=spoken_text,
                 output_path=str(slow_path),
                 length_penalty=args.slow_length_penalty,
                 **common_kwargs,

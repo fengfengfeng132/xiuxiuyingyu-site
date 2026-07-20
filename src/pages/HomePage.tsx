@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button';
+import { dictationWords } from '../data/dictationWords';
 import { questionBank } from '../data/loadQuestionBank';
 import { loadState, startSession } from '../lib/storage';
 
@@ -95,7 +96,7 @@ export function HomePage() {
           <img className="feature-image feature-image-headset" src="/images/ui-ipad/headset.png" alt="" aria-hidden="true" />
           <span>
             <strong>听写单词</strong>
-            <em>今日 20 个单词</em>
+            <em>今日 {dictationWords.length} 个单词</em>
           </span>
           <b>开始学习</b>
         </Link>

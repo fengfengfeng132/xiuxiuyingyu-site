@@ -12,6 +12,9 @@ export interface Question {
   explanation: string;
   tags: string[];
   audioText?: string;
+  audioKey?: string;
+  phonetic?: string;
+  grammarLabel?: string;
 }
 
 export interface SessionAnswer {

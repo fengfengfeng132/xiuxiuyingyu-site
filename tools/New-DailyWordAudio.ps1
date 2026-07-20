@@ -8,12 +8,11 @@ $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Speech
 
 $repoRoot = Resolve-Path -LiteralPath "."
-$dictationPath = Join-Path $repoRoot.Path "src\data\dictationWords.ts"
-$source = Get-Content -LiteralPath $dictationPath -Raw -Encoding UTF8
-$words = [regex]::Matches($source, "word:\s*'([^']+)'") | ForEach-Object { $_.Groups[1].Value }
+$dictationPath = Join-Path $repoRoot.Path "src\data\dictationWords.json"
+$entries = Get-Content -LiteralPath $dictationPath -Raw -Encoding UTF8 | ConvertFrom-Json
 
 $voiceName = "Microsoft Zira Desktop"
-if ($words.Count -eq 0) {
+if ($entries.Count -eq 0) {
   throw "No words found in $dictationPath"
 }
 
@@ -95,14 +94,11 @@ function Normalize-PcmWaveHeader([string]$Path) {
   }
 }
 
-foreach ($word in $words) {
-  if ($word -eq "read") {
-    $spokenText = "red"
-  } else {
-    $spokenText = $word.Replace("-", " ")
-  }
-  $normalPath = Join-Path $normalDir "$word.wav"
-  $slowPath = Join-Path $slowDir "$word.wav"
+foreach ($entry in $entries) {
+  $audioKey = [string]$entry.audioKey
+  $spokenText = [string]$entry.spokenText
+  $normalPath = Join-Path $normalDir "$audioKey.wav"
+  $slowPath = Join-Path $slowDir "$audioKey.wav"
 
   if (Test-Path $normalPath) { Remove-Item -LiteralPath $normalPath -Force }
   if (Test-Path $slowPath) { Remove-Item -LiteralPath $slowPath -Force }

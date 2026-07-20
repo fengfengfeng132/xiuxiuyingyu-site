@@ -32,7 +32,10 @@ function normalizeQuestion(value: unknown): Question | null {
     typeof stemCandidate !== 'string' ||
     !isStringArray(q.tags) ||
     typeof q.explanation !== 'string' ||
-    (q.audioText !== undefined && typeof q.audioText !== 'string')
+    (q.audioText !== undefined && typeof q.audioText !== 'string') ||
+    (q.audioKey !== undefined && typeof q.audioKey !== 'string') ||
+    (q.phonetic !== undefined && typeof q.phonetic !== 'string') ||
+    (q.grammarLabel !== undefined && typeof q.grammarLabel !== 'string')
   ) {
     return null;
   }
@@ -49,6 +52,9 @@ function normalizeQuestion(value: unknown): Question | null {
     explanation: q.explanation,
     tags: q.tags,
     audioText: typeof q.audioText === 'string' ? q.audioText : undefined,
+    audioKey: typeof q.audioKey === 'string' ? q.audioKey : undefined,
+    phonetic: typeof q.phonetic === 'string' ? q.phonetic : undefined,
+    grammarLabel: typeof q.grammarLabel === 'string' ? q.grammarLabel : undefined,
   };
 }
 

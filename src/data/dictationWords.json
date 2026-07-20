@@ -1,0 +1,500 @@
+[
+  {
+    "id": 1,
+    "word": "eat",
+    "meaning": "吃",
+    "note": "eat 表示吃东西，比如 eat an apple。",
+    "imageHint": "a child eating an apple",
+    "phonetic": "/iːt/",
+    "audioKey": "eat",
+    "spokenText": "eat"
+  },
+  {
+    "id": 2,
+    "word": "ate",
+    "meaning": "吃了",
+    "note": "ate 是 eat 的过去式，表示已经吃了。",
+    "imageHint": "a child who ate an apple yesterday",
+    "phonetic": "/eɪt/",
+    "audioKey": "ate",
+    "spokenText": "ate",
+    "grammarLabel": "过去式"
+  },
+  {
+    "id": 3,
+    "word": "run",
+    "meaning": "跑",
+    "note": "run 表示跑起来。",
+    "imageHint": "a child running on a playground",
+    "phonetic": "/rʌn/",
+    "audioKey": "run",
+    "spokenText": "run"
+  },
+  {
+    "id": 4,
+    "word": "ran",
+    "meaning": "跑了",
+    "note": "ran 是 run 的过去式，表示已经跑了。",
+    "imageHint": "a child who ran in a race yesterday",
+    "phonetic": "/ræn/",
+    "audioKey": "ran",
+    "spokenText": "ran",
+    "grammarLabel": "过去式"
+  },
+  {
+    "id": 5,
+    "word": "draw",
+    "meaning": "画",
+    "note": "draw 表示用笔画画。",
+    "imageHint": "a child drawing a colorful picture",
+    "phonetic": "/drɔː/",
+    "audioKey": "draw",
+    "spokenText": "draw"
+  },
+  {
+    "id": 6,
+    "word": "drew",
+    "meaning": "画了",
+    "note": "drew 是 draw 的过去式，表示已经画了。",
+    "imageHint": "a child who drew a picture yesterday",
+    "phonetic": "/druː/",
+    "audioKey": "drew",
+    "spokenText": "drew",
+    "grammarLabel": "过去式"
+  },
+  {
+    "id": 7,
+    "word": "catch",
+    "meaning": "接住",
+    "note": "catch 表示把飞来的东西接住。",
+    "imageHint": "a child catching a soft ball",
+    "phonetic": "/kætʃ/",
+    "audioKey": "catch",
+    "spokenText": "catch"
+  },
+  {
+    "id": 8,
+    "word": "caught",
+    "meaning": "接住了",
+    "note": "caught 是 catch 的过去式，表示已经接住了。",
+    "imageHint": "a child who caught a soft ball",
+    "phonetic": "/kɔːt/",
+    "audioKey": "caught",
+    "spokenText": "caught",
+    "grammarLabel": "过去式"
+  },
+  {
+    "id": 9,
+    "word": "read",
+    "meaning": "读",
+    "note": "这里的 read 表示读，读音是 reed。",
+    "imageHint": "a child reading a book now",
+    "phonetic": "/riːd/",
+    "audioKey": "read",
+    "spokenText": "read"
+  },
+  {
+    "id": 10,
+    "word": "read",
+    "meaning": "读了",
+    "note": "这个 read 是过去式，读音像 red，表示已经读了。",
+    "imageHint": "a child who read a book yesterday",
+    "phonetic": "/red/",
+    "audioKey": "read-past",
+    "spokenText": "red",
+    "grammarLabel": "过去式"
+  },
+  {
+    "id": 11,
+    "word": "ride",
+    "meaning": "骑/乘坐",
+    "note": "ride 表示骑车或乘坐。",
+    "imageHint": "a child riding a bicycle",
+    "phonetic": "/raɪd/",
+    "audioKey": "ride",
+    "spokenText": "ride"
+  },
+  {
+    "id": 12,
+    "word": "rode",
+    "meaning": "骑了/乘坐了",
+    "note": "rode 是 ride 的过去式，表示已经骑了或乘坐了。",
+    "imageHint": "a child who rode a bicycle yesterday",
+    "phonetic": "/roʊd/",
+    "audioKey": "rode",
+    "spokenText": "rode",
+    "grammarLabel": "过去式"
+  },
+  {
+    "id": 13,
+    "word": "write",
+    "meaning": "写",
+    "note": "write 表示用笔写字。",
+    "imageHint": "a child writing a word with a pencil",
+    "phonetic": "/raɪt/",
+    "audioKey": "write",
+    "spokenText": "write"
+  },
+  {
+    "id": 14,
+    "word": "wrote",
+    "meaning": "写了",
+    "note": "wrote 是 write 的过去式，表示已经写了。",
+    "imageHint": "a child who wrote a short note",
+    "phonetic": "/roʊt/",
+    "audioKey": "wrote",
+    "spokenText": "wrote",
+    "grammarLabel": "过去式"
+  },
+  {
+    "id": 15,
+    "word": "throw",
+    "meaning": "扔",
+    "note": "throw 表示把东西扔出去。",
+    "imageHint": "a child throwing a soft ball",
+    "phonetic": "/θroʊ/",
+    "audioKey": "throw",
+    "spokenText": "throw"
+  },
+  {
+    "id": 16,
+    "word": "threw",
+    "meaning": "扔了",
+    "note": "threw 是 throw 的过去式，表示已经扔了。",
+    "imageHint": "a child who threw a soft ball",
+    "phonetic": "/θruː/",
+    "audioKey": "threw",
+    "spokenText": "threw",
+    "grammarLabel": "过去式"
+  },
+  {
+    "id": 17,
+    "word": "tennis",
+    "meaning": "网球",
+    "note": "tennis 是网球运动。",
+    "imageHint": "a tennis racket and a tennis ball",
+    "phonetic": "/ˈtenɪs/",
+    "audioKey": "tennis",
+    "spokenText": "tennis"
+  },
+  {
+    "id": 18,
+    "word": "soccer",
+    "meaning": "足球",
+    "note": "soccer 是足球运动。",
+    "imageHint": "children playing soccer with a ball",
+    "phonetic": "/ˈsɑːkər/",
+    "audioKey": "soccer",
+    "spokenText": "soccer"
+  },
+  {
+    "id": 19,
+    "word": "handball",
+    "meaning": "手球",
+    "note": "handball 是用手传球和投球的运动。",
+    "imageHint": "children playing handball in a gym",
+    "phonetic": "/ˈhændbɔːl/",
+    "audioKey": "handball",
+    "spokenText": "handball"
+  },
+  {
+    "id": 20,
+    "word": "jump rope",
+    "meaning": "跳绳",
+    "note": "jump rope 表示跳绳。",
+    "imageHint": "a child jumping rope on a playground",
+    "phonetic": "/dʒʌmp roʊp/",
+    "audioKey": "jump rope",
+    "spokenText": "jump rope"
+  },
+  {
+    "id": 21,
+    "word": "that",
+    "meaning": "那个",
+    "note": "that 表示离我们远一点的那个。",
+    "imageHint": "a child pointing to an object farther away",
+    "phonetic": "/ðæt/",
+    "audioKey": "that",
+    "spokenText": "that"
+  },
+  {
+    "id": 22,
+    "word": "do",
+    "meaning": "做",
+    "note": "do 表示做一件事情。",
+    "imageHint": "a child doing a simple classroom activity",
+    "phonetic": "/duː/",
+    "audioKey": "do",
+    "spokenText": "do"
+  },
+  {
+    "id": 23,
+    "word": "happy",
+    "meaning": "开心的",
+    "note": "happy 表示开心、高兴。",
+    "imageHint": "a happy smiling child",
+    "phonetic": "/ˈhæpi/",
+    "audioKey": "happy",
+    "spokenText": "happy"
+  },
+  {
+    "id": 24,
+    "word": "A",
+    "meaning": "字母 A",
+    "note": "A 是英文字母表的第 1 个字母。",
+    "imageHint": "uppercase letter A on a colorful alphabet card",
+    "phonetic": "/eɪ/",
+    "audioKey": "A",
+    "spokenText": "A"
+  },
+  {
+    "id": 25,
+    "word": "B",
+    "meaning": "字母 B",
+    "note": "B 是英文字母表的第 2 个字母。",
+    "imageHint": "uppercase letter B on a colorful alphabet card",
+    "phonetic": "/biː/",
+    "audioKey": "B",
+    "spokenText": "B"
+  },
+  {
+    "id": 26,
+    "word": "C",
+    "meaning": "字母 C",
+    "note": "C 是英文字母表的第 3 个字母。",
+    "imageHint": "uppercase letter C on a colorful alphabet card",
+    "phonetic": "/siː/",
+    "audioKey": "C",
+    "spokenText": "C"
+  },
+  {
+    "id": 27,
+    "word": "D",
+    "meaning": "字母 D",
+    "note": "D 是英文字母表的第 4 个字母。",
+    "imageHint": "uppercase letter D on a colorful alphabet card",
+    "phonetic": "/diː/",
+    "audioKey": "D",
+    "spokenText": "D"
+  },
+  {
+    "id": 28,
+    "word": "E",
+    "meaning": "字母 E",
+    "note": "E 是英文字母表的第 5 个字母。",
+    "imageHint": "uppercase letter E on a colorful alphabet card",
+    "phonetic": "/iː/",
+    "audioKey": "E",
+    "spokenText": "E"
+  },
+  {
+    "id": 29,
+    "word": "F",
+    "meaning": "字母 F",
+    "note": "F 是英文字母表的第 6 个字母。",
+    "imageHint": "uppercase letter F on a colorful alphabet card",
+    "phonetic": "/ef/",
+    "audioKey": "F",
+    "spokenText": "F"
+  },
+  {
+    "id": 30,
+    "word": "G",
+    "meaning": "字母 G",
+    "note": "G 是英文字母表的第 7 个字母。",
+    "imageHint": "uppercase letter G on a colorful alphabet card",
+    "phonetic": "/dʒiː/",
+    "audioKey": "G",
+    "spokenText": "G"
+  },
+  {
+    "id": 31,
+    "word": "H",
+    "meaning": "字母 H",
+    "note": "H 是英文字母表的第 8 个字母。",
+    "imageHint": "uppercase letter H on a colorful alphabet card",
+    "phonetic": "/eɪtʃ/",
+    "audioKey": "H",
+    "spokenText": "H"
+  },
+  {
+    "id": 32,
+    "word": "I",
+    "meaning": "字母 I",
+    "note": "I 是英文字母表的第 9 个字母。",
+    "imageHint": "uppercase letter I on a colorful alphabet card",
+    "phonetic": "/aɪ/",
+    "audioKey": "I",
+    "spokenText": "I"
+  },
+  {
+    "id": 33,
+    "word": "J",
+    "meaning": "字母 J",
+    "note": "J 是英文字母表的第 10 个字母。",
+    "imageHint": "uppercase letter J on a colorful alphabet card",
+    "phonetic": "/dʒeɪ/",
+    "audioKey": "J",
+    "spokenText": "J"
+  },
+  {
+    "id": 34,
+    "word": "K",
+    "meaning": "字母 K",
+    "note": "K 是英文字母表的第 11 个字母。",
+    "imageHint": "uppercase letter K on a colorful alphabet card",
+    "phonetic": "/keɪ/",
+    "audioKey": "K",
+    "spokenText": "K"
+  },
+  {
+    "id": 35,
+    "word": "L",
+    "meaning": "字母 L",
+    "note": "L 是英文字母表的第 12 个字母。",
+    "imageHint": "uppercase letter L on a colorful alphabet card",
+    "phonetic": "/el/",
+    "audioKey": "L",
+    "spokenText": "L"
+  },
+  {
+    "id": 36,
+    "word": "M",
+    "meaning": "字母 M",
+    "note": "M 是英文字母表的第 13 个字母。",
+    "imageHint": "uppercase letter M on a colorful alphabet card",
+    "phonetic": "/em/",
+    "audioKey": "M",
+    "spokenText": "M"
+  },
+  {
+    "id": 37,
+    "word": "N",
+    "meaning": "字母 N",
+    "note": "N 是英文字母表的第 14 个字母。",
+    "imageHint": "uppercase letter N on a colorful alphabet card",
+    "phonetic": "/en/",
+    "audioKey": "N",
+    "spokenText": "N"
+  },
+  {
+    "id": 38,
+    "word": "O",
+    "meaning": "字母 O",
+    "note": "O 是英文字母表的第 15 个字母。",
+    "imageHint": "uppercase letter O on a colorful alphabet card",
+    "phonetic": "/oʊ/",
+    "audioKey": "O",
+    "spokenText": "O"
+  },
+  {
+    "id": 39,
+    "word": "P",
+    "meaning": "字母 P",
+    "note": "P 是英文字母表的第 16 个字母。",
+    "imageHint": "uppercase letter P on a colorful alphabet card",
+    "phonetic": "/piː/",
+    "audioKey": "P",
+    "spokenText": "P"
+  },
+  {
+    "id": 40,
+    "word": "Q",
+    "meaning": "字母 Q",
+    "note": "Q 是英文字母表的第 17 个字母。",
+    "imageHint": "uppercase letter Q on a colorful alphabet card",
+    "phonetic": "/kjuː/",
+    "audioKey": "Q",
+    "spokenText": "Q"
+  },
+  {
+    "id": 41,
+    "word": "R",
+    "meaning": "字母 R",
+    "note": "R 是英文字母表的第 18 个字母。",
+    "imageHint": "uppercase letter R on a colorful alphabet card",
+    "phonetic": "/ɑːr/",
+    "audioKey": "R",
+    "spokenText": "R"
+  },
+  {
+    "id": 42,
+    "word": "S",
+    "meaning": "字母 S",
+    "note": "S 是英文字母表的第 19 个字母。",
+    "imageHint": "uppercase letter S on a colorful alphabet card",
+    "phonetic": "/es/",
+    "audioKey": "S",
+    "spokenText": "S"
+  },
+  {
+    "id": 43,
+    "word": "T",
+    "meaning": "字母 T",
+    "note": "T 是英文字母表的第 20 个字母。",
+    "imageHint": "uppercase letter T on a colorful alphabet card",
+    "phonetic": "/tiː/",
+    "audioKey": "T",
+    "spokenText": "T"
+  },
+  {
+    "id": 44,
+    "word": "U",
+    "meaning": "字母 U",
+    "note": "U 是英文字母表的第 21 个字母。",
+    "imageHint": "uppercase letter U on a colorful alphabet card",
+    "phonetic": "/juː/",
+    "audioKey": "U",
+    "spokenText": "U"
+  },
+  {
+    "id": 45,
+    "word": "V",
+    "meaning": "字母 V",
+    "note": "V 是英文字母表的第 22 个字母。",
+    "imageHint": "uppercase letter V on a colorful alphabet card",
+    "phonetic": "/viː/",
+    "audioKey": "V",
+    "spokenText": "V"
+  },
+  {
+    "id": 46,
+    "word": "W",
+    "meaning": "字母 W",
+    "note": "W 是英文字母表的第 23 个字母。",
+    "imageHint": "uppercase letter W on a colorful alphabet card",
+    "phonetic": "/ˈdʌbəljuː/",
+    "audioKey": "W",
+    "spokenText": "W"
+  },
+  {
+    "id": 47,
+    "word": "X",
+    "meaning": "字母 X",
+    "note": "X 是英文字母表的第 24 个字母。",
+    "imageHint": "uppercase letter X on a colorful alphabet card",
+    "phonetic": "/eks/",
+    "audioKey": "X",
+    "spokenText": "X"
+  },
+  {
+    "id": 48,
+    "word": "Y",
+    "meaning": "字母 Y",
+    "note": "Y 是英文字母表的第 25 个字母。",
+    "imageHint": "uppercase letter Y on a colorful alphabet card",
+    "phonetic": "/waɪ/",
+    "audioKey": "Y",
+    "spokenText": "Y"
+  },
+  {
+    "id": 49,
+    "word": "Z",
+    "meaning": "字母 Z",
+    "note": "Z 是英文字母表的第 26 个字母。",
+    "imageHint": "uppercase letter Z on a colorful alphabet card",
+    "phonetic": "/ziː/",
+    "audioKey": "Z",
+    "spokenText": "Z"
+  }
+]

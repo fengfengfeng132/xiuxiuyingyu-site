@@ -19,6 +19,50 @@
 
 ---
 
+## 2026-07-27 每日词替换为球类、颜色与自然物品 9 词
+
+### 范围
+
+- 今日听写词表
+- 日常学习题
+- 本地普通/慢速单词音频
+- `src/data/dictationWords.json`
+- `tests/dailyWordSync.test.ts`
+- `public/audio/words/us`
+- `public/audio/words/us-slow`
+
+### 问题现象
+
+- 用户要求把听写单词同步放入日常学习，并完整替换为 `baseball / table tennis / badminton / volleyball / green / crab / tree / dress / frog`。
+- 上一轮共有 49 个词并带过去式标记，如果只追加新词或只生成新音频，页面会继续混入旧词、旧标签和旧音频。
+
+### 根因
+
+1. 每日词数据已经统一由结构化 JSON 驱动，但普通和慢速 WAV 仍是目录级静态资源，更新时必须整体替换。
+2. 本轮不含过去式；旧数据里的 `grammarLabel` 不能继续保留。
+3. `table tennis` 是带空格的短语，音频文件名、页面音频键和 URL 编码必须继续保持同一原始文本。
+
+### 处理
+
+1. 先把同步测试改为固定的 9 词顺序、儿童化中文释义和音频键，并确认旧 49 词实现触发失败。
+2. 用 9 条新数据整体替换 `dictationWords.json`；日常学习继续从同一份词表自动生成。
+3. 清除上一轮过去式标记，并将首页显示数量继续交给 `dictationWords.length`。
+4. 用现有生成脚本重新生成普通和慢速 WAV，整体替换两个正式音频目录，不保留旧课音频。
+
+### 验证
+
+- 红灯阶段：`dailyWordSync` 有 7 项按预期失败，覆盖旧词表、旧标签和缺失的新音频。
+- 绿灯阶段：`npm run test -- tests/dailyWordSync.test.ts tests/dailyWordAudioScript.test.ts`，15 项测试通过。
+- 两个音频目录各有 9 个 WAV；文件名与 9 个 `audioKey` 完全一致。
+- 后续执行完整 `npm run lint`、`npm run test`、`npm run build`，并试听普通版和慢速版。
+
+### 后续提醒
+
+- 每次替换每日词都要整体核对词表、日常题和两套音频目录，不能让旧课资源混入新课。
+- 带空格的短语继续直接使用结构化 `audioKey`，不要在某一层单独改成连字符或下划线。
+
+---
+
 ## 2026-07-20 《Fish Shop》年轻成年女声慢速饱满版
 
 ### 范围

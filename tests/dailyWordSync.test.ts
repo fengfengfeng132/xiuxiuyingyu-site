@@ -7,58 +7,28 @@ import { dictationWords } from '../src/data/dictationWords';
 import { fetchLocalUsAudioUrl, fetchLocalUsSlowAudioUrl } from '../src/lib/phonetic';
 
 const expectedWords = [
-  'eat',
-  'ate',
-  'run',
-  'ran',
-  'draw',
-  'drew',
-  'catch',
-  'caught',
-  'read',
-  'read',
-  'ride',
-  'rode',
-  'write',
-  'wrote',
-  'throw',
-  'threw',
-  'tennis',
-  'soccer',
-  'handball',
-  'jump rope',
-  'that',
-  'do',
-  'happy',
-  ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+  'baseball',
+  'table tennis',
+  'badminton',
+  'volleyball',
+  'green',
+  'crab',
+  'tree',
+  'dress',
+  'frog',
 ];
 const expectedMeanings = [
-  '吃',
-  '吃了',
-  '跑',
-  '跑了',
-  '画',
-  '画了',
-  '接住',
-  '接住了',
-  '读',
-  '读了',
-  '骑/乘坐',
-  '骑了/乘坐了',
-  '写',
-  '写了',
-  '扔',
-  '扔了',
-  '网球',
-  '足球',
-  '手球',
-  '跳绳',
-  '那个',
-  '做',
-  '开心的',
-  ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((letter) => `字母 ${letter}`),
+  '棒球',
+  '乒乓球',
+  '羽毛球',
+  '排球',
+  '绿色',
+  '螃蟹',
+  '树',
+  '连衣裙',
+  '青蛙',
 ];
-const expectedAudioKeys = expectedWords.map((word, index) => (word === 'read' && index === 9 ? 'read-past' : word));
+const expectedAudioKeys = expectedWords;
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(testDir, '..');
@@ -109,35 +79,21 @@ function readWavDurationSeconds(relativePath: string): number {
 }
 
 describe('daily word sync', () => {
-  it('keeps the dictation word list on the requested 49-entry set', () => {
+  it('keeps the dictation word list on the requested 9-entry set', () => {
     expect(dictationWords.map((item) => item.word)).toEqual(expectedWords);
     expect(dictationWords.map((item) => item.meaning)).toEqual(expectedMeanings);
   });
 
-  it('reuses the same 49 entries in daily learning questions', () => {
+  it('reuses the same 9 entries in daily learning questions', () => {
     expect(dailyLearningQuestions).toHaveLength(expectedWords.length);
     expect(dailyLearningQuestions.map((item) => item.prompt)).toEqual(expectedWords);
     expect(dailyLearningQuestions.map((item) => item.audioText)).toEqual(expectedWords);
     expect(dailyLearningQuestions.map((item) => item.audioKey ?? item.audioText)).toEqual(expectedAudioKeys);
   });
 
-  it('keeps present and past read as separate entries with separate pronunciation data', () => {
-    const readEntries = dictationWords.filter((item) => item.word === 'read');
-
-    expect(readEntries).toHaveLength(2);
-    expect(readEntries.map((item) => item.phonetic)).toEqual(['/riːd/', '/red/']);
-    expect(readEntries.map((item) => item.audioKey ?? item.word)).toEqual(['read', 'read-past']);
-  });
-
-  it('marks every requested past-tense entry in both learning flows', () => {
-    const expectedPastTenseWords = ['ate', 'ran', 'drew', 'caught', 'read', 'rode', 'wrote', 'threw'];
-
-    expect(dictationWords.filter((item) => item.grammarLabel === '过去式').map((item) => item.word)).toEqual(
-      expectedPastTenseWords,
-    );
-    expect(dailyLearningQuestions.filter((item) => item.grammarLabel === '过去式').map((item) => item.prompt)).toEqual(
-      expectedPastTenseWords,
-    );
+  it('does not carry past-tense labels into the replacement lesson', () => {
+    expect(dictationWords.some((item) => item.grammarLabel)).toBe(false);
+    expect(dailyLearningQuestions.some((item) => item.grammarLabel)).toBe(false);
   });
 
   it('keeps normal and slow local audio filenames synced with the current word set', () => {

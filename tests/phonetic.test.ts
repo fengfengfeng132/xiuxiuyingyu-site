@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { dictationWords } from '../src/data/dictationWords';
 import {
   classifyWordAudioFailure,
   getLocalSlowWordAudioFeedback,
@@ -65,8 +66,9 @@ describe('phonetic', () => {
       setTimeout: () => 1,
     });
 
-    void playLocalUsWordAudio('eat');
-    void playLocalUsSlowWordAudio('eat');
+    const currentDailyAudioKey = dictationWords[0].audioKey;
+    void playLocalUsWordAudio(currentDailyAudioKey);
+    void playLocalUsSlowWordAudio(currentDailyAudioKey);
     void playLocalQuestionBankAudio('keyboard');
 
     expect(playCalls).toBe(3);

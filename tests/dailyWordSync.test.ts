@@ -7,26 +7,32 @@ import { dictationWords } from '../src/data/dictationWords';
 import { fetchLocalUsAudioUrl, fetchLocalUsSlowAudioUrl } from '../src/lib/phonetic';
 
 const expectedWords = [
-  'baseball',
-  'table tennis',
-  'badminton',
-  'volleyball',
-  'green',
-  'crab',
-  'tree',
-  'dress',
-  'frog',
+  'father',
+  'mother',
+  'brother',
+  'sister',
+  'family',
+  'grandfather',
+  'grandmother',
+  'friend',
+  'hope',
+  'smile',
+  'drive',
+  'strong',
 ];
 const expectedMeanings = [
-  '棒球',
-  '乒乓球',
-  '羽毛球',
-  '排球',
-  '绿色',
-  '螃蟹',
-  '树',
-  '连衣裙',
-  '青蛙',
+  '爸爸',
+  '妈妈',
+  '兄弟',
+  '姐妹',
+  '家庭',
+  '爷爷/外公',
+  '奶奶/外婆',
+  '朋友',
+  '希望',
+  '微笑',
+  '开车',
+  '强壮的',
 ];
 const expectedAudioKeys = expectedWords;
 
@@ -79,12 +85,12 @@ function readWavDurationSeconds(relativePath: string): number {
 }
 
 describe('daily word sync', () => {
-  it('keeps the dictation word list on the requested 9-entry set', () => {
+  it('keeps the dictation word list on the requested 12-entry set', () => {
     expect(dictationWords.map((item) => item.word)).toEqual(expectedWords);
     expect(dictationWords.map((item) => item.meaning)).toEqual(expectedMeanings);
   });
 
-  it('reuses the same 9 entries in daily learning questions', () => {
+  it('reuses the same 12 entries in daily learning questions', () => {
     expect(dailyLearningQuestions).toHaveLength(expectedWords.length);
     expect(dailyLearningQuestions.map((item) => item.prompt)).toEqual(expectedWords);
     expect(dailyLearningQuestions.map((item) => item.audioText)).toEqual(expectedWords);

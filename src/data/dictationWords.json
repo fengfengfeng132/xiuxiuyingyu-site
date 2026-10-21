@@ -1,92 +1,122 @@
 [
   {
     "id": 1,
-    "word": "baseball",
-    "meaning": "棒球",
-    "note": "baseball 是棒球运动。",
-    "imageHint": "a baseball bat, glove, and baseball",
-    "phonetic": "/ˈbeɪsbɔːl/",
-    "audioKey": "baseball",
-    "spokenText": "baseball"
+    "word": "father",
+    "meaning": "爸爸",
+    "note": "father 是爸爸。",
+    "imageHint": "a father spending time with his child",
+    "phonetic": "/ˈfɑːðər/",
+    "audioKey": "father",
+    "spokenText": "father"
   },
   {
     "id": 2,
-    "word": "table tennis",
-    "meaning": "乒乓球",
-    "note": "table tennis 是乒乓球运动。",
-    "imageHint": "two table tennis paddles and a small ball",
-    "phonetic": "/ˈteɪbəl ˌtenɪs/",
-    "audioKey": "table tennis",
-    "spokenText": "table tennis"
+    "word": "mother",
+    "meaning": "妈妈",
+    "note": "mother 是妈妈。",
+    "imageHint": "a mother spending time with her child",
+    "phonetic": "/ˈmʌðər/",
+    "audioKey": "mother",
+    "spokenText": "mother"
   },
   {
     "id": 3,
-    "word": "badminton",
-    "meaning": "羽毛球",
-    "note": "badminton 是羽毛球运动。",
-    "imageHint": "a badminton racket and shuttlecock",
-    "phonetic": "/ˈbædmɪntən/",
-    "audioKey": "badminton",
-    "spokenText": "badminton"
+    "word": "brother",
+    "meaning": "兄弟",
+    "note": "brother 可以指哥哥，也可以指弟弟。",
+    "imageHint": "two brothers playing together",
+    "phonetic": "/ˈbrʌðər/",
+    "audioKey": "brother",
+    "spokenText": "brother"
   },
   {
     "id": 4,
-    "word": "volleyball",
-    "meaning": "排球",
-    "note": "volleyball 是排球运动。",
-    "imageHint": "children playing volleyball over a net",
-    "phonetic": "/ˈvɑːlibɔːl/",
-    "audioKey": "volleyball",
-    "spokenText": "volleyball"
+    "word": "sister",
+    "meaning": "姐妹",
+    "note": "sister 可以指姐姐，也可以指妹妹。",
+    "imageHint": "two sisters playing together",
+    "phonetic": "/ˈsɪstər/",
+    "audioKey": "sister",
+    "spokenText": "sister"
   },
   {
     "id": 5,
-    "word": "green",
-    "meaning": "绿色",
-    "note": "green 表示绿色。",
-    "imageHint": "a bright green crayon and green leaf",
-    "phonetic": "/ɡriːn/",
-    "audioKey": "green",
-    "spokenText": "green"
+    "word": "family",
+    "meaning": "家庭",
+    "note": "family 表示家庭，也可以指一家人。",
+    "imageHint": "a happy family standing together",
+    "phonetic": "/ˈfæməli/",
+    "audioKey": "family",
+    "spokenText": "family"
   },
   {
     "id": 6,
-    "word": "crab",
-    "meaning": "螃蟹",
-    "note": "crab 是螃蟹。",
-    "imageHint": "a friendly red crab on a beach",
-    "phonetic": "/kræb/",
-    "audioKey": "crab",
-    "spokenText": "crab"
+    "word": "grandfather",
+    "meaning": "爷爷/外公",
+    "note": "grandfather 可以指爷爷，也可以指外公。",
+    "imageHint": "a grandfather reading a book with his grandchild",
+    "phonetic": "/ˈɡrænfɑːðər/",
+    "audioKey": "grandfather",
+    "spokenText": "grandfather"
   },
   {
     "id": 7,
-    "word": "tree",
-    "meaning": "树",
-    "note": "tree 是树。",
-    "imageHint": "a leafy green tree",
-    "phonetic": "/triː/",
-    "audioKey": "tree",
-    "spokenText": "tree"
+    "word": "grandmother",
+    "meaning": "奶奶/外婆",
+    "note": "grandmother 可以指奶奶，也可以指外婆。",
+    "imageHint": "a grandmother reading a book with her grandchild",
+    "phonetic": "/ˈɡrænmʌðər/",
+    "audioKey": "grandmother",
+    "spokenText": "grandmother"
   },
   {
     "id": 8,
-    "word": "dress",
-    "meaning": "连衣裙",
-    "note": "dress 是连衣裙。",
-    "imageHint": "a colorful child's dress on a hanger",
-    "phonetic": "/dres/",
-    "audioKey": "dress",
-    "spokenText": "dress"
+    "word": "friend",
+    "meaning": "朋友",
+    "note": "friend 是朋友。",
+    "imageHint": "two children who are friends playing together",
+    "phonetic": "/frend/",
+    "audioKey": "friend",
+    "spokenText": "friend"
   },
   {
     "id": 9,
-    "word": "frog",
-    "meaning": "青蛙",
-    "note": "frog 是青蛙。",
-    "imageHint": "a friendly green frog beside a pond",
-    "phonetic": "/frɑːɡ/",
-    "audioKey": "frog",
-    "spokenText": "frog"
+    "word": "hope",
+    "meaning": "希望",
+    "note": "hope 表示希望一件好事发生。",
+    "imageHint": "a child hoping for a sunny day while looking out a window",
+    "phonetic": "/hoʊp/",
+    "audioKey": "hope",
+    "spokenText": "hope"
+  },
+  {
+    "id": 10,
+    "word": "smile",
+    "meaning": "微笑",
+    "note": "smile 表示微笑。",
+    "imageHint": "a child with a warm smile",
+    "phonetic": "/smaɪl/",
+    "audioKey": "smile",
+    "spokenText": "smile"
+  },
+  {
+    "id": 11,
+    "word": "drive",
+    "meaning": "开车",
+    "note": "drive 表示开车。",
+    "imageHint": "an adult driving a car with a seat belt on",
+    "phonetic": "/draɪv/",
+    "audioKey": "drive",
+    "spokenText": "drive"
+  },
+  {
+    "id": 12,
+    "word": "strong",
+    "meaning": "强壮的",
+    "note": "strong 表示强壮、有力气。",
+    "imageHint": "a strong child showing arm muscles",
+    "phonetic": "/strɔːŋ/",
+    "audioKey": "strong",
+    "spokenText": "strong"
   }
 ]

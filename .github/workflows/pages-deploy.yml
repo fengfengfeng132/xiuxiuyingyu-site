@@ -14,6 +14,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Build and Deploy
+    env:
+      WRANGLER_VERSION: "4.151.3"
 
     steps:
       - name: Checkout
@@ -31,12 +33,19 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Install deployment runtime
+        run: |
+          WORKERD_VERSION=$(npm view "wrangler@$WRANGLER_VERSION" dependencies.workerd)
+          npm install --no-save --package-lock=false --include=optional \
+            "wrangler@$WRANGLER_VERSION" "@cloudflare/workerd-linux-64@$WORKERD_VERSION"
+          npx --no-install wrangler --version
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: "4"
+          wranglerVersion: ${{ env.WRANGLER_VERSION }}
           packageManager: "npm"
           command: pages deploy dist --project-name=xiuxiuyingyu --branch=main
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}

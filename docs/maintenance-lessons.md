@@ -19,6 +19,30 @@
 
 ---
 
+## 2026-10-27 发布工具缺少 Linux workerd 运行文件
+
+### 问题现象与根因
+
+- 12 词提交 `69bcf2c` 已推送，GitHub Actions 安装应用依赖和构建均成功，但发布失败，线上继续使用旧词表。
+- 失败日志显示自动安装 `wrangler@4` 后缺少 `@cloudflare/workerd-linux-64`，连 `wrangler --version` 都无法执行。
+- workerd 将平台二进制作为 optionalDependencies；该次安装未取得 Linux 包，但 npm 仍报告安装成功。日志不足以确认是下载失败还是 npm 的可选依赖处理导致漏装。
+
+### 处理
+
+1. 固定该次实际使用的 Wrangler 版本 `4.151.3`，避免大版本范围在每次发布时变化。
+2. 新增发布工具安装步骤，从该固定版本的官方元数据读取匹配的 workerd 版本，同时显式安装 Wrangler 和 Linux 二进制包。
+3. 使用 `--no-save --package-lock=false --include=optional`，只准备 CI 发布工具，不改应用依赖清单或锁文件。
+4. 在交给 wrangler-action 前执行版本检查；保留原 Cloudflare 项目、分支、凭据和发布命令。
+
+### 验证与后续提醒
+
+- 官方元数据确认 Wrangler 4.151.3 使用 workerd 1.20261019.1；对应 Linux 二进制下载地址返回 HTTP 200。
+- 发布前检查 YAML 结构并执行 lint、完整测试和构建；Linux 运行文件的执行以新 GitHub Actions 和实际线上版本为准。
+- 以后遇到“构建成功但网站没更新”，必须查看发布步骤结论并核对线上资源哈希；推送成功不能当作部署成功。
+- 升级 Wrangler 时继续根据它的依赖版本选择平台二进制，不能直接安装 workerd 的 latest。
+
+---
+
 ## 2026-10-22 每日词替换为家庭成员与常用词 12 词
 
 ### 范围

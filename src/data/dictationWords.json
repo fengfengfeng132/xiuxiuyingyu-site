@@ -1,83 +1,83 @@
 [
   {
     "id": 1,
-    "word": "father",
-    "meaning": "爸爸",
-    "note": "father 是爸爸。",
-    "imageHint": "a father spending time with his child",
-    "phonetic": "/ˈfɑːðər/",
-    "audioKey": "father",
-    "spokenText": "father"
+    "word": "am",
+    "meaning": "是（和 I 连用）",
+    "note": "am 和 I 连用，例如 I am happy.（我很开心。）",
+    "imageHint": "a happy child pointing to themselves",
+    "phonetic": "/æm/",
+    "audioKey": "am",
+    "spokenText": "am"
   },
   {
     "id": 2,
-    "word": "mother",
-    "meaning": "妈妈",
-    "note": "mother 是妈妈。",
-    "imageHint": "a mother spending time with her child",
-    "phonetic": "/ˈmʌðər/",
-    "audioKey": "mother",
-    "spokenText": "mother"
+    "word": "is",
+    "meaning": "是（用于单数）",
+    "note": "is 常和 he、she、it 或单个人、物连用，例如 He is a student.（他是一名学生。）",
+    "imageHint": "one student standing with a school bag",
+    "phonetic": "/ɪz/",
+    "audioKey": "is",
+    "spokenText": "is"
   },
   {
     "id": 3,
-    "word": "brother",
-    "meaning": "兄弟",
-    "note": "brother 可以指哥哥，也可以指弟弟。",
-    "imageHint": "two brothers playing together",
-    "phonetic": "/ˈbrʌðər/",
-    "audioKey": "brother",
-    "spokenText": "brother"
+    "word": "are",
+    "meaning": "是（和 you 或复数连用）",
+    "note": "are 常和 you、we、they 连用，例如 We are friends.（我们是朋友。）",
+    "imageHint": "a group of children standing together as friends",
+    "phonetic": "/ɑːr/",
+    "audioKey": "are",
+    "spokenText": "are"
   },
   {
     "id": 4,
-    "word": "sister",
-    "meaning": "姐妹",
-    "note": "sister 可以指姐姐，也可以指妹妹。",
-    "imageHint": "two sisters playing together",
-    "phonetic": "/ˈsɪstər/",
-    "audioKey": "sister",
-    "spokenText": "sister"
+    "word": "isn't",
+    "meaning": "不是（is not 的缩写）",
+    "note": "isn't 是 is not 的缩写，例如 It isn't a dog.（它不是一只狗。）",
+    "imageHint": "a cat beside a crossed out picture of a dog",
+    "phonetic": "/ˈɪzənt/",
+    "audioKey": "isn't",
+    "spokenText": "isn't"
   },
   {
     "id": 5,
-    "word": "family",
-    "meaning": "家庭",
-    "note": "family 表示家庭，也可以指一家人。",
-    "imageHint": "a happy family standing together",
-    "phonetic": "/ˈfæməli/",
-    "audioKey": "family",
-    "spokenText": "family"
+    "word": "aren't",
+    "meaning": "不是（are not 的缩写）",
+    "note": "aren't 是 are not 的缩写，例如 They aren't teachers.（他们不是老师。）",
+    "imageHint": "two young students holding school bags",
+    "phonetic": "/ɑːrnt/",
+    "audioKey": "aren't",
+    "spokenText": "aren't"
   },
   {
     "id": 6,
-    "word": "grandfather",
-    "meaning": "爷爷/外公",
-    "note": "grandfather 可以指爷爷，也可以指外公。",
-    "imageHint": "a grandfather reading a book with his grandchild",
-    "phonetic": "/ˈɡrænfɑːðər/",
-    "audioKey": "grandfather",
-    "spokenText": "grandfather"
+    "word": "cry",
+    "meaning": "哭",
+    "note": "cry 表示哭、流眼泪。",
+    "imageHint": "a child crying with tears on their cheeks",
+    "phonetic": "/kraɪ/",
+    "audioKey": "cry",
+    "spokenText": "cry"
   },
   {
     "id": 7,
-    "word": "grandmother",
-    "meaning": "奶奶/外婆",
-    "note": "grandmother 可以指奶奶，也可以指外婆。",
-    "imageHint": "a grandmother reading a book with her grandchild",
-    "phonetic": "/ˈɡrænmʌðər/",
-    "audioKey": "grandmother",
-    "spokenText": "grandmother"
+    "word": "drive",
+    "meaning": "开车",
+    "note": "drive 表示开车。",
+    "imageHint": "an adult driving a car with a seat belt on",
+    "phonetic": "/draɪv/",
+    "audioKey": "drive",
+    "spokenText": "drive"
   },
   {
     "id": 8,
-    "word": "friend",
-    "meaning": "朋友",
-    "note": "friend 是朋友。",
-    "imageHint": "two children who are friends playing together",
-    "phonetic": "/frend/",
-    "audioKey": "friend",
-    "spokenText": "friend"
+    "word": "funny",
+    "meaning": "有趣的",
+    "note": "funny 表示有趣、让人发笑。",
+    "imageHint": "a child making a funny face",
+    "phonetic": "/ˈfʌni/",
+    "audioKey": "funny",
+    "spokenText": "funny"
   },
   {
     "id": 9,
@@ -91,6 +91,26 @@
   },
   {
     "id": 10,
+    "word": "laugh",
+    "meaning": "笑",
+    "note": "laugh 表示笑出声。",
+    "imageHint": "children laughing together at a funny story",
+    "phonetic": "/læf/",
+    "audioKey": "laugh",
+    "spokenText": "laugh"
+  },
+  {
+    "id": 11,
+    "word": "nice",
+    "meaning": "友好的",
+    "note": "nice 可以形容人友好，也可以表示很好。",
+    "imageHint": "a friendly child helping another child pick up books",
+    "phonetic": "/naɪs/",
+    "audioKey": "nice",
+    "spokenText": "nice"
+  },
+  {
+    "id": 12,
     "word": "smile",
     "meaning": "微笑",
     "note": "smile 表示微笑。",
@@ -100,17 +120,7 @@
     "spokenText": "smile"
   },
   {
-    "id": 11,
-    "word": "drive",
-    "meaning": "开车",
-    "note": "drive 表示开车。",
-    "imageHint": "an adult driving a car with a seat belt on",
-    "phonetic": "/draɪv/",
-    "audioKey": "drive",
-    "spokenText": "drive"
-  },
-  {
-    "id": 12,
+    "id": 13,
     "word": "strong",
     "meaning": "强壮的",
     "note": "strong 表示强壮、有力气。",
@@ -118,5 +128,25 @@
     "phonetic": "/strɔːŋ/",
     "audioKey": "strong",
     "spokenText": "strong"
+  },
+  {
+    "id": 14,
+    "word": "student",
+    "meaning": "学生",
+    "note": "student 是学生。",
+    "imageHint": "a student reading a book at a classroom desk",
+    "phonetic": "/ˈstuːdənt/",
+    "audioKey": "student",
+    "spokenText": "student"
+  },
+  {
+    "id": 15,
+    "word": "young",
+    "meaning": "年轻的",
+    "note": "young 表示年轻的、年纪小的。",
+    "imageHint": "a young child playing in a park",
+    "phonetic": "/jʌŋ/",
+    "audioKey": "young",
+    "spokenText": "young"
   }
 ]

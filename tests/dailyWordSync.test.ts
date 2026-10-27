@@ -7,32 +7,38 @@ import { dictationWords } from '../src/data/dictationWords';
 import { fetchLocalUsAudioUrl, fetchLocalUsSlowAudioUrl } from '../src/lib/phonetic';
 
 const expectedWords = [
-  'father',
-  'mother',
-  'brother',
-  'sister',
-  'family',
-  'grandfather',
-  'grandmother',
-  'friend',
-  'hope',
-  'smile',
+  'am',
+  'is',
+  'are',
+  "isn't",
+  "aren't",
+  'cry',
   'drive',
+  'funny',
+  'hope',
+  'laugh',
+  'nice',
+  'smile',
   'strong',
+  'student',
+  'young',
 ];
 const expectedMeanings = [
-  '爸爸',
-  '妈妈',
-  '兄弟',
-  '姐妹',
-  '家庭',
-  '爷爷/外公',
-  '奶奶/外婆',
-  '朋友',
-  '希望',
-  '微笑',
+  '是（和 I 连用）',
+  '是（用于单数）',
+  '是（和 you 或复数连用）',
+  '不是（is not 的缩写）',
+  '不是（are not 的缩写）',
+  '哭',
   '开车',
+  '有趣的',
+  '希望',
+  '笑',
+  '友好的',
+  '微笑',
   '强壮的',
+  '学生',
+  '年轻的',
 ];
 const expectedAudioKeys = expectedWords;
 
@@ -85,16 +91,32 @@ function readWavDurationSeconds(relativePath: string): number {
 }
 
 describe('daily word sync', () => {
-  it('keeps the dictation word list on the requested 12-entry set', () => {
+  it('keeps the dictation word list on the requested 15-entry set', () => {
     expect(dictationWords.map((item) => item.word)).toEqual(expectedWords);
     expect(dictationWords.map((item) => item.meaning)).toEqual(expectedMeanings);
   });
 
-  it('reuses the same 12 entries in daily learning questions', () => {
+  it('reuses the same 15 entries in daily learning questions', () => {
     expect(dailyLearningQuestions).toHaveLength(expectedWords.length);
     expect(dailyLearningQuestions.map((item) => item.prompt)).toEqual(expectedWords);
     expect(dailyLearningQuestions.map((item) => item.audioText)).toEqual(expectedWords);
     expect(dailyLearningQuestions.map((item) => item.audioKey ?? item.audioText)).toEqual(expectedAudioKeys);
+  });
+
+  it('keeps contraction spelling, spoken text and audio keys aligned', () => {
+    ["isn't", "aren't"].forEach((word) => {
+      const entry = dictationWords.find((item) => item.word === word);
+      expect(entry?.audioKey).toBe(word);
+      expect(entry?.spokenText).toBe(word);
+    });
+  });
+
+  it('gives every daily question four distinct choices and the matching answer', () => {
+    dailyLearningQuestions.forEach((question, index) => {
+      expect(new Set(question.options).size).toBe(4);
+      expect(question.options?.[question.answerIndex ?? -1]).toBe(expectedMeanings[index]);
+      expect(question.phonetic).toBe(dictationWords[index].phonetic);
+    });
   });
 
   it('does not carry past-tense labels into the replacement lesson', () => {

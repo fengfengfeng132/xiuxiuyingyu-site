@@ -361,10 +361,8 @@ export function DictationPage() {
     if (spellingInput.trim().length === 0) return;
 
     const trimmedInput = spellingInput.trim();
-    const normalizedInput = trimmedInput.toLowerCase();
-    const normalizedAnswer = currentStep.word.word.toLowerCase();
-    const isCorrect = normalizedInput === normalizedAnswer;
     const nextSpellingFeedback = buildSpellingFeedback(trimmedInput, currentStep.word.word);
+    const isCorrect = nextSpellingFeedback.isCorrect;
 
     setAnswers((previous) => [
       ...previous,

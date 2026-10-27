@@ -8,6 +8,10 @@ export interface SpellingFeedback {
   typedLetters: SpellingLetterFeedback[];
 }
 
+function normalizeSpelling(value: string): string {
+  return value.toLowerCase().replace(/[\u2018\u2019]/g, "'");
+}
+
 export function buildSpellingFeedback(userInput: string, correctWord: string): SpellingFeedback {
   const typedWord = userInput.trim();
   const answerWord = correctWord.trim();
@@ -21,12 +25,12 @@ export function buildSpellingFeedback(userInput: string, correctWord: string): S
 
     return {
       char: typedChar,
-      isWrong: typedChar.toLowerCase() !== expectedChar.toLowerCase(),
+      isWrong: normalizeSpelling(typedChar) !== normalizeSpelling(expectedChar),
     };
   });
 
   return {
-    isCorrect: typedWord.toLowerCase() === answerWord.toLowerCase(),
+    isCorrect: normalizeSpelling(typedWord) === normalizeSpelling(answerWord),
     typedLetters,
   };
 }

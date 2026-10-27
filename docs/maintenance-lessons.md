@@ -26,13 +26,14 @@
 - 12 词提交 `69bcf2c` 已推送，GitHub Actions 安装应用依赖和构建均成功，但发布失败，线上继续使用旧词表。
 - 失败日志显示自动安装 `wrangler@4` 后缺少 `@cloudflare/workerd-linux-64`，连 `wrangler --version` 都无法执行。
 - workerd 将平台二进制作为 optionalDependencies；该次安装未取得 Linux 包，但 npm 仍报告安装成功。日志不足以确认是下载失败还是 npm 的可选依赖处理导致漏装。
+- 首次修复在已有应用 node_modules 中追加工具，CI 的 npm 10.9.9 又报 `Cannot read properties of null (reading 'edgesOut')`，因此需隔离工具安装目录。
 
 ### 处理
 
 1. 固定该次实际使用的 Wrangler 版本 `4.151.3`，避免大版本范围在每次发布时变化。
 2. 新增发布工具安装步骤，从该固定版本的官方元数据读取匹配的 workerd 版本，同时显式安装 Wrangler 和 Linux 二进制包。
-3. 使用 `--no-save --package-lock=false --include=optional`，只准备 CI 发布工具，不改应用依赖清单或锁文件。
-4. 在交给 wrangler-action 前执行版本检查；保留原 Cloudflare 项目、分支、凭据和发布命令。
+3. 使用 `--prefix "$RUNNER_TEMP/xiuxiu-wrangler" --include=optional`，在全新临时目录安装发布工具及其依赖，应用依赖清单、锁文件和 node_modules 不受影响。
+4. 通过完整路径执行版本检查和发布，替换会自动向应用目录安装工具的 wrangler-action；保留原 Cloudflare 项目、分支、凭据和发布命令。
 
 ### 验证与后续提醒
 

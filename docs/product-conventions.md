@@ -17,10 +17,14 @@
 - “把这次的新单词替换进去”
 - “把相应发音也一起替换”
 
-遇到这类需求时，默认必须同时更新：
+当前数据约定（2026-11-11 更新）：
 
-- `src/data/dictationWords.ts`
-- `src/data/dailyLearningQuestions.ts`
+- `src/data/dictationWords.json` 是当前每日词的唯一词源；`dictationWords.ts` 只负责类型和导出。
+- 旧每日词保存在 `src/data/archivedDictationWords.json`，继续进入日常学习；归档时保留原 ID，后续新课使用未占用 ID，不能让旧错题记录指向新词。
+- `src/data/dailyLearningQuestions.ts` 从这两份不同课次的数据自动生成题目，不另写一份手工词表。
+- 两组词的普通/慢速音频都要保留；不能因为替换每日课而删除归档词音频。
+- 首页“今日 10 分钟”优先抽当前每日词；“每日 10 题”优先抽归档词复习，不足 10 题时从常规题库补齐。
+- `examples` 保存教材英文原句、中文翻译、音频键和来源。重复词合并，但不同例句都保留。
 
 不要只改一个文件，否则容易出现：
 
@@ -30,10 +34,12 @@
 
 ## 当前播放策略
 
-截至 `2026-05-16`，当前产品约定如下：
+截至 `2026-11-11`，当前产品约定如下：
 
 - 听写单词模块正常播放：走本地生成的 `public/audio/words/us/*.wav`
-- 听写单词模块慢速播放：走本地 `IndexTTS2` 生成的 `public/audio/words/us-slow/*.wav`
+- 听写及归档单词慢速播放：走独立生成的 `public/audio/words/us-slow/*.wav`
+- 例句正常/慢速播放：分别使用 `public/audio/examples/us/*.wav` 和 `public/audio/examples/us-slow/*.wav`
+- 当前沿用已验证的 `New-DailyWordAudio.ps1` / Microsoft Zira Desktop 生成流程，正常和慢速分别合成，不做时间拉伸
 - 其他未接入本地音频 catalog 的普通播放，才允许继续回退到统一的美式词典接口
 - 不允许前端自己把音频拉慢来伪造慢速
 
@@ -95,10 +101,10 @@
 
 默认流程：
 
-1. 更新 `src/data/dictationWords.ts`
-2. 更新 `src/data/dailyLearningQuestions.ts`
-3. 生成并替换对应音频
-4. 跑校验
+1. 将旧每日词归档，保留 ID；更新 `src/data/dictationWords.json`，给新词分配未占用 ID
+2. 确认听写和自动生成的日常学习题同步，归档词仍在题库中
+3. 在临时目录生成新词及例句的普通/慢速音频，验证后复制到正式目录，保留归档词音频
+4. 校验词表、题目、例句、音频文件集合与已有错题 ID，再跑 lint、test、build
 
 不要只换词表，不换音频。  
 不要只换听写，不换日常学习。
@@ -110,7 +116,14 @@
 - `public/audio/words/us/*.wav`
 - `public/audio/words/us-slow/*.wav`
 
-即使当前正常播放主要走词典接口，本地 `us/*.wav` 仍然建议同步更新，作为统一声音的备用资源。
+有例句时还要同步生成 `public/audio/examples/us/*.wav` 和 `public/audio/examples/us-slow/*.wav`。每日词和归档词均优先使用本地资源。
+
+### 例句学习与背诵
+
+- 例句放在听写的新词学习卡中，支持中英对照、正常/慢速听读，以及遮住英文看中文背诵。
+- 辨义或拼写作答前不渲染例句，避免从句子或翻译中看到答案；提交后才展示。
+- 日常学习中，带例句的题提交后停留复盘，再点下一题；保存判题和发星不能重复执行。
+- 切词时恢复英文显示并停止上一词音频，不另加背诵强制过关或未经验证的自动评分。
 
 ### C. 用户说“读音不够正宗 / 不够清楚 / 有回音”
 

@@ -2,45 +2,24 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { dailyLearningQuestions } from '../src/data/dailyLearningQuestions';
-import { dictationWords } from '../src/data/dictationWords';
+import { archivedLearningQuestions, dailyLearningQuestions } from '../src/data/dailyLearningQuestions';
+import { archivedDictationWords, dictationWords } from '../src/data/dictationWords';
+import { questionBank } from '../src/data/loadQuestionBank';
 import { fetchLocalUsAudioUrl, fetchLocalUsSlowAudioUrl } from '../src/lib/phonetic';
 
 const expectedWords = [
-  'am',
-  'is',
-  'are',
-  "isn't",
-  "aren't",
-  'cry',
-  'drive',
-  'funny',
-  'hope',
-  'laugh',
-  'nice',
-  'smile',
-  'strong',
-  'student',
-  'young',
+  'baby', 'clean', 'eat', 'enjoy', 'family', 'fruit', 'jump', 'kind', 'man', 'parent',
+  'elephant', 'tortoise', 'sad', 'lonely', 'scared', 'play', 'sleep',
 ];
 const expectedMeanings = [
-  '是（和 I 连用）',
-  '是（用于单数）',
-  '是（和 you 或复数连用）',
-  '不是（is not 的缩写）',
-  '不是（are not 的缩写）',
-  '哭',
-  '开车',
-  '有趣的',
-  '希望',
-  '笑',
-  '友好的',
-  '微笑',
-  '强壮的',
-  '学生',
-  '年轻的',
+  '婴儿', '清理', '吃', '喜欢', '家庭', '水果', '跳', '种类', '男人', '父亲或母亲',
+  '大象', '陆龟', '难过的', '孤独的', '害怕的', '玩', '睡觉',
 ];
-const expectedAudioKeys = expectedWords;
+const expectedArchivedWords = [
+  'am', 'is', 'are', "isn't", "aren't", 'cry', 'drive', 'funny', 'hope', 'laugh',
+  'nice', 'smile', 'strong', 'student', 'young',
+];
+const expectedAudioKeys = [...expectedArchivedWords, ...expectedWords];
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(testDir, '..');
@@ -91,21 +70,21 @@ function readWavDurationSeconds(relativePath: string): number {
 }
 
 describe('daily word sync', () => {
-  it('keeps the dictation word list on the requested 15-entry set', () => {
+  it('keeps the dictation word list on the requested 17-entry set', () => {
     expect(dictationWords.map((item) => item.word)).toEqual(expectedWords);
     expect(dictationWords.map((item) => item.meaning)).toEqual(expectedMeanings);
   });
 
-  it('reuses the same 15 entries in daily learning questions', () => {
+  it('reuses the same 17 entries in daily learning questions', () => {
     expect(dailyLearningQuestions).toHaveLength(expectedWords.length);
     expect(dailyLearningQuestions.map((item) => item.prompt)).toEqual(expectedWords);
     expect(dailyLearningQuestions.map((item) => item.audioText)).toEqual(expectedWords);
-    expect(dailyLearningQuestions.map((item) => item.audioKey ?? item.audioText)).toEqual(expectedAudioKeys);
+    expect(dailyLearningQuestions.map((item) => item.audioKey ?? item.audioText)).toEqual(expectedWords);
   });
 
   it('keeps contraction spelling, spoken text and audio keys aligned', () => {
     ["isn't", "aren't"].forEach((word) => {
-      const entry = dictationWords.find((item) => item.word === word);
+      const entry = archivedDictationWords.find((item) => item.word === word);
       expect(entry?.audioKey).toBe(word);
       expect(entry?.spokenText).toBe(word);
     });
@@ -119,17 +98,34 @@ describe('daily word sync', () => {
     });
   });
 
+  it('moves all previous words into regular learning without reusing their saved question IDs', () => {
+    expect(archivedDictationWords.map((word) => word.word)).toEqual(expectedArchivedWords);
+    expect(archivedLearningQuestions.map((question) => question.id)).toEqual(
+      expectedArchivedWords.map((_, index) => 9001 + index),
+    );
+    expect(dailyLearningQuestions.map((question) => question.id)).toEqual(
+      expectedWords.map((_, index) => 9101 + index),
+    );
+    archivedLearningQuestions.forEach((question) => {
+      expect(question.tags).toContain('archived-dictation');
+      expect(question.tags).not.toContain('daily-dictation');
+      expect(questionBank.find((item) => item.id === question.id)).toEqual(question);
+      expect(questionBank.filter((item) => item.prompt === question.prompt)).toHaveLength(1);
+    });
+    expect(new Set(questionBank.map((question) => question.id)).size).toBe(questionBank.length);
+  });
+
   it('does not carry past-tense labels into the replacement lesson', () => {
     expect(dictationWords.some((item) => item.grammarLabel)).toBe(false);
     expect(dailyLearningQuestions.some((item) => item.grammarLabel)).toBe(false);
   });
 
-  it('keeps normal and slow local audio filenames synced with the current word set', () => {
+  it('keeps normal and slow audio for both the current and archived word sets', () => {
     expect(readAudioWordSet('public/audio/words/us')).toEqual([...expectedAudioKeys].sort());
     expect(readAudioWordSet('public/audio/words/us-slow')).toEqual([...expectedAudioKeys].sort());
   });
 
-  it('maps each current word to local audio URLs that exist on disk', () => {
+  it('maps each current and archived word to local audio URLs that exist on disk', () => {
     const normalFileNames = readAudioFileNameSet('public/audio/words/us');
     const slowFileNames = readAudioFileNameSet('public/audio/words/us-slow');
 

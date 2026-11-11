@@ -24,7 +24,7 @@ const routeSteps = [
   },
   {
     title: '每日 10 题',
-    desc: '巩固提升',
+    desc: '复习之前学过的词',
     meta: '8/10 题',
     icon: '/images/ui-ipad/review-book.png',
     query: 'mode=all&train=daily20',

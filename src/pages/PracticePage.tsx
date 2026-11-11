@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { ExampleSentences } from '../components/ExampleSentences';
 import { ProgressBar } from '../components/ProgressBar';
 import { questionBank } from '../data/loadQuestionBank';
 import {
@@ -22,6 +23,7 @@ import {
   recognizeSpeechOnce,
 } from '../lib/speechAssessment';
 import { pickDailyQuestions, pickPracticeSessionQuestions } from '../lib/practiceUtils';
+import { getSavedExampleReview } from '../lib/practiceExampleReview';
 import { awardPerfectTrainingStar } from '../lib/starRewards';
 import { createSession, loadState, saveState } from '../lib/storage';
 import { playWrongAnswerTone, updateWrongBookForQuestion } from '../lib/studyFeedback';
@@ -89,21 +91,21 @@ function pickUsVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | nul
   );
 }
 
-function pickDailyLearningSet(bank: Question[], count: number): Question[] {
-  const dailyDictationBank = bank.filter((item) => item.tags.includes(DAILY_DICTATION_TAG));
-  if (!dailyDictationBank.length) {
+function pickDailyLearningSet(bank: Question[], count: number, lessonTag = DAILY_DICTATION_TAG): Question[] {
+  const preferredBank = bank.filter((item) => item.tags.includes(lessonTag));
+  if (!preferredBank.length) {
     return pickDailyQuestions(bank, count);
   }
 
-  const pickedDailyDictation = pickDailyQuestions(dailyDictationBank, Math.min(count, dailyDictationBank.length));
-  if (pickedDailyDictation.length >= count) {
-    return pickedDailyDictation;
+  const preferredQuestions = pickDailyQuestions(preferredBank, count);
+  if (preferredQuestions.length >= count) {
+    return preferredQuestions;
   }
 
-  const pickedIds = new Set(pickedDailyDictation.map((item) => item.id));
+  const pickedIds = new Set(preferredQuestions.map((item) => item.id));
   const fallbackBank = bank.filter((item) => !pickedIds.has(item.id));
-  const fallback = pickDailyQuestions(fallbackBank, count - pickedDailyDictation.length);
-  return [...pickedDailyDictation, ...fallback];
+  const fallback = pickDailyQuestions(fallbackBank, count - preferredQuestions.length);
+  return [...preferredQuestions, ...fallback];
 }
 
 function shuffleArray<T>(arr: T[]): T[] {
@@ -225,6 +227,7 @@ export function PracticePage() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [feedback, setFeedback] = useState('');
+  const [submittedExampleQuestionId, setSubmittedExampleQuestionId] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
   const [listenRate, setListenRate] = useState(1);
   const [sentenceCursor, setSentenceCursor] = useState(0);
@@ -274,7 +277,7 @@ export function PracticePage() {
     }
 
     if (train === 'daily20') {
-      bank = pickDailyLearningSet(bank, 10);
+      bank = pickDailyLearningSet(bank, 10, 'archived-dictation');
     }
 
     if (train === 'level10') {
@@ -484,11 +487,13 @@ export function PracticePage() {
     const state = loadState();
     const session = state.activeSession;
     const existed = session?.answers.find((a) => a.questionId === question.id);
+    const savedExampleReview = getSavedExampleReview(question, existed);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelected(existed && existed.selectedIndex >= 0 ? existed.selectedIndex : null);
-    setFeedback('');
-    setSpellingInput('');
+    setFeedback(savedExampleReview?.feedback ?? '');
+    setSubmittedExampleQuestionId(savedExampleReview?.questionId ?? null);
+    setSpellingInput(savedExampleReview?.spellingInput ?? '');
     setSpeechChecking(false);
     setSpeechCheckMessage('');
     setSpeechCheckPassed(null);
@@ -521,7 +526,7 @@ export function PracticePage() {
 
   useEffect(() => {
     if (!question) return;
-    if (!question.tags.includes(DAILY_DICTATION_TAG)) return;
+    if (!question.tags.includes(DAILY_DICTATION_TAG) && !question.tags.includes('archived-dictation')) return;
     if (!isSingleEnglishWord(question.prompt)) return;
     void preloadLocalUsSlowWordAudio(question.audioKey ?? question.prompt);
   }, [question]);
@@ -553,7 +558,7 @@ export function PracticePage() {
   const speakAudio = useCallback(async (text: string, rate: number) => {
     if (!text) return;
 
-    const isDailyDictationWord = Boolean(question?.tags.includes(DAILY_DICTATION_TAG));
+    const isDailyDictationWord = Boolean(question?.tags.includes(DAILY_DICTATION_TAG) || question?.tags.includes('archived-dictation'));
     if (isDailyDictationWord) {
       const audioKey = question?.audioKey ?? text;
       if (rate < 1) {
@@ -683,8 +688,54 @@ export function PracticePage() {
     );
   };
 
+  const advanceAfterAnswer = (nextFeedback = feedback, flow = questionFlow) => {
+    const state = loadState();
+    const session = state.activeSession;
+    if (!session) {
+      setFeedback('学习记录暂不可用，请刷新后重试。');
+      return;
+    }
+
+    stopUsWordAudioPlayback();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    const nextIndex = Math.min(questionIndex + 1, Math.max(flow.length - 1, 0));
+    session.currentQuestionIndex = Math.max(session.currentQuestionIndex, nextIndex);
+
+    if (questionIndex >= flow.length - 1) {
+      const finishedAt = new Date().toISOString();
+      session.finishedAt = finishedAt;
+      const rewarded = awardPerfectTrainingStar(
+        {
+          ...state,
+          activeSession: null,
+          sessions: [session, ...state.sessions].slice(0, 30),
+        },
+        {
+          sourceType: 'practice',
+          sourceId: session.id,
+          title: getTrainTitle(train),
+          score: session.score,
+          total: session.questionTotal ?? totalCount,
+          earnedAt: finishedAt,
+        },
+      );
+      saveState(rewarded.state);
+      navigate('/result');
+      return;
+    }
+
+    saveState(state);
+    const nextQuestionId = flow[nextIndex];
+    const nextQuestion = nextQuestionId !== undefined ? questionById.get(nextQuestionId) : undefined;
+    autoPlayAfterSubmitRef.current = Boolean(nextQuestion && isVocabQuestion(nextQuestion));
+    setFeedback(nextFeedback);
+    setQuestionIndex(nextIndex);
+  };
+
   const goPrev = () => {
     if (questionIndex === 0) return;
+    stopUsWordAudioPlayback();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     setFeedback('');
     setSpeechCheckMessage('');
     setSpeechCheckPassed(null);
@@ -693,7 +744,13 @@ export function PracticePage() {
   };
 
   const goNext = () => {
+    if (submittedExampleQuestionId === question.id) {
+      advanceAfterAnswer();
+      return;
+    }
     if (questionIndex >= totalCount - 1) return;
+    stopUsWordAudioPlayback();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     setFeedback('');
     setSpeechCheckMessage('');
     setSpeechCheckPassed(null);
@@ -702,6 +759,10 @@ export function PracticePage() {
   };
 
   const submit = () => {
+    if (submittedExampleQuestionId === question.id) {
+      advanceAfterAnswer();
+      return;
+    }
     if (isChoiceQuestion && selected === null) return;
     if (isSpellingQuestion && spellingInput.trim().length === 0) return;
 
@@ -713,6 +774,13 @@ export function PracticePage() {
       state.activeSession.answers.every((answer) => questionById.has(answer.questionId));
 
     const session = hasCompatibleSession && state.activeSession ? state.activeSession : createSession();
+    const savedExampleReview = getSavedExampleReview(question, session.answers.find((answer) => answer.questionId === question.id));
+    if (savedExampleReview) {
+      setSubmittedExampleQuestionId(savedExampleReview.questionId);
+      setFeedback(savedExampleReview.feedback);
+      setSpellingInput(savedExampleReview.spellingInput);
+      return;
+    }
     const selectedIndex = isChoiceQuestion ? (selected ?? 0) : isSpellingQuestion ? -1 : 0;
     const normalizedInput = spellingInput.trim().toLowerCase();
     const normalizedAnswer = question.prompt.trim().toLowerCase();
@@ -760,7 +828,7 @@ export function PracticePage() {
         if (reorderedFlow !== questionFlow) {
           nextFlow = reorderedFlow;
           setQuestionFlow(reorderedFlow);
-          nextFeedback += ' 已为你切换到相似题继续练习。';
+          nextFeedback += question.examples?.length ? ' 下一题会练习相似内容。' : ' 已为你切换到相似题继续练习。';
         }
       }
     } else {
@@ -769,41 +837,15 @@ export function PracticePage() {
       nextFeedback = nextStreak >= 3 ? `连续答对 ${nextStreak} 题，真棒！` : '回答正确。';
     }
 
-    const nextIndex = Math.min(questionIndex + 1, Math.max(nextFlow.length - 1, 0));
-    session.currentQuestionIndex = Math.max(session.currentQuestionIndex, nextIndex);
-
-    if (questionIndex >= nextFlow.length - 1) {
-      const finishedAt = new Date().toISOString();
-      session.finishedAt = finishedAt;
-      const rewarded = awardPerfectTrainingStar(
-        {
-          ...state,
-          activeSession: null,
-          sessions: [session, ...state.sessions].slice(0, 30),
-        },
-        {
-          sourceType: 'practice',
-          sourceId: session.id,
-          title: getTrainTitle(train),
-          score: session.score,
-          total: session.questionTotal ?? totalCount,
-          earnedAt: finishedAt,
-        },
-      );
-      saveState(rewarded.state);
-      navigate('/result');
+    state.activeSession = session;
+    session.currentQuestionIndex = Math.max(session.currentQuestionIndex, questionIndex);
+    saveState(state);
+    if (question.examples?.length && (isChoiceQuestion || isSpellingQuestion)) {
+      setSubmittedExampleQuestionId(question.id);
+      setFeedback(nextFeedback);
       return;
     }
-
-    state.activeSession = session;
-    saveState(state);
-
-    const nextQuestionId = nextFlow[nextIndex];
-    const nextQuestion = nextQuestionId !== undefined ? questionById.get(nextQuestionId) : undefined;
-    autoPlayAfterSubmitRef.current = Boolean(nextQuestion && isVocabQuestion(nextQuestion));
-
-    setFeedback(nextFeedback);
-    setQuestionIndex(nextIndex);
+    advanceAfterAnswer(nextFeedback, nextFlow);
   };
 
   const modeTitle = mode === 'vocab' ? '词汇' : mode === 'dialogue' ? '对话' : '全部';
@@ -817,7 +859,8 @@ export function PracticePage() {
   const cardSubtitle = train === 'audio' ? '听音后选择正确选项' : question.stem;
   const displayedPhonetic = question.phonetic || phonetic;
 
-  const submitDisabled = isChoiceQuestion
+  const hasSubmittedExampleQuestion = submittedExampleQuestionId === question.id;
+  const submitDisabled = hasSubmittedExampleQuestion ? false : isChoiceQuestion
     ? selected === null
     : isSpellingQuestion
       ? spellingInput.trim().length === 0
@@ -859,6 +902,9 @@ export function PracticePage() {
         </div>
         <img className="practice-card-dog" src="/images/ui-ipad/dog.png" alt="" aria-hidden="true" />
         {displayedPhonetic ? <p className="field-note">美式音标：{displayedPhonetic}</p> : null}
+        {(!isChoiceQuestion && !isSpellingQuestion || hasSubmittedExampleQuestion) && (question.partOfSpeech || question.sources?.length) ? (
+          <p className="word-learning-metadata">{[question.partOfSpeech, question.sources?.join(' · ')].filter(Boolean).join(' · ')}</p>
+        ) : null}
 
         <div className="listen-controls">
           <Button variant="ghost" onClick={() => playFullAudio(1)}>
@@ -899,6 +945,7 @@ export function PracticePage() {
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
+              disabled={hasSubmittedExampleQuestion}
             />
           </div>
         ) : isChoiceQuestion ? (
@@ -908,6 +955,7 @@ export function PracticePage() {
                 key={`${question.id}-${op}`}
                 className={`option ${selected === idx ? 'option-selected' : ''}`}
                 onClick={() => setSelected(idx)}
+                disabled={hasSubmittedExampleQuestion}
               >
                 {String.fromCharCode(65 + idx)}. {op}
               </button>
@@ -919,6 +967,11 @@ export function PracticePage() {
           </div>
         )}
 
+        <ExampleSentences
+          key={question.id}
+          examples={question.examples}
+          revealed={(!isChoiceQuestion && !isSpellingQuestion) || hasSubmittedExampleQuestion}
+        />
         {feedback ? <p className="feedback">{feedback}</p> : null}
 
         <div className="practice-action-dock">
@@ -926,11 +979,13 @@ export function PracticePage() {
             上一题
           </Button>
           <Button onClick={submit} disabled={submitDisabled}>
-            {isChoiceQuestion || isSpellingQuestion ? '提交' : '我会了，下一题'}
+            {hasSubmittedExampleQuestion ? questionIndex >= totalCount - 1 ? '查看结果' : '下一题' : isChoiceQuestion || isSpellingQuestion ? '提交' : '我会了，下一题'}
           </Button>
-          <Button variant="secondary" onClick={goNext} disabled={questionIndex >= totalCount - 1}>
-            下一题
-          </Button>
+          {!hasSubmittedExampleQuestion ? (
+            <Button variant="secondary" onClick={goNext} disabled={questionIndex >= totalCount - 1}>
+              下一题
+            </Button>
+          ) : null}
         </div>
       </Card>
     </main>

@@ -1,152 +1,383 @@
 [
   {
-    "id": 1,
-    "word": "am",
-    "meaning": "是（和 I 连用）",
-    "note": "am 和 I 连用，例如 I am happy.（我很开心。）",
-    "imageHint": "a happy child pointing to themselves",
-    "phonetic": "/æm/",
-    "audioKey": "am",
-    "spokenText": "am"
+    "id": 101,
+    "word": "baby",
+    "meaning": "婴儿",
+    "note": "baby 是刚出生不久的小宝宝。",
+    "imageHint": "a baby wrapped in a soft blanket",
+    "phonetic": "/ˈbeɪbi/",
+    "audioKey": "baby",
+    "spokenText": "baby",
+    "partOfSpeech": "n.",
+    "sources": [
+      "Word List"
+    ],
+    "examples": [
+      {
+        "text": "The baby cries a lot.",
+        "translation": "这个婴儿经常哭。",
+        "audioKey": "baby-1",
+        "source": "Word List"
+      }
+    ]
   },
   {
-    "id": 2,
-    "word": "is",
-    "meaning": "是（用于单数）",
-    "note": "is 常和 he、she、it 或单个人、物连用，例如 He is a student.（他是一名学生。）",
-    "imageHint": "one student standing with a school bag",
-    "phonetic": "/ɪz/",
-    "audioKey": "is",
-    "spokenText": "is"
+    "id": 102,
+    "word": "clean",
+    "meaning": "清理",
+    "note": "clean 表示把东西打扫干净。",
+    "imageHint": "a girl cleaning the floor with a mop",
+    "phonetic": "/kliːn/",
+    "audioKey": "clean",
+    "spokenText": "clean",
+    "partOfSpeech": "v.",
+    "sources": [
+      "Word List"
+    ],
+    "examples": [
+      {
+        "text": "She cleans the floor.",
+        "translation": "她打扫地板。",
+        "audioKey": "clean-1",
+        "source": "Word List"
+      }
+    ]
   },
   {
-    "id": 3,
-    "word": "are",
-    "meaning": "是（和 you 或复数连用）",
-    "note": "are 常和 you、we、they 连用，例如 We are friends.（我们是朋友。）",
-    "imageHint": "a group of children standing together as friends",
-    "phonetic": "/ɑːr/",
-    "audioKey": "are",
-    "spokenText": "are"
+    "id": 103,
+    "word": "eat",
+    "meaning": "吃",
+    "note": "eat 表示吃东西。",
+    "imageHint": "children eating lunch together at a table",
+    "phonetic": "/iːt/",
+    "audioKey": "eat",
+    "spokenText": "eat",
+    "partOfSpeech": "v.",
+    "sources": [
+      "Word List",
+      "Unit 2"
+    ],
+    "examples": [
+      {
+        "text": "The students eat lunch.",
+        "translation": "学生们吃午饭。",
+        "audioKey": "eat-1",
+        "source": "Word List"
+      },
+      {
+        "text": "They eat together.",
+        "translation": "他们一起吃饭。",
+        "audioKey": "eat-2",
+        "source": "Unit 2"
+      }
+    ]
   },
   {
-    "id": 4,
-    "word": "isn't",
-    "meaning": "不是（is not 的缩写）",
-    "note": "isn't 是 is not 的缩写，例如 It isn't a dog.（它不是一只狗。）",
-    "imageHint": "a cat beside a crossed out picture of a dog",
-    "phonetic": "/ˈɪzənt/",
-    "audioKey": "isn't",
-    "spokenText": "isn't"
+    "id": 104,
+    "word": "enjoy",
+    "meaning": "喜欢",
+    "note": "enjoy 表示喜欢做一件事，做的时候很开心。",
+    "imageHint": "a girl enjoying painting in art class",
+    "phonetic": "/ɪnˈdʒɔɪ/",
+    "audioKey": "enjoy",
+    "spokenText": "enjoy",
+    "partOfSpeech": "v.",
+    "sources": [
+      "Word List"
+    ],
+    "examples": [
+      {
+        "text": "She enjoys art class.",
+        "translation": "她喜欢美术课。",
+        "audioKey": "enjoy-1",
+        "source": "Word List"
+      }
+    ]
   },
   {
-    "id": 5,
-    "word": "aren't",
-    "meaning": "不是（are not 的缩写）",
-    "note": "aren't 是 are not 的缩写，例如 They aren't teachers.（他们不是老师。）",
-    "imageHint": "two young students holding school bags",
-    "phonetic": "/ɑːrnt/",
-    "audioKey": "aren't",
-    "spokenText": "aren't"
+    "id": 105,
+    "word": "family",
+    "meaning": "家庭",
+    "note": "family 是爸爸、妈妈和其他家人组成的家庭。",
+    "imageHint": "a large happy family standing together",
+    "phonetic": "/ˈfæməli/",
+    "audioKey": "family",
+    "spokenText": "family",
+    "partOfSpeech": "n.",
+    "sources": [
+      "Word List"
+    ],
+    "examples": [
+      {
+        "text": "My family is big.",
+        "translation": "我家有很多人。",
+        "audioKey": "family-1",
+        "source": "Word List"
+      }
+    ]
   },
   {
-    "id": 6,
-    "word": "cry",
-    "meaning": "哭",
-    "note": "cry 表示哭、流眼泪。",
-    "imageHint": "a child crying with tears on their cheeks",
-    "phonetic": "/kraɪ/",
-    "audioKey": "cry",
-    "spokenText": "cry"
+    "id": 106,
+    "word": "fruit",
+    "meaning": "水果",
+    "note": "fruit 是苹果、香蕉这样的水果。",
+    "imageHint": "a bowl of colorful apples bananas and oranges",
+    "phonetic": "/fruːt/",
+    "audioKey": "fruit",
+    "spokenText": "fruit",
+    "partOfSpeech": "n.",
+    "sources": [
+      "Word List"
+    ],
+    "examples": [
+      {
+        "text": "She eats fruit every day.",
+        "translation": "她每天都吃水果。",
+        "audioKey": "fruit-1",
+        "source": "Word List"
+      }
+    ]
   },
   {
-    "id": 7,
-    "word": "drive",
-    "meaning": "开车",
-    "note": "drive 表示开车。",
-    "imageHint": "an adult driving a car with a seat belt on",
-    "phonetic": "/draɪv/",
-    "audioKey": "drive",
-    "spokenText": "drive"
+    "id": 107,
+    "word": "jump",
+    "meaning": "跳",
+    "note": "jump 表示双脚离开地面跳起来。",
+    "imageHint": "children jumping into a swimming pool",
+    "phonetic": "/dʒʌmp/",
+    "audioKey": "jump",
+    "spokenText": "jump",
+    "partOfSpeech": "v.",
+    "sources": [
+      "Word List"
+    ],
+    "examples": [
+      {
+        "text": "They jump into the water.",
+        "translation": "他们跳进水里。",
+        "audioKey": "jump-1",
+        "source": "Word List"
+      }
+    ]
   },
   {
-    "id": 8,
-    "word": "funny",
-    "meaning": "有趣的",
-    "note": "funny 表示有趣、让人发笑。",
-    "imageHint": "a child making a funny face",
-    "phonetic": "/ˈfʌni/",
-    "audioKey": "funny",
-    "spokenText": "funny"
+    "id": 108,
+    "word": "kind",
+    "meaning": "种类",
+    "note": "这里的 kind 表示种类，比如不同种类的苹果。",
+    "imageHint": "different kinds of red green and yellow apples",
+    "phonetic": "/kaɪnd/",
+    "audioKey": "kind",
+    "spokenText": "kind",
+    "partOfSpeech": "n.",
+    "sources": [
+      "Word List"
+    ],
+    "examples": [
+      {
+        "text": "There are many kinds of apples.",
+        "translation": "苹果有很多种。",
+        "audioKey": "kind-1",
+        "source": "Word List"
+      }
+    ]
   },
   {
-    "id": 9,
-    "word": "hope",
-    "meaning": "希望",
-    "note": "hope 表示希望一件好事发生。",
-    "imageHint": "a child hoping for a sunny day while looking out a window",
-    "phonetic": "/hoʊp/",
-    "audioKey": "hope",
-    "spokenText": "hope"
+    "id": 109,
+    "word": "man",
+    "meaning": "男人",
+    "note": "man 表示成年男子。",
+    "imageHint": "a man laughing while reading a funny story",
+    "phonetic": "/mæn/",
+    "audioKey": "man",
+    "spokenText": "man",
+    "partOfSpeech": "n.",
+    "sources": [
+      "Word List"
+    ],
+    "examples": [
+      {
+        "text": "The man laughs at the funny story.",
+        "translation": "那个男人看了这个有趣的故事，笑了起来。",
+        "audioKey": "man-1",
+        "source": "Word List"
+      }
+    ]
   },
   {
-    "id": 10,
-    "word": "laugh",
-    "meaning": "笑",
-    "note": "laugh 表示笑出声。",
-    "imageHint": "children laughing together at a funny story",
-    "phonetic": "/læf/",
-    "audioKey": "laugh",
-    "spokenText": "laugh"
+    "id": 110,
+    "word": "parent",
+    "meaning": "父亲或母亲",
+    "note": "parent 指爸爸或妈妈，parents 指父母。",
+    "imageHint": "a mother and father smiling beside their child",
+    "phonetic": "/ˈperənt/",
+    "audioKey": "parent",
+    "spokenText": "parent",
+    "partOfSpeech": "n.",
+    "sources": [
+      "Word List"
+    ],
+    "examples": [
+      {
+        "text": "Their parents are nice.",
+        "translation": "他们的父母很友好。",
+        "audioKey": "parent-1",
+        "source": "Word List"
+      }
+    ]
   },
   {
-    "id": 11,
-    "word": "nice",
-    "meaning": "友好的",
-    "note": "nice 可以形容人友好，也可以表示很好。",
-    "imageHint": "a friendly child helping another child pick up books",
-    "phonetic": "/naɪs/",
-    "audioKey": "nice",
-    "spokenText": "nice"
+    "id": 111,
+    "word": "elephant",
+    "meaning": "大象",
+    "note": "elephant 是有长鼻子和大耳朵的大象。",
+    "imageHint": "a little elephant with a long trunk and big ears",
+    "phonetic": "/ˈeləfənt/",
+    "audioKey": "elephant",
+    "spokenText": "elephant",
+    "partOfSpeech": "n.",
+    "sources": [
+      "Unit 2"
+    ],
+    "examples": [
+      {
+        "text": "Elliot is a little elephant.",
+        "translation": "埃利奥特是一头小象。",
+        "audioKey": "elephant-1",
+        "source": "Unit 2"
+      }
+    ]
   },
   {
-    "id": 12,
-    "word": "smile",
-    "meaning": "微笑",
-    "note": "smile 表示微笑。",
-    "imageHint": "a child with a warm smile",
-    "phonetic": "/smaɪl/",
-    "audioKey": "smile",
-    "spokenText": "smile"
+    "id": 112,
+    "word": "tortoise",
+    "meaning": "陆龟",
+    "note": "tortoise 是生活在陆地上的龟。",
+    "imageHint": "small tortoises walking on dry land",
+    "phonetic": "/ˈtɔːrtəs/",
+    "audioKey": "tortoise",
+    "spokenText": "tortoise",
+    "partOfSpeech": "n.",
+    "sources": [
+      "Unit 2"
+    ],
+    "examples": [
+      {
+        "text": "He sees some tortoises.",
+        "translation": "他看见几只陆龟。",
+        "audioKey": "tortoise-1",
+        "source": "Unit 2"
+      }
+    ]
   },
   {
-    "id": 13,
-    "word": "strong",
-    "meaning": "强壮的",
-    "note": "strong 表示强壮、有力气。",
-    "imageHint": "a strong child showing arm muscles",
-    "phonetic": "/strɔːŋ/",
-    "audioKey": "strong",
-    "spokenText": "strong"
+    "id": 113,
+    "word": "sad",
+    "meaning": "难过的",
+    "note": "sad 表示心里难过、不开心。",
+    "imageHint": "a sad little elephant with its head down",
+    "phonetic": "/sæd/",
+    "audioKey": "sad",
+    "spokenText": "sad",
+    "partOfSpeech": "adj.",
+    "sources": [
+      "Unit 2"
+    ],
+    "examples": [
+      {
+        "text": "Elliot is sad.",
+        "translation": "埃利奥特很难过。",
+        "audioKey": "sad-1",
+        "source": "Unit 2"
+      }
+    ]
   },
   {
-    "id": 14,
-    "word": "student",
-    "meaning": "学生",
-    "note": "student 是学生。",
-    "imageHint": "a student reading a book at a classroom desk",
-    "phonetic": "/ˈstuːdənt/",
-    "audioKey": "student",
-    "spokenText": "student"
+    "id": 114,
+    "word": "lonely",
+    "meaning": "孤独的",
+    "note": "lonely 表示没有人陪伴，感到孤独。",
+    "imageHint": "a lonely little elephant sitting apart from other animals",
+    "phonetic": "/ˈloʊnli/",
+    "audioKey": "lonely",
+    "spokenText": "lonely",
+    "partOfSpeech": "adj.",
+    "sources": [
+      "Unit 2"
+    ],
+    "examples": [
+      {
+        "text": "Elliot is lonely.",
+        "translation": "埃利奥特感到孤独。",
+        "audioKey": "lonely-1",
+        "source": "Unit 2"
+      }
+    ]
   },
   {
-    "id": 15,
-    "word": "young",
-    "meaning": "年轻的",
-    "note": "young 表示年轻的、年纪小的。",
-    "imageHint": "a young child playing in a park",
-    "phonetic": "/jʌŋ/",
-    "audioKey": "young",
-    "spokenText": "young"
+    "id": 115,
+    "word": "scared",
+    "meaning": "害怕的",
+    "note": "scared 表示看到或想到什么时感到害怕。",
+    "imageHint": "scared zebras running away together",
+    "phonetic": "/skerd/",
+    "audioKey": "scared",
+    "spokenText": "scared",
+    "partOfSpeech": "adj.",
+    "sources": [
+      "Unit 2"
+    ],
+    "examples": [
+      {
+        "text": "The zebras are scared and they run away.",
+        "translation": "斑马们很害怕，于是跑开了。",
+        "audioKey": "scared-1",
+        "source": "Unit 2"
+      }
+    ]
+  },
+  {
+    "id": 116,
+    "word": "play",
+    "meaning": "玩",
+    "note": "play 表示做游戏、玩耍。",
+    "imageHint": "children playing with toy blocks together",
+    "phonetic": "/pleɪ/",
+    "audioKey": "play",
+    "spokenText": "play",
+    "partOfSpeech": "v.",
+    "sources": [
+      "Unit 2"
+    ],
+    "examples": [
+      {
+        "text": "They play together.",
+        "translation": "他们一起玩。",
+        "audioKey": "play-1",
+        "source": "Unit 2"
+      }
+    ]
+  },
+  {
+    "id": 117,
+    "word": "sleep",
+    "meaning": "睡觉",
+    "note": "sleep 表示闭上眼睛睡觉、休息。",
+    "imageHint": "children sleeping in their beds in a bedroom",
+    "phonetic": "/sliːp/",
+    "audioKey": "sleep",
+    "spokenText": "sleep",
+    "partOfSpeech": "v.",
+    "sources": [
+      "Unit 2"
+    ],
+    "examples": [
+      {
+        "text": "They sleep in the bedroom.",
+        "translation": "他们在卧室里睡觉。",
+        "audioKey": "sleep-1",
+        "source": "Unit 2"
+      }
+    ]
   }
 ]

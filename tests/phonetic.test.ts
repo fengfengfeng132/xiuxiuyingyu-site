@@ -1,10 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { dictationWords } from '../src/data/dictationWords';
+import { archivedDictationWords, dictationWords } from '../src/data/dictationWords';
 import {
   classifyWordAudioFailure,
+  fetchLocalExampleAudioUrl,
+  fetchLocalUsAudioUrl,
+  fetchLocalUsSlowAudioUrl,
   getLocalSlowWordAudioFeedback,
   getLocalWordAudioFeedback,
   normalizePhoneticForDisplay,
+  playLocalExampleAudio,
   playLocalQuestionBankAudio,
   playLocalUsSlowWordAudio,
   playLocalUsWordAudio,
@@ -41,7 +45,7 @@ describe('phonetic', () => {
   });
 
   it('starts local playback synchronously while the iPad click gesture is still active', () => {
-    let playCalls = 0;
+    const played: { src: string; rate: number }[] = [];
 
     class FakeAudio {
       currentTime = 0;
@@ -55,7 +59,7 @@ describe('phonetic', () => {
       load() {}
       pause() {}
       play() {
-        playCalls += 1;
+        played.push({ src: this.src, rate: this.playbackRate });
         return Promise.resolve();
       }
     }
@@ -70,7 +74,25 @@ describe('phonetic', () => {
     void playLocalUsWordAudio(currentDailyAudioKey);
     void playLocalUsSlowWordAudio(currentDailyAudioKey);
     void playLocalQuestionBankAudio('keyboard');
+    const exampleAudioKey = dictationWords[0].examples![0].audioKey;
+    void playLocalExampleAudio(exampleAudioKey);
+    void playLocalExampleAudio(exampleAudioKey, 0.75);
 
-    expect(playCalls).toBe(3);
+    expect(played).toHaveLength(5);
+    expect(played.at(-2)?.src).toContain(`/audio/examples/us/${exampleAudioKey}.wav`);
+    expect(played.at(-1)?.src).toContain(`/audio/examples/us-slow/${exampleAudioKey}.wav`);
+    expect(played.every((audio) => audio.rate === 1)).toBe(true);
+  });
+
+  it('keeps the archived lesson playable locally after replacing the daily lesson', () => {
+    archivedDictationWords.forEach((word) => {
+      expect(fetchLocalUsAudioUrl(word.audioKey)).toBe(`/audio/words/us/${encodeURIComponent(word.audioKey)}.wav`);
+      expect(fetchLocalUsSlowAudioUrl(word.audioKey)).toBe(`/audio/words/us-slow/${encodeURIComponent(word.audioKey)}.wav`);
+    });
+  });
+
+  it('only maps example audio keys declared in the vocabulary data', async () => {
+    expect(fetchLocalExampleAudioUrl('../undeclared')).toBeNull();
+    expect(await playLocalExampleAudio('../undeclared')).toEqual({ ok: false, reason: 'missing' });
   });
 });

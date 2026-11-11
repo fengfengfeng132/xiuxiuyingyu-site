@@ -3377,3 +3377,111 @@ body {
     margin: 24px auto 0;
   }
 }
+
+.example-sentences {
+  position: relative;
+  z-index: 4;
+  margin-top: 24px;
+  padding: 18px;
+  border: 1px solid #cbddea;
+  border-radius: 20px;
+  color: #263b56;
+  background: #f7fbff;
+  overflow-wrap: anywhere;
+}
+
+.example-sentences-heading,
+.example-sentence-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.example-sentences-heading {
+  justify-content: space-between;
+}
+
+.example-sentences-heading h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.example-sentences-guide,
+.example-sentence-source,
+.example-sentence-covered,
+.lesson-word-sources,
+.word-learning-metadata {
+  color: #60738a;
+  font-size: 0.9rem;
+}
+
+.example-sentences-guide {
+  margin: 8px 0 14px;
+}
+
+.example-sentence + .example-sentence {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #d6e5f0;
+}
+
+.example-sentence-english {
+  margin: 8px 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.example-sentence-translation,
+.example-sentence-covered {
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+.example-sentence-actions .btn,
+.example-sentences-heading .btn {
+  min-height: 44px;
+  padding: 8px 14px;
+}
+
+.example-sentence-audio-message {
+  margin: 12px 0 0;
+  color: #9a451c;
+}
+
+.lesson-word-sources {
+  margin-top: 8px;
+}
+
+.dictation-lesson-page-with-examples .lesson-bottom-action {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  width: min(700px, 100%);
+  margin: 16px auto 0;
+}
+
+.dictation-lesson-page-with-examples .lesson-heart-image {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .lesson-word-sources {
+    text-align: center;
+  }
+
+  .lesson-word-card .example-sentences {
+    margin: 28px auto 0;
+    max-width: 700px;
+    padding: 24px;
+  }
+
+  .example-sentence-english {
+    font-size: 1.5rem;
+  }
+
+  .example-sentence-translation {
+    font-size: 1.1rem;
+  }
+}

@@ -1,5 +1,12 @@
 export type QuestionType = 'single_choice' | 'listen_choice' | 'spell' | 'vocab' | 'dialogue';
 
+export interface ExampleSentence {
+  text: string;
+  translation: string;
+  audioKey: string;
+  source?: string;
+}
+
 export interface Question {
   id: number;
   level: 'L2';
@@ -15,6 +22,9 @@ export interface Question {
   audioKey?: string;
   phonetic?: string;
   grammarLabel?: string;
+  examples?: ExampleSentence[];
+  partOfSpeech?: string;
+  sources?: string[];
 }
 
 export interface SessionAnswer {

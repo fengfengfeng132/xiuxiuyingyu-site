@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { ExampleSentences } from '../components/ExampleSentences';
 import { DAILY_LEARNING_QUESTION_ID_BASE } from '../data/dailyLearningQuestions';
 import { dictationWords, type DictationWord } from '../data/dictationWords';
 import { questionBank } from '../data/loadQuestionBank';
@@ -544,7 +545,7 @@ export function DictationPage() {
   const displayProgressCurrent = (stepIndex % dictationWords.length) + 1;
   const displayProgressTotal = dictationWords.length;
   const currentProgress = Math.round((displayProgressCurrent / displayProgressTotal) * 100);
-  const meaningLine = currentStep.word.word === 'hot' ? 'adj. 热的；烫的' : `释义：${currentStep.word.meaning}`;
+  const meaningLine = `${currentStep.word.partOfSpeech ? `${currentStep.word.partOfSpeech} ` : '释义：'}${currentStep.word.meaning}`;
   const shouldShowMeaningLine = shouldShowDictationMeaningLine(currentStep.type, hasSubmittedCurrentStep);
   const shouldShowPhoneticLine = shouldShowDictationPhoneticLine(currentStep.type, hasSubmittedCurrentStep);
   const displayedPhonetic = currentStep.word.phonetic || phonetic;
@@ -578,7 +579,7 @@ export function DictationPage() {
   };
 
   return (
-    <main className="reference-page dictation-lesson-page">
+    <main className={`reference-page dictation-lesson-page${currentStep.word.examples?.length && shouldShowMeaningLine ? ' dictation-lesson-page-with-examples' : ''}`}>
       <img className="lesson-dog-image" src="/images/ui-ipad/dog.png" alt="" aria-hidden="true" />
 
       <header className="lesson-topbar">
@@ -612,6 +613,9 @@ export function DictationPage() {
         {currentStep.word.grammarLabel ? <p className="lesson-grammar-label">{currentStep.word.grammarLabel}</p> : null}
         {shouldShowPhoneticLine ? <p className="lesson-phonetic">{displayedPhonetic || '/.../'}</p> : null}
         {shouldShowMeaningLine ? <p className="lesson-meaning">{meaningLine}</p> : null}
+        {shouldShowMeaningLine && currentStep.word.sources?.length ? (
+          <p className="lesson-word-sources">{currentStep.word.sources.join(' · ')}</p>
+        ) : null}
 
         <div className="lesson-audio-row" aria-label="播放控制">
           <button className="lesson-audio-button" type="button" onClick={() => void playCurrentWord()}>
@@ -671,6 +675,12 @@ export function DictationPage() {
           <strong>提示：</strong>
           {hintText}
         </p>
+        <ExampleSentences
+          key={currentStep.id}
+          examples={currentStep.word.examples}
+          revealed={shouldShowMeaningLine}
+          beforePlay={clearAutoPlayTimer}
+        />
         <img className="lesson-heart-image" src="/images/ui-ipad/heart-bubble.png" alt="" aria-hidden="true" />
 
         {speechCheckMessage ? <p className={speechCheckClassName}>{speechCheckMessage}</p> : null}

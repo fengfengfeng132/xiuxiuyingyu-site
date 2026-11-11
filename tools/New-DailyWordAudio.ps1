@@ -19,7 +19,33 @@ if ($entries.Count -eq 0) {
 $resolvedOutputDir = Join-Path $repoRoot.Path $OutputDir
 $normalDir = Join-Path $resolvedOutputDir "us"
 $slowDir = Join-Path $resolvedOutputDir "us-slow"
-New-Item -ItemType Directory -Force -Path $normalDir, $slowDir | Out-Null
+$exampleNormalDir = Join-Path $resolvedOutputDir "examples\us"
+$exampleSlowDir = Join-Path $resolvedOutputDir "examples\us-slow"
+$normalRate = -1
+$slowRate = -5
+
+$audioJobs = @(
+  foreach ($entry in $entries) {
+    [PSCustomObject]@{ AudioKey = $entry.audioKey; Text = $entry.spokenText; NormalDir = $normalDir; SlowDir = $slowDir }
+    if ($entry.PSObject.Properties.Name -contains "examples") {
+      foreach ($example in $entry.examples) {
+        [PSCustomObject]@{ AudioKey = $example.audioKey; Text = $example.text; NormalDir = $exampleNormalDir; SlowDir = $exampleSlowDir }
+      }
+    }
+  }
+)
+
+foreach ($job in $audioJobs) {
+  if ([string]::IsNullOrWhiteSpace($job.AudioKey) -or [string]::IsNullOrWhiteSpace($job.Text)) {
+    throw "Every word and example must have a nonempty audioKey and spoken text."
+  }
+  if ($job.AudioKey.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
+    throw "Invalid audio key: $($job.AudioKey)"
+  }
+}
+
+$outputDirectories = @($audioJobs | ForEach-Object { $_.NormalDir; $_.SlowDir } | Sort-Object -Unique)
+New-Item -ItemType Directory -Force -Path $outputDirectories | Out-Null
 
 $systemSpeaker = $null
 $sapiSpeaker = $null
@@ -35,12 +61,12 @@ try {
   }
 
   $sapiSpeaker = New-Object -ComObject SAPI.SpVoice
-  $voiceToken = @($sapiSpeaker.GetVoices() | Where-Object { $_.GetDescription() -like "$voiceName*" })[0]
-  if ($null -eq $voiceToken) {
+  $voiceTokens = @($sapiSpeaker.GetVoices() | Where-Object { $_.GetDescription() -like "$voiceName*" })
+  if ($voiceTokens.Count -eq 0) {
     throw "Missing required voice: $voiceName"
   }
 
-  $sapiSpeaker.Voice = $voiceToken
+  $sapiSpeaker.Voice = $voiceTokens[0]
   $useSapi = $true
 }
 
@@ -94,53 +120,37 @@ function Normalize-PcmWaveHeader([string]$Path) {
   }
 }
 
-foreach ($entry in $entries) {
-  $audioKey = [string]$entry.audioKey
-  $spokenText = [string]$entry.spokenText
-  $normalPath = Join-Path $normalDir "$audioKey.wav"
-  $slowPath = Join-Path $slowDir "$audioKey.wav"
+try {
+  foreach ($job in $audioJobs) {
+    $audioKey = [string]$job.AudioKey
+    $spokenText = [string]$job.Text
+    $normalPath = Join-Path $job.NormalDir "$audioKey.wav"
+    $slowPath = Join-Path $job.SlowDir "$audioKey.wav"
 
-  if (Test-Path $normalPath) { Remove-Item -LiteralPath $normalPath -Force }
-  if (Test-Path $slowPath) { Remove-Item -LiteralPath $slowPath -Force }
+    if (Test-Path -LiteralPath $normalPath) { Remove-Item -LiteralPath $normalPath -Force }
+    if (Test-Path -LiteralPath $slowPath) { Remove-Item -LiteralPath $slowPath -Force }
 
-  try {
     if ($useSapi) {
-      Write-SapiWave $sapiSpeaker $normalPath $spokenText -1
-      Write-SapiWave $sapiSpeaker $slowPath $spokenText -5
+      Write-SapiWave $sapiSpeaker $normalPath $spokenText $normalRate
+      Write-SapiWave $sapiSpeaker $slowPath $spokenText $slowRate
     } else {
-      Write-SystemSpeechWave $systemSpeaker $normalPath $spokenText -1
-      Write-SystemSpeechWave $systemSpeaker $slowPath $spokenText -5
-    }
-  } catch {
-    if (-not $useSapi) {
-      throw
+      Write-SystemSpeechWave $systemSpeaker $normalPath $spokenText $normalRate
+      Write-SystemSpeechWave $systemSpeaker $slowPath $spokenText $slowRate
     }
 
-    if (Test-Path $normalPath) { Remove-Item -LiteralPath $normalPath -Force }
-    if (Test-Path $slowPath) { Remove-Item -LiteralPath $slowPath -Force }
-    if ($null -ne $sapiSpeaker) {
-      [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($sapiSpeaker)
-      $sapiSpeaker = $null
-    }
-
-    $systemSpeaker = New-Object System.Speech.Synthesis.SpeechSynthesizer
-    $useSapi = $false
-    Write-SystemSpeechWave $systemSpeaker $normalPath $spokenText -1
-    Write-SystemSpeechWave $systemSpeaker $slowPath $spokenText -5
+    Normalize-PcmWaveHeader $normalPath
+    Normalize-PcmWaveHeader $slowPath
+  }
+} finally {
+  if ($null -ne $systemSpeaker) {
+    $systemSpeaker.Dispose()
   }
 
-  Normalize-PcmWaveHeader $normalPath
-  Normalize-PcmWaveHeader $slowPath
+  if ($null -ne $sapiSpeaker) {
+    [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($sapiSpeaker)
+  }
 }
 
-if ($null -ne $systemSpeaker) {
-  $systemSpeaker.Dispose()
-}
-
-if ($null -ne $sapiSpeaker) {
-  [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($sapiSpeaker)
-}
-
-Get-ChildItem -LiteralPath $normalDir, $slowDir -Filter "*.wav" |
+Get-ChildItem -LiteralPath $outputDirectories -Filter "*.wav" |
   Sort-Object DirectoryName, Name |
   Select-Object FullName, Length, LastWriteTime

@@ -1,5 +1,7 @@
 import type { AppState, StudySession } from '../types/schema';
 import { parseAppState } from '../schema/studySchema';
+import { questionIdAliases } from '../data/loadQuestionBank';
+import { migrateQuestionIds } from './questionIdMigration';
 
 const APP_STORAGE_KEY = 'woe_l2_local_state_v1';
 
@@ -14,14 +16,16 @@ const initialState: AppState = {
 };
 
 export function loadState(): AppState {
+  let state: AppState;
   try {
     const raw = localStorage.getItem(APP_STORAGE_KEY);
     if (!raw) return initialState;
     const parsed = JSON.parse(raw) as unknown;
-    return parseAppState(parsed, initialState);
+    state = parseAppState(parsed, initialState);
   } catch {
     return initialState;
   }
+  return migrateQuestionIds(state, questionIdAliases);
 }
 
 export function saveState(state: AppState): void {

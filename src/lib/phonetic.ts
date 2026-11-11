@@ -1,4 +1,4 @@
-import { dictationWords } from '../data/dictationWords';
+import { vocabularyWords } from '../data/dictationWords';
 import { questionBankLocalAudioEntries } from '../data/questionBankLocalAudio';
 
 const DICTIONARY_API = 'https://api.dictionaryapi.dev/api/v2/entries/en';
@@ -30,14 +30,14 @@ const LOCAL_NORMAL_WORD_AUDIO_BASE = '/audio/words/us';
 const LOCAL_SLOW_WORD_AUDIO_BASE = '/audio/words/us-slow';
 const localAudioWarmupCache = new Map<string, Promise<boolean>>();
 const localNormalWordAudioMap = new Map(
-  dictationWords.map((item) => {
+  vocabularyWords.map((item) => {
     const key = item.audioKey.trim().toLowerCase();
     const fileName = item.audioKey.trim();
     return [key, `${LOCAL_NORMAL_WORD_AUDIO_BASE}/${encodeURIComponent(fileName)}.wav`] as const;
   }),
 );
 const localSlowWordAudioMap = new Map(
-  dictationWords.map((item) => {
+  vocabularyWords.map((item) => {
     const key = item.audioKey.trim().toLowerCase();
     const fileName = item.audioKey.trim();
     return [key, `${LOCAL_SLOW_WORD_AUDIO_BASE}/${encodeURIComponent(fileName)}.wav`] as const;
@@ -48,6 +48,9 @@ const localQuestionBankAudioMap = new Map(
     const key = normalizeAudioText(item.text);
     return [key, item] as const;
   }),
+);
+const localExampleAudioKeys = new Set(
+  vocabularyWords.flatMap((word) => word.examples?.map((example) => example.audioKey) ?? []),
 );
 
 function normalizeWord(word: string): string {
@@ -221,6 +224,12 @@ export function fetchLocalUsSlowAudioUrl(word: string): string | null {
   return localSlowWordAudioMap.get(normalizeWord(word)) ?? null;
 }
 
+export function fetchLocalExampleAudioUrl(audioKey: string, rate = 1): string | null {
+  if (!localExampleAudioKeys.has(audioKey)) return null;
+  const variant = rate < 1 ? 'us-slow' : 'us';
+  return `/audio/examples/${variant}/${encodeURIComponent(audioKey)}.wav`;
+}
+
 export function fetchLocalQuestionBankAudioUrl(text: string, rate = 1): string | null {
   const entry = localQuestionBankAudioMap.get(normalizeAudioText(text));
   if (!entry) return null;
@@ -351,4 +360,9 @@ export async function playLocalQuestionBankAudio(text: string, rate = 1): Promis
   const url = fetchLocalQuestionBankAudioUrl(text, rate);
   if (!url) return { ok: false, reason: 'missing' };
   return playAudioUrl(url, 1, requestId);
+}
+
+export async function playLocalExampleAudio(audioKey: string, rate = 1): Promise<WordAudioPlaybackResult> {
+  const requestId = nextWordAudioRequestId();
+  return playAudioUrl(fetchLocalExampleAudioUrl(audioKey, rate), 1, requestId);
 }

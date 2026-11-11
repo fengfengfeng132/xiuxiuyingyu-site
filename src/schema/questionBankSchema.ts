@@ -1,9 +1,20 @@
-import type { Question, QuestionType } from '../types/schema';
+import type { ExampleSentence, Question, QuestionType } from '../types/schema';
 
 const QUESTION_TYPES = new Set(['single_choice', 'listen_choice', 'spell', 'vocab', 'dialogue']);
 
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+function isExampleSentenceArray(value: unknown): value is ExampleSentence[] {
+  return Array.isArray(value) && value.every((item: unknown) => {
+    if (!item || typeof item !== 'object') return false;
+    const example = item as Record<string, unknown>;
+    return typeof example.text === 'string'
+      && typeof example.translation === 'string'
+      && typeof example.audioKey === 'string'
+      && (example.source === undefined || typeof example.source === 'string');
+  });
 }
 
 function normalizeType(rawType: unknown): QuestionType | null {
@@ -35,7 +46,10 @@ function normalizeQuestion(value: unknown): Question | null {
     (q.audioText !== undefined && typeof q.audioText !== 'string') ||
     (q.audioKey !== undefined && typeof q.audioKey !== 'string') ||
     (q.phonetic !== undefined && typeof q.phonetic !== 'string') ||
-    (q.grammarLabel !== undefined && typeof q.grammarLabel !== 'string')
+    (q.grammarLabel !== undefined && typeof q.grammarLabel !== 'string') ||
+    (q.partOfSpeech !== undefined && typeof q.partOfSpeech !== 'string') ||
+    (q.sources !== undefined && !isStringArray(q.sources)) ||
+    (q.examples !== undefined && !isExampleSentenceArray(q.examples))
   ) {
     return null;
   }
@@ -55,6 +69,9 @@ function normalizeQuestion(value: unknown): Question | null {
     audioKey: typeof q.audioKey === 'string' ? q.audioKey : undefined,
     phonetic: typeof q.phonetic === 'string' ? q.phonetic : undefined,
     grammarLabel: typeof q.grammarLabel === 'string' ? q.grammarLabel : undefined,
+    partOfSpeech: typeof q.partOfSpeech === 'string' ? q.partOfSpeech : undefined,
+    sources: isStringArray(q.sources) ? q.sources : undefined,
+    examples: isExampleSentenceArray(q.examples) ? q.examples : undefined,
   };
 }
 

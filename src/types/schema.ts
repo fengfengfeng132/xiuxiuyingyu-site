@@ -96,6 +96,76 @@ export interface StarRecord {
   total: number;
 }
 
+export type TrainingSource = 'practice' | 'dictation';
+export type TrainingAnswerKind = 'practice' | 'meaning' | 'spelling';
+
+export interface TrainingAnswer {
+  questionId: number;
+  isCorrect: boolean;
+  answeredAt: string;
+  kind: TrainingAnswerKind;
+}
+
+export interface CompletedTrainingInput {
+  id: string;
+  source: TrainingSource;
+  title: string;
+  train?: string;
+  mode?: StudySession['mode'];
+  startedAt: string;
+  finishedAt: string;
+  questionTotal: number;
+  answers: TrainingAnswer[];
+}
+
+export interface CompletedTrainingSummary {
+  id: string;
+  source: TrainingSource;
+  title: string;
+  train?: string;
+  mode?: StudySession['mode'];
+  startedAt?: string;
+  finishedAt: string;
+  questionTotal?: number;
+  answeredCount: number;
+  correctCount?: number;
+  totalsKnown: boolean;
+  durationSeconds?: number;
+  questionIds: number[];
+}
+
+export interface LearningErrorDay {
+  day: string;
+  practice: number;
+  meaning: number;
+  spelling: number;
+  lastAnsweredAt: string;
+}
+
+export interface CorrectTrainingRound {
+  roundKey: string;
+  startedAt: string;
+  answeredAt: string;
+}
+
+export interface QuestionLearningRecord {
+  questionId: number;
+  firstSeenAt: string;
+  lastReviewedAt: string;
+  answeredCount: number;
+  correctCount: number;
+  wrongCount: number;
+  lastWrongAt?: string;
+  recentErrors: LearningErrorDay[];
+  correctRounds: CorrectTrainingRound[];
+}
+
+export interface LearningRecords {
+  version: 1;
+  rounds: CompletedTrainingSummary[];
+  questions: QuestionLearningRecord[];
+}
+
 export interface AppState {
   activeSession: StudySession | null;
   sessions: StudySession[];
@@ -104,4 +174,5 @@ export interface AppState {
   reviewTasks: ReviewTask[];
   starRecords: StarRecord[];
   localAudioFiles: Record<string, string>;
+  learningRecords?: LearningRecords;
 }

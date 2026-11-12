@@ -146,6 +146,15 @@
 
 ## 最后校验
 
+### 基础题库补全（2026-11-12）
+
+- `questionBankLocalAudioCatalog` 从实际题库提取单词、整句和分句，排除已有每日/归档词；不再维护第二份手写文本列表。
+- 本次补齐 117 组基础题库音频（234 个 WAV）。沿用 Microsoft Zira Desktop，正常 Rate=-1、慢速 Rate=-5、Volume=90，播放速率统一为 1。
+- 继续复用 `tools/New-DailyWordAudio.ps1`。新增 `-ManifestPath` 可接受由上述 catalog 导出的 JSON 数组，每项包含 `audioKey` 和 `spokenText`；`-Volume 90` 与当前资源一致。先生成到临时目录，检查并试听后再复制。
+- 导出命令：`node tools/export_question_bank_audio_manifest.mjs`，默认输出 `tmp/question-bank-audio/manifest.json`；再将此路径传给生成脚本的 `-ManifestPath`。
+- 每日/归档词与例句的 100 个已有 WAV 本次保持字节不变。全站现有 334 个 WAV 均为独立普通/慢速资源；缺失慢速时不允许前端拉慢冒充。
+- 统一声源不等于真人录音；当前仍是系统 TTS，不能向用户承诺真人自然度。
+
 改完音频或词表后，默认执行：
 
 - `npm run lint`

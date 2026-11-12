@@ -1,5 +1,6 @@
-import { QUESTION_TOTAL } from '../data/loadQuestionBank';
+import { questionBank } from '../data/loadQuestionBank';
 import { loadState } from './storage';
+import { getLearningStatistics, getTrainingAccuracy } from './learningStats';
 
 function downloadTextFile(content: string, filename: string, mimeType: string) {
   const blob = new Blob([content], { type: mimeType });
@@ -17,11 +18,6 @@ function nowStamp() {
   return new Date().toISOString().replace(/[:.]/g, '-');
 }
 
-function getSessionTotal(scoreCount: number, answeredCount: number): number {
-  const fallback = answeredCount > 0 ? answeredCount : QUESTION_TOTAL;
-  return Math.max(scoreCount, fallback, 1);
-}
-
 export function exportStateAsJson() {
   const state = loadState();
   const filename = `woe_l2_records_${nowStamp()}.json`;
@@ -30,20 +26,21 @@ export function exportStateAsJson() {
 
 export function exportSessionsAsCsv() {
   const state = loadState();
-  const header = ['session_id', 'started_at', 'finished_at', 'mode', 'train', 'score', 'accuracy_percent', 'answered_count', 'target_count'];
-  const rows = state.sessions.map((s) => {
-    const targetCount = typeof s.questionTotal === 'number' ? s.questionTotal : getSessionTotal(s.score, s.answers.length);
-    const accuracyPercent = Math.round((s.score / Math.max(targetCount, 1)) * 100);
+  const header = ['session_id', 'started_at', 'finished_at', 'mode', 'train', 'score', 'accuracy_percent', 'answered_count', 'target_count', 'source', 'title'];
+  const rows = getLearningStatistics(state, questionBank).rounds.map((round) => {
+    const accuracyPercent = getTrainingAccuracy(round);
     return [
-      s.id,
-      s.startedAt,
-      s.finishedAt ?? '',
-      s.mode ?? '',
-      s.train ?? '',
-      String(s.score),
-      String(accuracyPercent),
-      String(s.answers.length),
-      String(targetCount),
+      round.id,
+      round.startedAt ?? '',
+      round.finishedAt,
+      round.mode ?? '',
+      round.train ?? '',
+      round.correctCount ?? '',
+      accuracyPercent ?? '',
+      round.answeredCount,
+      round.questionTotal ?? '',
+      round.source,
+      round.title,
     ];
   });
 

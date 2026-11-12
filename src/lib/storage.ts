@@ -1,31 +1,31 @@
 import type { AppState, StudySession } from '../types/schema';
 import { parseAppState } from '../schema/studySchema';
-import { questionIdAliases } from '../data/loadQuestionBank';
+import { questionBank, questionIdAliases } from '../data/loadQuestionBank';
 import { migrateQuestionIds } from './questionIdMigration';
+import { createLearningRecords, ensureLearningRecords } from './learningRecords';
 
 const APP_STORAGE_KEY = 'woe_l2_local_state_v1';
 
-const initialState: AppState = {
-  activeSession: null,
-  sessions: [],
-  wrongBook: [],
-  dictationHistory: [],
-  reviewTasks: [],
-  starRecords: [],
-  localAudioFiles: {},
-};
+export function createInitialState(): AppState {
+  return {
+    activeSession: null, sessions: [], wrongBook: [], dictationHistory: [],
+    reviewTasks: [], starRecords: [], localAudioFiles: {}, learningRecords: createLearningRecords(),
+  };
+}
+
+const initialState = createInitialState();
 
 export function loadState(): AppState {
   let state: AppState;
   try {
     const raw = localStorage.getItem(APP_STORAGE_KEY);
-    if (!raw) return initialState;
+    if (!raw) return createInitialState();
     const parsed = JSON.parse(raw) as unknown;
-    state = parseAppState(parsed, initialState);
+    state = parseAppState(parsed, createInitialState());
   } catch {
-    return initialState;
+    return createInitialState();
   }
-  return migrateQuestionIds(state, questionIdAliases);
+  return ensureLearningRecords(migrateQuestionIds(state, questionIdAliases), questionBank);
 }
 
 export function saveState(state: AppState): void {

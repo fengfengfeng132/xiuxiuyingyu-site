@@ -3,6 +3,7 @@ import { Button } from '../components/Button';
 import { dictationWords } from '../data/dictationWords';
 import { questionBank } from '../data/loadQuestionBank';
 import { loadState, startSession } from '../lib/storage';
+import { DAILY_MINUTE_GOAL, getLearningStatistics } from '../lib/learningStats';
 
 function isDueTodayOrEarlier(dueAt: string): boolean {
   return new Date(dueAt).getTime() <= Date.now();
@@ -17,6 +18,8 @@ function getQuestionPrompt(questionId: number): string | null {
 export function HomePage() {
   const navigate = useNavigate();
   const state = loadState();
+  const statistics = getLearningStatistics(state, questionBank);
+  const todayProgress = Math.min((statistics.todayMinutes / DAILY_MINUTE_GOAL) * 100, 100);
 
   const pendingWrongCount = state.wrongBook.filter((x) => !x.mastered).length;
   const pendingReviewCount = state.reviewTasks.filter((x) => !x.completed).length;
@@ -40,22 +43,15 @@ export function HomePage() {
     navigate(`/practice${query ? `?${query}` : ''}`);
   };
 
-  const latest = state.sessions[0];
-  const latestTotal = latest?.questionTotal ?? questionBank.length;
-  const latestAccuracy = latest ? `${Math.round((latest.score / Math.max(latestTotal, 1)) * 100)}%` : '98%';
-  const streakDays = latest ? Math.max(state.sessions.length, 1) : 12;
-  const masteredCount = latest ? latest.score + Math.max(0, state.sessions.length - 1) * 10 : 156;
-  const weakWordFallback = ['hot', 'finish', 'plant', 'clean', 'cold'];
   const weakWords = state.wrongBook
     .filter((item) => !item.mastered)
     .map((item) => getQuestionPrompt(item.questionId))
     .filter((item): item is string => Boolean(item))
     .slice(0, 5);
-  const displayedWeakWords = weakWords.length > 0 ? weakWords : weakWordFallback;
   const stats = [
-    { value: latestAccuracy, label: '正确率', icon: '/images/ui-ipad/stat-check-icon.png' },
-    { value: `${streakDays}天`, label: '连续学习', icon: '/images/ui-ipad/stat-fire-icon.png' },
-    { value: `${masteredCount}个`, label: '已掌握单词', icon: '/images/ui-ipad/stat-medal-icon.png' },
+    { value: statistics.accuracy === null ? '暂无数据' : `${statistics.accuracy}%`, label: '正确率', icon: '/images/ui-ipad/stat-check-icon.png' },
+    { value: `${statistics.streakDays}天`, label: '连续学习', icon: '/images/ui-ipad/stat-fire-icon.png' },
+    { value: `${statistics.learnedWordCount}个`, label: '已练过单词', icon: '/images/ui-ipad/stat-medal-icon.png' },
   ];
 
   return (
@@ -79,11 +75,11 @@ export function HomePage() {
         <div className="home-task-progress">
           <img className="home-progress-clock" src="/images/ui-ipad/clock.png" alt="" aria-hidden="true" />
           <div>
-            <span>今日学习进度</span>
-            <strong>6</strong>
+            <span>今日学习进度（分钟）</span>
+            <strong>{statistics.todayMinutes}</strong>
           </div>
           <div className="home-task-progress-track">
-            <span style={{ width: '60%' }} />
+            <span style={{ width: `${todayProgress}%` }} />
           </div>
         </div>
 
@@ -105,7 +101,7 @@ export function HomePage() {
           <img className="feature-image feature-image-book" src="/images/ui-ipad/review-book.png" alt="" aria-hidden="true" />
           <span>
             <strong>复习巩固</strong>
-            <em>错词复习{pendingWrongCount > 0 ? pendingWrongCount : 12}个</em>
+            <em>错词复习{pendingWrongCount}个</em>
           </span>
           <b>开始复习</b>
           <img className="feature-star-image" src="/images/ui-ipad/star-sticker.png" alt="" aria-hidden="true" />
@@ -136,7 +132,7 @@ export function HomePage() {
           <Link to="/wrong">查看全部 &gt;</Link>
         </div>
         <div className="weak-chip-row">
-          {displayedWeakWords.map((word) => (
+          {weakWords.length === 0 ? <p>暂无待加强错词</p> : weakWords.map((word) => (
             <span key={word}>{word}</span>
           ))}
         </div>

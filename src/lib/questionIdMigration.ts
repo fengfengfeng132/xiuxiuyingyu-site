@@ -1,4 +1,5 @@
 import type { AppState, ReviewTask, StudySession, WrongItem } from '../types/schema';
+import { migrateLearningRecordsQuestionIds } from './learningRecords';
 
 function migrateIdList(questionIds: number[], aliases: ReadonlyMap<number, number>): number[] {
   const migrated = [...new Set(questionIds.map((questionId) => aliases.get(questionId) ?? questionId))];
@@ -65,10 +66,12 @@ export function migrateQuestionIds(state: AppState, aliases: ReadonlyMap<number,
   const sessions = state.sessions.map((session) => migrateSession(session, aliases));
   const wrongBook = migrateWrongBook(state.wrongBook, aliases);
   const reviewTasks = state.reviewTasks.map((task) => migrateReviewTask(task, aliases));
+  const learningRecords = state.learningRecords ? migrateLearningRecordsQuestionIds(state.learningRecords, aliases) : undefined;
   const sessionsChanged = sessions.some((session, index) => session !== state.sessions[index]);
   const reviewTasksChanged = reviewTasks.some((task, index) => task !== state.reviewTasks[index]);
 
-  if (activeSession === state.activeSession && wrongBook === state.wrongBook && !sessionsChanged && !reviewTasksChanged) {
+  if (activeSession === state.activeSession && wrongBook === state.wrongBook && !sessionsChanged && !reviewTasksChanged
+    && learningRecords === state.learningRecords) {
     return state;
   }
 
@@ -78,5 +81,6 @@ export function migrateQuestionIds(state: AppState, aliases: ReadonlyMap<number,
     sessions: sessionsChanged ? sessions : state.sessions,
     wrongBook,
     reviewTasks: reviewTasksChanged ? reviewTasks : state.reviewTasks,
+    ...(learningRecords ? { learningRecords } : {}),
   };
 }

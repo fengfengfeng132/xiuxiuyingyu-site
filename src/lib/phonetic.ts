@@ -307,10 +307,9 @@ export function stopUsWordAudioPlayback(): void {
   player.currentTime = 0;
 }
 
-async function playAudioUrl(url: string | null, rate: number, requestId: number): Promise<WordAudioPlaybackResult> {
-  const player = getWordAudioPlayer();
-
+async function playAudioUrl(url: string | null, requestId: number): Promise<WordAudioPlaybackResult> {
   if (!url) return { ok: false, reason: 'missing' };
+  const player = getWordAudioPlayer();
   if (!player) return { ok: false, reason: 'failed' };
 
   try {
@@ -321,7 +320,7 @@ async function playAudioUrl(url: string | null, rate: number, requestId: number)
       player.src = absoluteUrl;
       player.load();
     }
-    player.playbackRate = rate;
+    player.playbackRate = 1;
     await player.play();
     if (!isLatestWordAudioRequest(requestId)) {
       return { ok: false, reason: 'stale' };
@@ -334,35 +333,41 @@ async function playAudioUrl(url: string | null, rate: number, requestId: number)
 
 export async function playUsWordAudio(word: string, rate = 1): Promise<WordAudioPlaybackResult> {
   const requestId = nextWordAudioRequestId();
+  const localUrl = rate < 1
+    ? fetchLocalUsSlowAudioUrl(word) ?? fetchLocalQuestionBankAudioUrl(word, rate)
+    : fetchLocalUsAudioUrl(word) ?? fetchLocalQuestionBankAudioUrl(word, rate);
+  if (localUrl) return playAudioUrl(localUrl, requestId);
+  if (rate < 1) return { ok: false, reason: 'missing' };
+
   const url = await fetchUsAudioUrl(word);
   if (!isLatestWordAudioRequest(requestId)) {
     return { ok: false, reason: 'stale' };
   }
-  return playAudioUrl(url, rate, requestId);
+  return playAudioUrl(url, requestId);
 }
 
 export async function playLocalUsWordAudio(word: string): Promise<WordAudioPlaybackResult> {
   const requestId = nextWordAudioRequestId();
   const url = fetchLocalUsAudioUrl(word);
   if (!url) return { ok: false, reason: 'missing' };
-  return playAudioUrl(url, 1, requestId);
+  return playAudioUrl(url, requestId);
 }
 
 export async function playLocalUsSlowWordAudio(word: string): Promise<WordAudioPlaybackResult> {
   const requestId = nextWordAudioRequestId();
   const url = fetchLocalUsSlowAudioUrl(word);
   if (!url) return { ok: false, reason: 'missing' };
-  return playAudioUrl(url, 1, requestId);
+  return playAudioUrl(url, requestId);
 }
 
 export async function playLocalQuestionBankAudio(text: string, rate = 1): Promise<WordAudioPlaybackResult> {
   const requestId = nextWordAudioRequestId();
   const url = fetchLocalQuestionBankAudioUrl(text, rate);
   if (!url) return { ok: false, reason: 'missing' };
-  return playAudioUrl(url, 1, requestId);
+  return playAudioUrl(url, requestId);
 }
 
 export async function playLocalExampleAudio(audioKey: string, rate = 1): Promise<WordAudioPlaybackResult> {
   const requestId = nextWordAudioRequestId();
-  return playAudioUrl(fetchLocalExampleAudioUrl(audioKey, rate), 1, requestId);
+  return playAudioUrl(fetchLocalExampleAudioUrl(audioKey, rate), requestId);
 }

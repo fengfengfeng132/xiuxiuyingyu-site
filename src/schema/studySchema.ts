@@ -1,6 +1,7 @@
 import type { AppState, DictationHistoryEntry, DictationHistoryWord, SessionAnswer, StarRecord, StudySession } from '../types/schema';
 import { isQuestionIdArray, parseReviewTasks } from './reviewSchema';
 import { parseWrongBook } from './wrongBookSchema';
+import { parseLearningRecords } from '../lib/learningRecords';
 
 function isSessionAnswer(value: unknown): value is SessionAnswer {
   if (!value || typeof value !== 'object') return false;
@@ -112,6 +113,7 @@ export function parseAppState(value: unknown, fallback: AppState): AppState {
   const dictationHistory = parseDictationHistory(raw.dictationHistory);
   const reviewTasks = parseReviewTasks(raw.reviewTasks);
   const starRecords = parseStarRecords(raw.starRecords);
+  const learningRecords = parseLearningRecords(raw.learningRecords);
   const localAudioFiles =
     raw.localAudioFiles && typeof raw.localAudioFiles === 'object' && !Array.isArray(raw.localAudioFiles)
       ? (raw.localAudioFiles as Record<string, string>)
@@ -126,5 +128,6 @@ export function parseAppState(value: unknown, fallback: AppState): AppState {
     reviewTasks,
     starRecords,
     localAudioFiles,
+    learningRecords,
   };
 }

@@ -136,10 +136,7 @@ export function assessSpokenText(target: string, transcript: string): SpokenAsse
     : Math.min(1, charSimilarity * 0.65 + tokenCoverage * 0.35);
   const score = Math.round(scoreRaw * 100);
   const passLine = targetTokenCount <= 2 ? 78 : 70;
-  const passed =
-    score >= passLine ||
-    normalizedTranscript.includes(normalizedTarget) ||
-    normalizedTarget.includes(normalizedTranscript);
+  const passed = score >= passLine;
 
   return {
     passed,

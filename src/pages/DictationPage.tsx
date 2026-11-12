@@ -33,7 +33,8 @@ import {
 import { createDictationHistoryEntry, summarizeWeeklyDictationHistory } from '../lib/dictationHistory';
 import { summarizeWrongDictationAnswers, type DictationAnswerRecord } from '../lib/dictationSummary';
 import { buildSpellingFeedback, type SpellingFeedback as SpellingFeedbackData } from '../lib/spellingFeedback';
-import { awardPerfectTrainingStar, getStarCount } from '../lib/starRewards';
+import { getStarCount } from '../lib/starRewards';
+import { recordCompletedTraining } from '../lib/learningRecords';
 
 type DictationStep =
   | {
@@ -120,6 +121,7 @@ export function DictationPage() {
   const [speechCheckMessage, setSpeechCheckMessage] = useState('');
   const [speechCheckPassed, setSpeechCheckPassed] = useState<boolean | null>(null);
   const [roundHistoryId, setRoundHistoryId] = useState(() => crypto.randomUUID());
+  const [roundStartedAt, setRoundStartedAt] = useState(() => new Date().toISOString());
   const [roundCompletedAt, setRoundCompletedAt] = useState<string | null>(null);
   const autoPlayStepRef = useRef('');
   const autoPlayTimerRef = useRef<number | null>(null);
@@ -265,30 +267,33 @@ export function DictationPage() {
     if (!isCompleted || roundHistorySavedRef.current) return;
 
     const finishedAt = roundCompletedAt ?? new Date().toISOString();
-    roundHistorySavedRef.current = true;
-
     const state = loadState();
-    const correctCount = answers.filter((answer) => answer.isCorrect).length;
-    const rewarded = awardPerfectTrainingStar(state, {
-      sourceType: 'dictation',
-      sourceId: roundHistoryId,
+    const wordIds = new Map(dictationWords.map((word) => [word.word, DAILY_LEARNING_QUESTION_ID_BASE + word.id]));
+    const nextState = recordCompletedTraining(state, {
+      source: 'dictation',
+      id: roundHistoryId,
       title: '每日听写',
-      score: correctCount,
-      total: quizTotal,
-      earnedAt: finishedAt,
+      train: 'dictation',
+      mode: 'vocab',
+      startedAt: roundStartedAt,
+      finishedAt,
+      questionTotal: quizTotal,
+      answers: answers.map((answer) => {
+        const questionId = wordIds.get(answer.word);
+        if (questionId === undefined) throw new Error(`听写单词未关联题库：${answer.word}`);
+        return {
+          questionId,
+          isCorrect: answer.isCorrect,
+          answeredAt: answer.answeredAt ?? finishedAt,
+          kind: answer.type === 'listenChoose' ? 'meaning' : 'spelling',
+        };
+      }),
     });
-    const nextState = rewarded.state;
     const nextHistoryEntry = createDictationHistoryEntry(answers, finishedAt, roundHistoryId);
-
-    if (nextHistoryEntry.wrongWords.length > 0) {
-      const existingHistory = nextState.dictationHistory.filter((item) => item.id !== nextHistoryEntry.id);
-      nextState.dictationHistory = [nextHistoryEntry, ...existingHistory].slice(0, 90);
-    }
-
-    if (rewarded.awarded || nextHistoryEntry.wrongWords.length > 0) {
-      saveState(nextState);
-    }
-  }, [answers, isCompleted, quizTotal, roundCompletedAt, roundHistoryId]);
+    const existingHistory = nextState.dictationHistory.filter((item) => item.id !== nextHistoryEntry.id);
+    saveState({ ...nextState, dictationHistory: [nextHistoryEntry, ...existingHistory].slice(0, 90) });
+    roundHistorySavedRef.current = true;
+  }, [answers, isCompleted, quizTotal, roundCompletedAt, roundHistoryId, roundStartedAt]);
 
   const resetStepUi = () => {
     clearAutoPlayTimer();
@@ -314,6 +319,7 @@ export function DictationPage() {
   const restartSession = () => {
     autoPlayStepRef.current = '';
     setRoundHistoryId(crypto.randomUUID());
+    setRoundStartedAt(new Date().toISOString());
     setRoundCompletedAt(null);
     roundHistorySavedRef.current = false;
     resetStepUi();
@@ -349,6 +355,7 @@ export function DictationPage() {
           userAnswer: selectedMeaning,
           correctAnswer: currentStep.word.meaning,
           isCorrect,
+          answeredAt: new Date().toISOString(),
         },
       ]);
       if (!isCorrect) {
@@ -375,6 +382,7 @@ export function DictationPage() {
           userAnswer: trimmedInput,
           correctAnswer: currentStep.word.word,
           isCorrect,
+          answeredAt: new Date().toISOString(),
         },
       ]);
     setSpellingFeedbackData(isCorrect ? null : nextSpellingFeedback);
@@ -404,6 +412,7 @@ export function DictationPage() {
         userAnswer: '不会',
         correctAnswer,
         isCorrect: false,
+        answeredAt: new Date().toISOString(),
       },
     ]);
     recordWrongWord(currentStep.word);
@@ -487,7 +496,7 @@ export function DictationPage() {
           </Card>
         ) : (
           <Card className="card-tone-mint" title="表现很好" subtitle="这一轮没有做错，可以稍后再练一遍巩固记忆。">
-            <p>这 {dictationWords.length} 个词已经基本掌握了。</p>
+            <p>这 {dictationWords.length} 个词本轮全部答对了，稍后再复习巩固。</p>
           </Card>
         )}
 

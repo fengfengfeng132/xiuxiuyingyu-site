@@ -5,6 +5,7 @@ import { dictationWords } from '../data/dictationWords';
 import { questionBank } from '../data/loadQuestionBank';
 import { getStarCount } from '../lib/starRewards';
 import { loadState, startSession } from '../lib/storage';
+import { DAILY_MINUTE_GOAL, DAILY_QUESTION_GOAL, getLearningStatistics } from '../lib/learningStats';
 
 interface ModeCard {
   title: string;
@@ -15,30 +16,6 @@ interface ModeCard {
   query?: string;
   to?: string;
 }
-
-const routeSteps = [
-  {
-    title: '今日 10 分钟',
-    desc: '坚持学习',
-    meta: '6/10 分钟',
-    icon: '/images/ui-ipad/clock.png',
-    query: 'mode=all&train=today10',
-  },
-  {
-    title: '每日 10 题',
-    desc: '复习之前学过的词',
-    meta: '8/10 题',
-    icon: '/images/ui-ipad/review-book.png',
-    query: 'mode=all&train=daily20',
-  },
-  {
-    title: '等级闯关',
-    desc: '挑战进阶',
-    meta: 'Lv.2 进行中',
-    icon: '/images/ui-ipad/stat-medal-icon.png',
-    query: 'mode=all&train=level10',
-  },
-];
 
 const modeCards: ModeCard[] = [
   {
@@ -110,8 +87,32 @@ const modeCards: ModeCard[] = [
 export function ModeHubPage() {
   const navigate = useNavigate();
   const state = loadState();
+  const statistics = getLearningStatistics(state, questionBank);
   const pendingWrongCount = state.wrongBook.filter((item) => !item.mastered).length;
   const starCount = getStarCount(state);
+  const routeSteps = [
+    {
+      title: '今日 10 分钟',
+      desc: '坚持学习',
+      meta: `${statistics.todayMinutes}/${DAILY_MINUTE_GOAL} 分钟`,
+      icon: '/images/ui-ipad/clock.png',
+      query: 'mode=all&train=today10',
+    },
+    {
+      title: '每日 10 题',
+      desc: '复习之前学过的词',
+      meta: `${statistics.todayDailyAnswered}/${DAILY_QUESTION_GOAL} 题`,
+      icon: '/images/ui-ipad/review-book.png',
+      query: 'mode=all&train=daily20',
+    },
+    {
+      title: '等级闯关',
+      desc: '挑战进阶',
+      meta: `今日完成 ${statistics.todayLevelRounds} 轮`,
+      icon: '/images/ui-ipad/stat-medal-icon.png',
+      query: 'mode=all&train=level10',
+    },
+  ];
 
   const beginLearning = (query: string) => {
     startSession();

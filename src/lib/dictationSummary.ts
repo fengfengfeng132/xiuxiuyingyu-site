@@ -6,6 +6,7 @@ export interface DictationAnswerRecord {
   userAnswer: string;
   correctAnswer: string;
   isCorrect: boolean;
+  answeredAt?: string;
 }
 
 export interface DictationMistakeDetail {

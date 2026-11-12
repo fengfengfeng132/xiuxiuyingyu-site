@@ -18,7 +18,7 @@ const CORRECT_ROUND_LIMIT = 3;
 const RECENT_WINDOW_DAYS = 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-type ReviewState = Pick<AppState, 'wrongBook' | 'reviewTasks' | 'sessions' | 'activeSession' | 'dictationHistory'>;
+type ReviewState = Pick<AppState, 'wrongBook' | 'reviewTasks' | 'sessions' | 'activeSession' | 'dictationHistory' | 'learningRecords'>;
 
 interface PracticeEvidence {
   recentErrors: number;
@@ -44,6 +44,11 @@ function getRecentWindowStart(now: Date): number {
 }
 
 function uniqueSessions(state: ReviewState): StudySession[] {
+  if (state.learningRecords) {
+    const active = state.activeSession;
+    if (!active || state.learningRecords.rounds.some((round) => round.source === 'practice' && round.id === active.id)) return [];
+    return [active];
+  }
   const sessions = state.activeSession ? [...state.sessions, state.activeSession] : state.sessions;
   return [...new Map(sessions.map((session) => [session.id, session])).values()];
 }
@@ -56,6 +61,25 @@ function collectPracticeEvidence(
 ): { seenIds: Set<number>; evidence: Map<number, PracticeEvidence> } {
   const seenIds = new Set<number>();
   const evidence = new Map<number, PracticeEvidence>();
+
+  state.learningRecords?.questions.forEach((record) => {
+    if (validPastTime(record.firstSeenAt, now) === null) return;
+    seenIds.add(record.questionId);
+    const wrong = wrongById.get(record.questionId);
+    const lastWrongAt = wrong ? validPastTime(wrong.lastWrongAt, now) : null;
+    const correctRounds = record.correctRounds.filter((round) => {
+      const startedAt = validPastTime(round.startedAt, now);
+      return startedAt !== null && validPastTime(round.answeredAt, now) !== null
+        && lastWrongAt !== null && startedAt > lastWrongAt;
+    });
+    const recentErrors = record.recentErrors.reduce((total, day) => {
+      const answeredAt = validPastTime(day.lastAnsweredAt, now);
+      return answeredAt !== null && answeredAt >= recentStart ? total + day.practice : total;
+    }, 0);
+    evidence.set(record.questionId, {
+      recentErrors, correctRoundsAfterWrong: correctRounds.length, reviewedAfterWrong: correctRounds.length > 0,
+    });
+  });
 
   uniqueSessions(state).forEach((session) => {
     const startedAt = validPastTime(session.startedAt, now);
@@ -82,7 +106,14 @@ function collectPracticeEvidence(
   return { seenIds, evidence };
 }
 
-function collectRecentDictationBonuses(state: ReviewState, now: number, recentStart: number): Map<string, number> {
+function collectRecentDictationBonuses(state: ReviewState, bank: Question[], now: number, recentStart: number): Map<number, number> {
+  if (state.learningRecords) {
+    return new Map(state.learningRecords.questions.map((record) => [record.questionId, record.recentErrors.reduce((total, day) => {
+      const answeredAt = validPastTime(day.lastAnsweredAt, now);
+      return answeredAt !== null && answeredAt >= recentStart
+        ? total + day.meaning * RECENT_MEANING_ERROR_WEIGHT + day.spelling * RECENT_SPELLING_ERROR_WEIGHT : total;
+    }, 0)]));
+  }
   const bonuses = new Map<string, number>();
   const historyById = new Map(state.dictationHistory.map((entry) => [entry.id, entry]));
   historyById.forEach((entry) => {
@@ -95,7 +126,7 @@ function collectRecentDictationBonuses(state: ReviewState, now: number, recentSt
       bonuses.set(word, (bonuses.get(word) ?? 0) + bonus);
     });
   });
-  return bonuses;
+  return new Map(bank.map((question) => [question.id, bonuses.get(question.prompt.trim().toLowerCase()) ?? 0]));
 }
 
 function getTaskEvidence(state: ReviewState, now: number): { taskIds: Set<number>; dueIds: Set<number> } {
@@ -140,7 +171,7 @@ export function selectReviewQuestions(
   const uniqueBank = [...new Map(bank.map((question) => [question.id, question])).values()];
   const wrongById = new Map(state.wrongBook.map((wrong) => [wrong.questionId, wrong]));
   const { seenIds, evidence } = collectPracticeEvidence(state, wrongById, nowTime, recentStart);
-  const dictationBonuses = collectRecentDictationBonuses(state, nowTime, recentStart);
+  const dictationBonuses = collectRecentDictationBonuses(state, uniqueBank, nowTime, recentStart);
   const { taskIds, dueIds } = getTaskEvidence(state, nowTime);
   const isPendingWrong = (id: number) => {
     const wrong = wrongById.get(id);
@@ -170,7 +201,7 @@ export function selectReviewQuestions(
     const score = (question: Question) => focusWeight(
       wrongById.get(question.id)!,
       evidence.get(question.id),
-      dictationBonuses.get(question.prompt.trim().toLowerCase()) ?? 0,
+      dictationBonuses.get(question.id) ?? 0,
       dueIds.has(question.id),
       nowTime,
     );

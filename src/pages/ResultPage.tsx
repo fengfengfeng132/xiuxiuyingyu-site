@@ -39,14 +39,15 @@ export function ResultPage() {
       const question = questionBank.find((item) => item.id === answer.questionId);
       if (!question) return null;
 
-      const correctOption = isSpellingRound
+      const isTranslationRound = latest.train === 'zh2en';
+      const correctOption = isSpellingRound || isTranslationRound
         ? question.prompt
         : question.options[question.answerIndex] ?? '（缺少正确答案）';
 
       return {
         id: question.id,
         prompt: question.prompt,
-        correctLabel: isSpellingRound ? '拼写' : String.fromCharCode(65 + question.answerIndex),
+        correctLabel: isSpellingRound ? '拼写' : isTranslationRound ? '英文' : String.fromCharCode(65 + question.answerIndex),
         correctOption,
       };
     })

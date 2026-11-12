@@ -1,5 +1,7 @@
 param(
-  [string]$OutputDir = ".\tmp\daily-word-audio"
+  [string]$OutputDir = ".\tmp\daily-word-audio",
+  [string]$ManifestPath = "",
+  [ValidateRange(1, 100)][int]$Volume = 100
 )
 
 Set-StrictMode -Version Latest
@@ -9,11 +11,17 @@ Add-Type -AssemblyName System.Speech
 
 $repoRoot = Resolve-Path -LiteralPath "."
 $dictationPath = Join-Path $repoRoot.Path "src\data\dictationWords.json"
-$entries = Get-Content -LiteralPath $dictationPath -Raw -Encoding UTF8 | ConvertFrom-Json
+if ($ManifestPath) {
+  $sourcePath = (Resolve-Path -LiteralPath $ManifestPath).Path
+  $entries = Get-Content -LiteralPath $sourcePath -Raw -Encoding UTF8 | ConvertFrom-Json
+} else {
+  $sourcePath = $dictationPath
+  $entries = Get-Content -LiteralPath $dictationPath -Raw -Encoding UTF8 | ConvertFrom-Json
+}
 
 $voiceName = "Microsoft Zira Desktop"
 if ($entries.Count -eq 0) {
-  throw "No words found in $dictationPath"
+  throw "No audio entries found in $sourcePath"
 }
 
 $resolvedOutputDir = Join-Path $repoRoot.Path $OutputDir
@@ -54,6 +62,7 @@ $useSapi = $false
 try {
   $systemSpeaker = New-Object System.Speech.Synthesis.SpeechSynthesizer
   $systemSpeaker.SelectVoice($voiceName)
+  $systemSpeaker.Volume = $Volume
 } catch {
   if ($null -ne $systemSpeaker) {
     $systemSpeaker.Dispose()
@@ -67,6 +76,7 @@ try {
   }
 
   $sapiSpeaker.Voice = $voiceTokens[0]
+  $sapiSpeaker.Volume = $Volume
   $useSapi = $true
 }
 

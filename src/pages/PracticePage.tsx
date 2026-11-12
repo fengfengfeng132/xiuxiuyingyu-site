@@ -24,13 +24,15 @@ import {
 } from '../lib/speechAssessment';
 import { pickDailyQuestions, pickPracticeSessionQuestions } from '../lib/practiceUtils';
 import { getSavedExampleReview } from '../lib/practiceExampleReview';
+import { buildTranslationQuestion, canRevealPracticeAnswer, getPracticeCardTitle } from '../lib/practiceDisplay';
 import { getLegacyPracticeQuestionIds, getSavedPracticeQuestionIds } from '../lib/practiceSession';
-import { applyReviewAnswers, getPendingReviewQuestionIds } from '../lib/reviewProgress';
+import { getPendingReviewQuestionIds } from '../lib/reviewProgress';
 import { selectReviewQuestions, type ReviewKind } from '../lib/reviewSelection';
-import { awardPerfectTrainingStar } from '../lib/starRewards';
+import { recordCompletedTraining } from '../lib/learningRecords';
 import { createSession, loadState, saveState } from '../lib/storage';
 import { playWrongAnswerTone, updateWrongBookForQuestion } from '../lib/studyFeedback';
 import { fetchWordImage } from '../lib/wordImage';
+import { buildSpellingFeedback } from '../lib/spellingFeedback';
 import type { Question, SessionAnswer } from '../types/schema';
 
 type TrainMode =
@@ -126,12 +128,6 @@ function shuffleArray<T>(arr: T[]): T[] {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
-}
-
-function extractZh(explanation: string): string {
-  const parts = explanation.split(/\s+/);
-  if (parts.length >= 2) return parts.slice(1).join(' ');
-  return explanation;
 }
 
 function maskWord(word: string): string {
@@ -296,18 +292,8 @@ export function PracticePage() {
 
     if (train === 'zh2en') {
       const vocabBank = bank.filter((q) => q.tags.includes('vocab-qa') || q.tags.includes('vocab'));
-      const allWords = vocabBank.map((x) => x.prompt);
-      bank = vocabBank.map((q) => {
-        const correctZh = extractZh(q.explanation);
-        const distract = shuffleArray(allWords.filter((w) => w !== q.prompt)).slice(0, 3);
-        const options = shuffleArray([q.prompt, ...distract]);
-        return {
-          ...q,
-          stem: `请选择“${correctZh}”对应的英文单词`,
-          options,
-          answerIndex: options.indexOf(q.prompt),
-        };
-      });
+      const vocabularyPool = questionBank.filter((q) => q.tags.includes('vocab-qa') || q.tags.includes('vocab'));
+      bank = vocabBank.map((question) => buildTranslationQuestion(question, vocabularyPool));
     }
 
     if (train === 'spelling') {
@@ -501,7 +487,7 @@ export function PracticePage() {
     const state = loadState();
     const session = state.activeSession;
     const existed = session?.answers.find((a) => a.questionId === question.id);
-    const savedExampleReview = getSavedExampleReview(question, existed, Boolean(REVIEW_KINDS[train]));
+    const savedExampleReview = getSavedExampleReview(question, existed, Boolean(REVIEW_KINDS[train]) || train === 'zh2en');
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelected(existed && existed.selectedIndex >= 0 ? existed.selectedIndex : null);
@@ -571,6 +557,7 @@ export function PracticePage() {
 
   const speakAudio = useCallback(async (text: string, rate: number) => {
     if (!text) return;
+    if (!canRevealPracticeAnswer(train, submittedExampleQuestionId === question?.id)) return;
 
     const isDailyDictationWord = Boolean(question?.tags.includes(DAILY_DICTATION_TAG) || question?.tags.includes('archived-dictation'));
     if (isDailyDictationWord) {
@@ -597,6 +584,11 @@ export function PracticePage() {
       if (playback.ok || playback.reason === 'stale') return;
     }
 
+    if (rate < 1) {
+      setFeedback('当前内容的慢速音频暂不可用，请先听正常发音。');
+      return;
+    }
+
     if (!('speechSynthesis' in window)) {
       setFeedback('当前浏览器不支持语音朗读。');
       return;
@@ -609,11 +601,11 @@ export function PracticePage() {
     const usVoice = preferredVoiceRef.current ?? pickUsVoice(voices);
     if (usVoice) utterance.voice = usVoice;
     utterance.lang = 'en-US';
-    utterance.rate = rate;
+    utterance.rate = 1;
     utterance.pitch = 1.05;
     utterance.volume = 1;
     window.speechSynthesis.speak(utterance);
-  }, [question]);
+  }, [question, submittedExampleQuestionId, train]);
 
   useEffect(() => {
     if (!autoPlayAfterSubmitRef.current) return;
@@ -664,6 +656,7 @@ export function PracticePage() {
 
   const runSpeechCheck = async () => {
     if (!question) return;
+    if (!canRevealPracticeAnswer(train, submittedExampleQuestionId === question.id)) return;
 
     const targetText = getAudioText(question).trim();
     if (!targetText) {
@@ -719,24 +712,26 @@ export function PracticePage() {
 
     if (questionIndex >= flow.length - 1) {
       const finishedAt = new Date().toISOString();
-      session.finishedAt = finishedAt;
-      state.reviewTasks = applyReviewAnswers(state.reviewTasks, session.answers, new Date(finishedAt));
-      const rewarded = awardPerfectTrainingStar(
+      const finishedSession = { ...session, finishedAt };
+      const nextState = recordCompletedTraining(
         {
           ...state,
           activeSession: null,
-          sessions: [session, ...state.sessions].slice(0, 30),
+          sessions: [finishedSession, ...state.sessions.filter((item) => item.id !== finishedSession.id)].slice(0, 30),
         },
         {
-          sourceType: 'practice',
-          sourceId: session.id,
+          id: session.id,
+          source: 'practice',
+          train,
+          mode,
           title: getTrainTitle(train),
-          score: session.score,
-          total: session.questionTotal ?? totalCount,
-          earnedAt: finishedAt,
+          startedAt: session.startedAt,
+          finishedAt,
+          questionTotal: session.questionTotal ?? totalCount,
+          answers: session.answers.map((answer) => ({ ...answer, kind: 'practice' as const })),
         },
       );
-      saveState(rewarded.state);
+      saveState(nextState);
       navigate('/result');
       return;
     }
@@ -799,7 +794,7 @@ export function PracticePage() {
       state.activeSession.answers.every((answer) => questionById.has(answer.questionId));
 
     const session = hasCompatibleSession && state.activeSession ? state.activeSession : createSession();
-    const savedExampleReview = getSavedExampleReview(question, session.answers.find((answer) => answer.questionId === question.id), Boolean(REVIEW_KINDS[train]));
+    const savedExampleReview = getSavedExampleReview(question, session.answers.find((answer) => answer.questionId === question.id), Boolean(REVIEW_KINDS[train]) || train === 'zh2en');
     if (savedExampleReview) {
       setSubmittedExampleQuestionId(savedExampleReview.questionId);
       setFeedback(savedExampleReview.feedback);
@@ -807,10 +802,8 @@ export function PracticePage() {
       return;
     }
     const selectedIndex = isChoiceQuestion ? (selected ?? 0) : isSpellingQuestion ? -1 : 0;
-    const normalizedInput = spellingInput.trim().toLowerCase();
-    const normalizedAnswer = question.prompt.trim().toLowerCase();
     const isCorrect = isSpellingQuestion
-      ? normalizedInput === normalizedAnswer
+      ? buildSpellingFeedback(spellingInput, question.prompt).isCorrect
       : isChoiceQuestion
         ? selectedIndex === question.answerIndex
         : true;
@@ -854,7 +847,7 @@ export function PracticePage() {
         if (reorderedFlow !== questionFlow) {
           nextFlow = reorderedFlow;
           setQuestionFlow(reorderedFlow);
-          nextFeedback += question.examples?.length || REVIEW_KINDS[train] ? ' 下一题会练习相似内容。' : ' 已为你切换到相似题继续练习。';
+          nextFeedback += question.examples?.length || REVIEW_KINDS[train] || train === 'zh2en' ? ' 下一题会练习相似内容。' : ' 已为你切换到相似题继续练习。';
         }
       }
     } else {
@@ -867,7 +860,7 @@ export function PracticePage() {
     session.currentQuestionIndex = questionIndex;
     session.questionIds = [...nextFlow];
     saveState(state);
-    if ((question.examples?.length || REVIEW_KINDS[train]) && (isChoiceQuestion || isSpellingQuestion)) {
+    if ((question.examples?.length || REVIEW_KINDS[train] || train === 'zh2en') && (isChoiceQuestion || isSpellingQuestion)) {
       setSubmittedExampleQuestionId(question.id);
       setFeedback(nextFeedback);
       return;
@@ -876,17 +869,13 @@ export function PracticePage() {
   };
 
   const modeTitle = mode === 'vocab' ? '词汇' : mode === 'dialogue' ? '对话' : '全部';
-  const cardTitle =
-    train === 'audio'
-      ? '先点击播放，再作答'
-      : train === 'spelling'
-        ? `中文释义：${extractZh(question.explanation)}`
-        : question.prompt;
+  const hasSubmittedExampleQuestion = submittedExampleQuestionId === question.id;
+  const canRevealAnswer = canRevealPracticeAnswer(train, hasSubmittedExampleQuestion);
+  const cardTitle = getPracticeCardTitle(train, question, hasSubmittedExampleQuestion);
 
   const cardSubtitle = train === 'audio' ? '听音后选择正确选项' : question.stem;
   const displayedPhonetic = question.phonetic || phonetic;
 
-  const hasSubmittedExampleQuestion = submittedExampleQuestionId === question.id;
   const submitDisabled = hasSubmittedExampleQuestion ? false : isChoiceQuestion
     ? selected === null
     : isSpellingQuestion
@@ -933,12 +922,12 @@ export function PracticePage() {
           </span>
         </div>
         <img className="practice-card-dog" src="/images/ui-ipad/dog.png" alt="" aria-hidden="true" />
-        {displayedPhonetic ? <p className="field-note">美式音标：{displayedPhonetic}</p> : null}
+        {canRevealAnswer && displayedPhonetic ? <p className="field-note">美式音标：{displayedPhonetic}</p> : null}
         {(!isChoiceQuestion && !isSpellingQuestion || hasSubmittedExampleQuestion) && (question.partOfSpeech || question.sources?.length) ? (
           <p className="word-learning-metadata">{[question.partOfSpeech, question.sources?.join(' · ')].filter(Boolean).join(' · ')}</p>
         ) : null}
 
-        <div className="listen-controls">
+        {canRevealAnswer ? <div className="listen-controls">
           <Button variant="ghost" onClick={() => playFullAudio(1)}>
             正常
           </Button>
@@ -951,7 +940,7 @@ export function PracticePage() {
           <Button variant="ghost" onClick={() => void runSpeechCheck()} disabled={speechChecking || !speechRecognitionSupported}>
             {speechChecking ? '识别中...' : '跟读判定'}
           </Button>
-        </div>
+        </div> : <p className="field-note">先选出正确英文，提交后可以听发音和跟读。</p>}
         {speechCheckMessage ? <p className={speechCheckClassName}>{speechCheckMessage}</p> : null}
         {!speechRecognitionSupported ? (
           <p className="speech-check speech-check-warn">当前浏览器不支持语音识别。iPad 请使用 Safari，并确认已开启 Siri。</p>

@@ -24,4 +24,21 @@ describe('speechAssessment', () => {
     expect(result.passed).toBe(true);
     expect(result.score).toBeGreaterThanOrEqual(70);
   });
+
+  it('rejects a single letter contained in a full target word', () => {
+    const result = assessSpokenText('elephant', 'a');
+    expect(result.passed).toBe(false);
+    expect(result.score).toBeLessThan(78);
+  });
+
+  it('rejects only one word from a full sentence', () => {
+    const result = assessSpokenText('The zebras are scared and they run away.', 'the');
+    expect(result.passed).toBe(false);
+    expect(result.score).toBeLessThan(70);
+  });
+
+  it('accepts a complete sentence and a minor word transcription error', () => {
+    expect(assessSpokenText('The zebras are scared and they run away.', 'the zebras are scared and they run away').passed).toBe(true);
+    expect(assessSpokenText('elephant', 'elephent').passed).toBe(true);
+  });
 });

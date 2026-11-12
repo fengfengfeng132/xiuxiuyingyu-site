@@ -12,10 +12,65 @@ import {
   playLocalQuestionBankAudio,
   playLocalUsSlowWordAudio,
   playLocalUsWordAudio,
+  playUsWordAudio,
 } from '../src/lib/phonetic';
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe('slow playback safety', () => {
+  it('plays base words through independent local variants at normal browser speed', async () => {
+    vi.resetModules();
+    const played: { src: string; rate: number }[] = [];
+    class FakeAudio {
+      currentTime = 0;
+      playbackRate = 1;
+      preload = '';
+      src = '';
+      load() {}
+      pause() {}
+      play() { played.push({ src: this.src, rate: this.playbackRate }); return Promise.resolve(); }
+    }
+    const fetch = vi.fn();
+    vi.stubGlobal('Audio', FakeAudio);
+    vi.stubGlobal('window', { location: { origin: 'https://example.test' } });
+    vi.stubGlobal('fetch', fetch);
+    const audio = await import('../src/lib/phonetic');
+
+    expect(await audio.playUsWordAudio('hit', 0.75)).toEqual({ ok: true, reason: 'played' });
+    expect(await audio.playUsWordAudio('hit', 1)).toEqual({ ok: true, reason: 'played' });
+    expect(played).toEqual([
+      { src: 'https://example.test/audio/question-bank/us-slow/hit.wav', rate: 1 },
+      { src: 'https://example.test/audio/question-bank/us/hit.wav', rate: 1 },
+    ]);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('reports missing independent slow audio instead of fetching and stretching dictionary audio', async () => {
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    expect(await playUsWordAudio('unlisted-regression-word', 0.75)).toEqual({ ok: false, reason: 'missing' });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('reports playback failure explicitly when a mapped local recording cannot play', async () => {
+    vi.resetModules();
+    class FailedAudio {
+      currentTime = 0;
+      playbackRate = 1;
+      preload = '';
+      src = '';
+      load() {}
+      pause() {}
+      play() { return Promise.reject(new Error('Unable to decode audio')); }
+    }
+    vi.stubGlobal('Audio', FailedAudio);
+    vi.stubGlobal('window', { location: { origin: 'https://example.test' } });
+    const audio = await import('../src/lib/phonetic');
+    expect(await audio.playUsWordAudio('hit', 0.75)).toEqual({ ok: false, reason: 'failed' });
+    expect(audio.getLocalSlowWordAudioFeedback({ ok: false, reason: 'failed' })).not.toBe('');
+  });
 });
 
 describe('phonetic', () => {

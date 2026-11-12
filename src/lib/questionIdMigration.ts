@@ -1,11 +1,26 @@
 import type { AppState, ReviewTask, StudySession, WrongItem } from '../types/schema';
 
+function migrateIdList(questionIds: number[], aliases: ReadonlyMap<number, number>): number[] {
+  const migrated = [...new Set(questionIds.map((questionId) => aliases.get(questionId) ?? questionId))];
+  return migrated.length === questionIds.length && migrated.every((questionId, index) => questionId === questionIds[index])
+    ? questionIds
+    : migrated;
+}
+
 function migrateSession(session: StudySession, aliases: ReadonlyMap<number, number>): StudySession {
   const answers = session.answers.map((answer) => {
     const questionId = aliases.get(answer.questionId) ?? answer.questionId;
     return questionId === answer.questionId ? answer : { ...answer, questionId };
   });
-  return answers.some((answer, index) => answer !== session.answers[index]) ? { ...session, answers } : session;
+  const questionIds = session.questionIds ? migrateIdList(session.questionIds, aliases) : undefined;
+  const answersChanged = answers.some((answer, index) => answer !== session.answers[index]);
+  if (!answersChanged && questionIds === session.questionIds) return session;
+
+  return {
+    ...session,
+    answers: answersChanged ? answers : session.answers,
+    ...(questionIds ? { questionIds } : {}),
+  };
 }
 
 function migrateWrongBook(items: WrongItem[], aliases: ReadonlyMap<number, number>): WrongItem[] {
@@ -34,10 +49,13 @@ function migrateWrongBook(items: WrongItem[], aliases: ReadonlyMap<number, numbe
 }
 
 function migrateReviewTask(task: ReviewTask, aliases: ReadonlyMap<number, number>): ReviewTask {
-  const questionIds = [...new Set(task.questionIds.map((questionId) => aliases.get(questionId) ?? questionId))];
-  const changed = questionIds.length !== task.questionIds.length
-    || questionIds.some((questionId, index) => questionId !== task.questionIds[index]);
-  return changed ? { ...task, questionIds } : task;
+  const questionIds = migrateIdList(task.questionIds, aliases);
+  const completedQuestionIds = task.completedQuestionIds ? migrateIdList(task.completedQuestionIds, aliases) : undefined;
+  if (questionIds === task.questionIds && completedQuestionIds === task.completedQuestionIds) return task;
+
+  const completedIds = new Set(completedQuestionIds ?? []);
+  const completed = task.completed || (questionIds.length > 0 && questionIds.every((questionId) => completedIds.has(questionId)));
+  return { ...task, questionIds, completed, ...(completedQuestionIds ? { completedQuestionIds } : {}) };
 }
 
 export function migrateQuestionIds(state: AppState, aliases: ReadonlyMap<number, number>): AppState {

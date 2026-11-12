@@ -1,0 +1,275 @@
+import { describe, expect, it } from 'vitest';
+import { selectReviewQuestions, type ReviewKind } from '../src/lib/reviewSelection';
+import type { Question, ReviewTask, StudySession, WrongItem } from '../src/types/schema';
+
+type ReviewState = Parameters<typeof selectReviewQuestions>[1];
+const NOW = new Date('2026-11-12T12:00:00+08:00');
+
+function question(id: number, archived = true): Question {
+  return {
+    id, level: 'L2', unit: 1, type: 'single_choice', prompt: `word-${id}`,
+    stem: '选出意思', options: ['一', '二', '三', '四'], answerIndex: 0,
+    explanation: `word-${id} 一`, tags: archived ? ['vocab', 'archived-dictation'] : ['vocab'],
+  };
+}
+
+function bank(size: number, archived = true): Question[] {
+  return Array.from({ length: size }, (_, index) => question(index + 1, archived));
+}
+
+function wrong(questionId: number, overrides: Partial<WrongItem> = {}): WrongItem {
+  return { questionId, wrongCount: 1, lastWrongAt: '2026-11-11T10:00:00+08:00', mastered: false, ...overrides };
+}
+
+function task(questionIds: number[], overrides: Partial<ReviewTask> = {}): ReviewTask {
+  return { id: 'review', questionIds, dueAt: '2026-11-12T09:00:00+08:00', completed: false, ...overrides };
+}
+
+function session(id: string, questionId: number, isCorrect: boolean, startedAt = '2026-11-12T09:00:00+08:00'): StudySession {
+  return {
+    id, startedAt, currentQuestionIndex: 0, score: isCorrect ? 1 : 0, accuracy: isCorrect ? 1 : 0,
+    answers: [{ questionId, selectedIndex: 0, isCorrect, answeredAt: '2026-11-12T10:00:00+08:00' }],
+  };
+}
+
+function state(overrides: Partial<ReviewState> = {}): ReviewState {
+  return { wrongBook: [], reviewTasks: [], sessions: [], activeSession: null, dictationHistory: [], ...overrides };
+}
+
+function ids(questions: Question[]): number[] {
+  return questions.map((item) => item.id);
+}
+
+function deepFreeze<T>(value: T): T {
+  if (value && typeof value === 'object') {
+    Object.values(value).forEach(deepFreeze);
+    Object.freeze(value);
+  }
+  return value;
+}
+
+describe('review selection', () => {
+  it.each<ReviewKind>(['daily', 'weekly', 'wrongFirst', 'spaced'])('always includes the sole wrong word in an 18-question %s pool', (kind) => {
+    const snapshot = state({ wrongBook: [wrong(1)], reviewTasks: [task([1])] });
+    const selected = selectReviewQuestions(bank(18), snapshot, { kind, now: NOW });
+
+    expect(selected).toHaveLength(10);
+    expect(ids(selected)[0]).toBe(1);
+    expect(new Set(ids(selected)).size).toBe(10);
+  });
+
+  it('prioritizes higher cumulative error counts and caps their influence', () => {
+    const questions = bank(2);
+    const choose = (firstCount: number) => ids(selectReviewQuestions(questions, state({
+      wrongBook: [wrong(1, { wrongCount: firstCount }), wrong(2, { wrongCount: 2 })],
+    }), { kind: 'weekly', now: NOW, count: 1 }));
+    expect(choose(3)).toEqual([1]);
+    expect(choose(5)).toEqual(choose(500));
+  });
+
+  it.each<ReviewKind>(['daily', 'weekly', 'spaced'])('reserves seven focus and three other old words for %s', (kind) => {
+    const wrongIds = Array.from({ length: 10 }, (_, index) => index + 1);
+    const snapshot = state({ wrongBook: wrongIds.map((id) => wrong(id)), reviewTasks: [task(wrongIds)] });
+    const selected = ids(selectReviewQuestions(bank(20), snapshot, { kind, now: NOW }));
+
+    expect(selected).toHaveLength(10);
+    expect(selected.filter((id) => wrongIds.includes(id))).toHaveLength(7);
+    expect(selected.filter((id) => !wrongIds.includes(id))).toHaveLength(3);
+  });
+
+  it('lets wrong-first use all ten slots for unmastered words', () => {
+    const selected = ids(selectReviewQuestions(bank(20), state({
+      wrongBook: Array.from({ length: 10 }, (_, index) => wrong(index + 1)),
+    }), { kind: 'wrongFirst', now: NOW }));
+    expect(selected).toHaveLength(10);
+    expect(selected.every((id) => id <= 10)).toBe(true);
+  });
+
+  it('keeps mastered words out of the focus quota while allowing them as ordinary review', () => {
+    const wrongBook = Array.from({ length: 11 }, (_, index) => wrong(index + 1, { mastered: index === 0 }));
+    const selected = ids(selectReviewQuestions(bank(20), state({ wrongBook }), { kind: 'weekly', now: NOW }));
+    expect(selected.filter((id) => id >= 2 && id <= 11)).toHaveLength(7);
+    expect(selected.slice(0, 7)).not.toContain(1);
+  });
+
+  it('fills a short focus pool with ordinary words and a short ordinary pool with remaining wrong words', () => {
+    const fewWrong = ids(selectReviewQuestions(bank(20), state({ wrongBook: [wrong(1), wrong(2)] }), { kind: 'weekly', now: NOW }));
+    expect(fewWrong).toHaveLength(10);
+    expect(fewWrong).toContain(1);
+    expect(fewWrong).toContain(2);
+
+    const manyWrong = ids(selectReviewQuestions(bank(20), state({
+      wrongBook: Array.from({ length: 18 }, (_, index) => wrong(index + 1)),
+    }), { kind: 'weekly', now: NOW }));
+    expect(manyWrong).toHaveLength(10);
+    expect(manyWrong.filter((id) => id <= 18)).toHaveLength(8);
+    expect(manyWrong).toEqual(expect.arrayContaining([19, 20]));
+  });
+
+  it('does not lose unresolved wrong words when their errors leave the rolling seven-day window', () => {
+    const snapshot = state({
+      wrongBook: [wrong(1, { lastWrongAt: '2026-11-05T10:00:00+08:00' }), wrong(2)],
+      dictationHistory: [{
+        id: 'last-week', finishedAt: '2026-11-05T11:00:00+08:00',
+        wrongWords: [{ word: 'word-1', meaning: '一', meaningWrongCount: 1, spellingWrongCount: 1 }],
+      }],
+    });
+    expect(ids(selectReviewQuestions(bank(2), snapshot, { kind: 'weekly', now: NOW, count: 1 }))).toEqual([1]);
+    expect(ids(selectReviewQuestions(bank(2), snapshot, { kind: 'spaced', now: NOW }))).toContain(1);
+  });
+
+  it('handles a legacy seven-day boundary by local calendar days across midnight', () => {
+    const snapshot = state({ wrongBook: [wrong(1, { lastWrongAt: '2026-11-05T23:50:00+08:00' })] });
+    expect(selectReviewQuestions(bank(1), snapshot, { kind: 'spaced', now: new Date('2026-11-11T23:59:00+08:00') })).toEqual([]);
+    expect(ids(selectReviewQuestions(bank(1), snapshot, { kind: 'spaced', now: new Date('2026-11-12T00:01:00+08:00') }))).toEqual([1]);
+  });
+
+  it('uses real task due times across midnight instead of the age of the latest mistake', () => {
+    const snapshot = state({ wrongBook: [wrong(1)], reviewTasks: [task([1], { dueAt: '2026-11-12T00:00:00+08:00' })] });
+    expect(selectReviewQuestions(bank(1), snapshot, { kind: 'spaced', now: new Date('2026-11-11T23:59:00+08:00') })).toEqual([]);
+    expect(ids(selectReviewQuestions(bank(1), snapshot, { kind: 'spaced', now: new Date('2026-11-12T00:01:00+08:00') }))).toEqual([1]);
+  });
+
+  it('excludes completed task subitems and fully completed tasks from spaced focus', () => {
+    const snapshot = state({
+      wrongBook: [wrong(1), wrong(2), wrong(3)],
+      reviewTasks: [task([1, 2], { completedQuestionIds: [1] }), task([3], { id: 'done', completed: true })],
+    });
+    expect(ids(selectReviewQuestions(bank(4), snapshot, { kind: 'spaced', now: NOW }))).toEqual([2, 4]);
+  });
+
+  it('gives recent practice errors enough weight to outweigh a single extra historical mistake', () => {
+    const snapshot = state({ wrongBook: [wrong(1, { wrongCount: 2 }), wrong(2)], sessions: [session('recent-error', 2, false)] });
+    expect(ids(selectReviewQuestions(bank(2), snapshot, { kind: 'weekly', now: NOW, count: 1 }))).toEqual([2]);
+  });
+
+  it('treats the recent window as today plus six previous local days without making it an eligibility cutoff', () => {
+    const baseState = state({ wrongBook: [wrong(1), wrong(2)] });
+    const baseChoice = ids(selectReviewQuestions(bank(2), baseState, { kind: 'weekly', now: NOW, count: 1 }));
+    const otherId = baseChoice[0] === 1 ? 2 : 1;
+    const withErrorAt = (finishedAt: string) => state({
+      ...baseState,
+      dictationHistory: [{
+        id: 'boundary', finishedAt,
+        wrongWords: [{ word: `word-${otherId}`, meaning: '一', meaningWrongCount: 1, spellingWrongCount: 0 }],
+      }],
+    });
+
+    expect(ids(selectReviewQuestions(bank(2), withErrorAt('2026-11-05T23:59:59+08:00'), { kind: 'weekly', now: NOW, count: 1 }))).toEqual(baseChoice);
+    expect(ids(selectReviewQuestions(bank(2), withErrorAt('2026-11-06T00:00:00+08:00'), { kind: 'weekly', now: NOW, count: 1 }))).toEqual([otherId]);
+    expect(selectReviewQuestions(bank(2), withErrorAt('2026-11-06T00:00:00+08:00'), {
+      kind: 'weekly', now: new Date('2026-11-13T00:01:00+08:00'),
+    })).toHaveLength(2);
+  });
+
+  it('prioritizes a due task but removes its bonus after that question is completed', () => {
+    const wrongBook = [wrong(1, { wrongCount: 5 }), wrong(2)];
+    const dueState = state({ wrongBook, reviewTasks: [task([2])] });
+    const doneState = state({ wrongBook, reviewTasks: [task([2], { completedQuestionIds: [2] })] });
+    expect(ids(selectReviewQuestions(bank(2), dueState, { kind: 'weekly', now: NOW, count: 1 }))).toEqual([2]);
+    expect(ids(selectReviewQuestions(bank(2), doneState, { kind: 'weekly', now: NOW, count: 1 }))).toEqual([1]);
+  });
+
+  it('weights recent dictation spelling errors more than meaning errors', () => {
+    const snapshot = state({
+      wrongBook: [wrong(1), wrong(2)],
+      dictationHistory: [{
+        id: 'recent-dictation', finishedAt: '2026-11-12T10:00:00+08:00',
+        wrongWords: [
+          { word: 'word-1', meaning: '一', meaningWrongCount: 1, spellingWrongCount: 0 },
+          { word: 'word-2', meaning: '二', meaningWrongCount: 0, spellingWrongCount: 1 },
+        ],
+      }],
+    });
+    expect(ids(selectReviewQuestions(bank(2), snapshot, { kind: 'weekly', now: NOW, count: 1 }))).toEqual([2]);
+  });
+
+  it('lowers priority after a correct answer in a later independent round without marking the word mastered', () => {
+    const wrongBook = [wrong(1, { wrongCount: 5 }), wrong(2, { wrongCount: 4 })];
+    const choose = (sessions: StudySession[]) => ids(selectReviewQuestions(bank(2), state({ wrongBook, sessions }), { kind: 'weekly', now: NOW, count: 1 }));
+    expect(choose([])).toEqual([1]);
+    expect(choose([session('later-correct', 1, true)])).toEqual([2]);
+    expect(choose([session('same-error-round', 1, true, '2026-11-11T09:00:00+08:00')])).toEqual([1]);
+    expect(wrongBook[0].mastered).toBe(false);
+  });
+
+  it('does not count one round twice when it is also the active session', () => {
+    const activeSession = session('same-round', 2, false);
+    const snapshot = state({ wrongBook: [wrong(1, { wrongCount: 4 }), wrong(2)], sessions: [activeSession], activeSession });
+    const single = selectReviewQuestions(bank(2), { ...snapshot, activeSession: null }, { kind: 'weekly', now: NOW, count: 1 });
+    expect(ids(selectReviewQuestions(bank(2), snapshot, { kind: 'weekly', now: NOW, count: 1 }))).toEqual(ids(single));
+    expect(ids(single)).toEqual([1]);
+  });
+
+  it('ignores invalid and future evidence dates for recent-error and due-task bonuses', () => {
+    const wrongBook = [wrong(1), wrong(2)];
+    const baseline = ids(selectReviewQuestions(bank(2), state({ wrongBook }), { kind: 'weekly', now: NOW, count: 1 }));
+    const otherId = baseline[0] === 1 ? 2 : 1;
+    const futureSession = session('future', otherId, false, '2026-11-13T09:00:00+08:00');
+    futureSession.answers[0].answeredAt = '2026-11-13T10:00:00+08:00';
+    const invalidSession = session('invalid', otherId, false);
+    invalidSession.answers[0].answeredAt = 'invalid';
+    const snapshot = state({
+      wrongBook,
+      sessions: [futureSession, invalidSession],
+      reviewTasks: [task([otherId], { dueAt: '2026-11-13T10:00:00+08:00' }), task([otherId], { id: 'invalid', dueAt: 'invalid' })],
+      dictationHistory: ['invalid', '2026-11-13T10:00:00+08:00'].map((finishedAt, index) => ({
+        id: `bad-date-${index}`, finishedAt,
+        wrongWords: [{ word: `word-${otherId}`, meaning: '一', meaningWrongCount: 100, spellingWrongCount: 100 }],
+      })),
+    });
+    expect(ids(selectReviewQuestions(bank(2), snapshot, { kind: 'weekly', now: NOW, count: 1 }))).toEqual(baseline);
+    expect(selectReviewQuestions(bank(2), snapshot, { kind: 'spaced', now: NOW })).toEqual([]);
+  });
+
+  it('does not grant a seven-day bonus to an invalid or future last-error date', () => {
+    const choose = (lastWrongAt: string) => ids(selectReviewQuestions(bank(2), state({
+      wrongBook: [wrong(1, { wrongCount: 2 }), wrong(2, { lastWrongAt })],
+    }), { kind: 'weekly', now: NOW, count: 1 }));
+    expect(choose('invalid')).toEqual([1]);
+    expect(choose('2026-11-13T10:00:00+08:00')).toEqual([1]);
+  });
+
+  it('keeps weekly candidates limited to archived, previously answered, wrong-book and task words', () => {
+    const questions = bank(6, false);
+    questions[0] = question(1);
+    const snapshot = state({
+      sessions: [session('seen', 2, true)], activeSession: session('active', 5, true),
+      wrongBook: [wrong(3)], reviewTasks: [task([4], { dueAt: '2026-11-13T10:00:00+08:00' })],
+    });
+    const selected = ids(selectReviewQuestions(questions, snapshot, { kind: 'weekly', now: NOW }));
+    expect(selected).toHaveLength(5);
+    expect([...selected].sort()).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it('prioritizes archived words for ordinary daily slots', () => {
+    const questions = [...bank(5, false), ...Array.from({ length: 15 }, (_, index) => question(index + 6))];
+    const selected = selectReviewQuestions(questions, state(), { kind: 'daily', now: NOW });
+    expect(selected).toHaveLength(10);
+    expect(selected.every((item) => item.tags.includes('archived-dictation'))).toBe(true);
+  });
+
+  it('handles no history and short banks without introducing unseen weekly or spaced questions', () => {
+    expect(selectReviewQuestions([], state(), { kind: 'daily', now: NOW })).toEqual([]);
+    expect(selectReviewQuestions(bank(18, false), state(), { kind: 'weekly', now: NOW })).toEqual([]);
+    expect(selectReviewQuestions(bank(18, false), state(), { kind: 'spaced', now: NOW })).toEqual([]);
+    expect(selectReviewQuestions(bank(18, false), state(), { kind: 'daily', now: NOW })).toHaveLength(10);
+    expect(selectReviewQuestions(bank(3), state(), { kind: 'weekly', now: NOW })).toHaveLength(3);
+    expect(selectReviewQuestions(bank(3), state(), { kind: 'weekly', now: NOW, count: 0 })).toEqual([]);
+  });
+
+  it('deduplicates question IDs, is stable within one day and does not mutate frozen inputs', () => {
+    const questions = [...bank(18), question(1)];
+    const snapshot = state({ wrongBook: [wrong(1)], reviewTasks: [task([1, 1])] });
+    const originalBank = structuredClone(questions);
+    const originalState = structuredClone(snapshot);
+    deepFreeze(questions);
+    deepFreeze(snapshot);
+    const selected = selectReviewQuestions(questions, snapshot, { kind: 'weekly', now: NOW });
+    const later = selectReviewQuestions(questions, snapshot, { kind: 'weekly', now: new Date('2026-11-12T23:00:00+08:00') });
+    expect(ids(later)).toEqual(ids(selected));
+    expect(new Set(ids(selected)).size).toBe(10);
+    expect(questions).toEqual(originalBank);
+    expect(snapshot).toEqual(originalState);
+  });
+});

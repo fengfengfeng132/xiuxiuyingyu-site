@@ -1,7 +1,7 @@
 import type { ReviewTask } from '../types/schema';
 
-function isNumberArray(value: unknown): value is number[] {
-  return Array.isArray(value) && value.every((item) => typeof item === 'number');
+export function isQuestionIdArray(value: unknown): value is number[] {
+  return Array.isArray(value) && value.every((item) => Number.isSafeInteger(item) && item > 0);
 }
 
 export function isReviewTask(value: unknown): value is ReviewTask {
@@ -10,7 +10,11 @@ export function isReviewTask(value: unknown): value is ReviewTask {
 
   return (
     typeof task.id === 'string' &&
-    isNumberArray(task.questionIds) &&
+    isQuestionIdArray(task.questionIds) &&
+    (task.completedQuestionIds === undefined || (
+      isQuestionIdArray(task.completedQuestionIds) &&
+      task.completedQuestionIds.every((questionId) => (task.questionIds as number[]).includes(questionId))
+    )) &&
     typeof task.dueAt === 'string' &&
     typeof task.completed === 'boolean'
   );
@@ -18,5 +22,7 @@ export function isReviewTask(value: unknown): value is ReviewTask {
 
 export function parseReviewTasks(value: unknown): ReviewTask[] {
   if (!Array.isArray(value)) return [];
-  return value.filter(isReviewTask);
+  return value.filter(isReviewTask).map((task) => (
+    task.completedQuestionIds === undefined ? { ...task, completedQuestionIds: [] } : task
+  ));
 }

@@ -1,6 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button';
+import { WeeklyReviewEntry } from '../components/WeeklyReviewEntry';
 import { dictationWords } from '../data/dictationWords';
+import { questionBank } from '../data/loadQuestionBank';
 import { getStarCount } from '../lib/starRewards';
 import { loadState, startSession } from '../lib/storage';
 
@@ -172,6 +174,7 @@ export function ModeHubPage() {
           <span>错题待修复 {pendingWrongCount} 个</span>
         </div>
         <div className="mode-card-grid">
+          <WeeklyReviewEntry compact bank={questionBank} state={state} onStart={() => beginLearning('mode=vocab&train=weekly')} />
           {modeCards.map((card) => (
             <article key={card.title} className={`mode-card mode-card-${card.tone}`}>
               <img src={card.icon} alt="" aria-hidden="true" loading="lazy" decoding="async" />

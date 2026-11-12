@@ -24,6 +24,9 @@ import {
 } from '../lib/speechAssessment';
 import { pickDailyQuestions, pickPracticeSessionQuestions } from '../lib/practiceUtils';
 import { getSavedExampleReview } from '../lib/practiceExampleReview';
+import { getLegacyPracticeQuestionIds, getSavedPracticeQuestionIds } from '../lib/practiceSession';
+import { applyReviewAnswers, getPendingReviewQuestionIds } from '../lib/reviewProgress';
+import { selectReviewQuestions, type ReviewKind } from '../lib/reviewSelection';
 import { awardPerfectTrainingStar } from '../lib/starRewards';
 import { createSession, loadState, saveState } from '../lib/storage';
 import { playWrongAnswerTone, updateWrongBookForQuestion } from '../lib/studyFeedback';
@@ -44,9 +47,16 @@ type TrainMode =
   | 'daily20'
   | 'today10'
   | 'level10'
-  | 'spaced';
+  | 'spaced'
+  | 'weekly';
 
 const DAILY_DICTATION_TAG = 'daily-dictation';
+const REVIEW_KINDS: Partial<Record<TrainMode, ReviewKind>> = {
+  daily20: 'daily',
+  weekly: 'weekly',
+  wrongFirst: 'wrongFirst',
+  spaced: 'spaced',
+};
 const PREFERRED_US_VOICE_NAMES = [
   'Microsoft Jenny Online (Natural) - English (United States)',
   'Microsoft Aria Online (Natural) - English (United States)',
@@ -68,6 +78,7 @@ const TRAIN_TITLE_MAP: Record<string, string> = {
   today10: '今日10分钟',
   level10: '等级10题',
   spaced: '间隔复习',
+  weekly: '一周再背',
 };
 
 function getTrainTitle(train: string): string {
@@ -91,8 +102,8 @@ function pickUsVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | nul
   );
 }
 
-function pickDailyLearningSet(bank: Question[], count: number, lessonTag = DAILY_DICTATION_TAG): Question[] {
-  const preferredBank = bank.filter((item) => item.tags.includes(lessonTag));
+function pickDailyLearningSet(bank: Question[], count: number): Question[] {
+  const preferredBank = bank.filter((item) => item.tags.includes(DAILY_DICTATION_TAG));
   if (!preferredBank.length) {
     return pickDailyQuestions(bank, count);
   }
@@ -221,12 +232,14 @@ export function PracticePage() {
   const [searchParams] = useSearchParams();
   const mode = (searchParams.get('mode') || 'all') as 'all' | 'vocab' | 'dialogue';
   const train = (searchParams.get('train') || 'normal') as TrainMode;
+  const reviewTaskId = train === 'spaced' ? searchParams.get('task') || undefined : undefined;
 
-  const [nowForSpaced, setNowForSpaced] = useState(0);
+  const [selectionNow] = useState(() => new Date());
   const [questionFlow, setQuestionFlow] = useState<number[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [feedback, setFeedback] = useState('');
+  const [sessionRestartMessage, setSessionRestartMessage] = useState('');
   const [submittedExampleQuestionId, setSubmittedExampleQuestionId] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
   const [listenRate, setListenRate] = useState(1);
@@ -243,7 +256,6 @@ export function PracticePage() {
 
   const currentBank = useMemo(() => {
     const stateSnapshot = loadState();
-    const wrongIds = new Set(stateSnapshot.wrongBook.filter((x) => !x.mastered).map((x) => x.questionId));
 
     let bank = questionBank;
     if (mode === 'vocab') {
@@ -252,39 +264,33 @@ export function PracticePage() {
       bank = bank.filter((q) => q.tags.includes('dialogue-qa') || q.tags.includes('dialogue'));
     }
 
-    if (train === 'wrongFirst') {
-      const wrongPart = bank.filter((q) => wrongIds.has(q.id));
-      const rest = bank.filter((q) => !wrongIds.has(q.id));
-      bank = [...wrongPart, ...rest];
+    if (reviewTaskId) {
+      const task = stateSnapshot.reviewTasks.find((item) => item.id === reviewTaskId);
+      if (!task || task.completed || !(new Date(task.dueAt).getTime() <= selectionNow.getTime())) return [];
+      const pendingIds = new Set(getPendingReviewQuestionIds(task));
+      bank = bank.filter((question) => pendingIds.has(question.id));
     }
 
-    if (train === 'spaced') {
-      const now = nowForSpaced;
-      const dueIds = new Set(
-        stateSnapshot.wrongBook
-          .filter((w) => {
-            const ageDays = Math.floor((now - new Date(w.lastWrongAt).getTime()) / (24 * 3600 * 1000));
-            return ageDays === 1 || ageDays === 3 || ageDays >= 7;
-          })
-          .map((w) => w.questionId),
-      );
-      const duePart = bank.filter((q) => dueIds.has(q.id));
-      bank = duePart.length ? duePart : bank;
+    const savedIds = getSavedPracticeQuestionIds(stateSnapshot.activeSession, bank, { mode, train, reviewTaskId });
+    if (savedIds) {
+      const questionsById = new Map(bank.map((question) => [question.id, question]));
+      bank = savedIds.map((id) => questionsById.get(id)!);
     }
 
-    if (train === 'today10') {
+    const reviewKind = REVIEW_KINDS[train];
+    if (reviewKind) {
+      return savedIds ? bank : selectReviewQuestions(bank, stateSnapshot, { kind: reviewKind, now: selectionNow });
+    }
+
+    if (train === 'today10' && !savedIds) {
       bank = pickDailyLearningSet(bank, 10);
     }
 
-    if (train === 'daily20') {
-      bank = pickDailyLearningSet(bank, 10, 'archived-dictation');
-    }
-
-    if (train === 'level10') {
+    if (train === 'level10' && !savedIds) {
       bank = bank.slice(0, 10);
     }
 
-    if (train === 'random') {
+    if (train === 'random' && !savedIds) {
       bank = shuffleArray(bank);
     }
 
@@ -395,8 +401,13 @@ export function PracticePage() {
       });
     }
 
-    return pickPracticeSessionQuestions(bank);
-  }, [mode, train, nowForSpaced]);
+    return savedIds ? bank : pickPracticeSessionQuestions(bank);
+  }, [mode, train, reviewTaskId, selectionNow]);
+
+  const reviewFocusCount = useMemo(() => {
+    const wrongIds = new Set(loadState().wrongBook.filter((item) => !item.mastered).map((item) => item.questionId));
+    return currentBank.filter((question) => wrongIds.has(question.id)).length;
+  }, [currentBank]);
 
   const questionById = useMemo(() => {
     const map = new Map<number, Question>();
@@ -405,15 +416,21 @@ export function PracticePage() {
   }, [currentBank]);
 
   useEffect(() => {
-    const flow = currentBank.map((q) => q.id);
+    if (!currentBank.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setQuestionFlow([]);
+      setQuestionIndex(0);
+      return;
+    }
     const state = loadState();
-
-    const flowIdSet = new Set(flow);
-    const shouldResetSession =
-      !state.activeSession ||
-      state.activeSession.mode !== mode ||
-      state.activeSession.train !== train ||
-      state.activeSession.answers.some((answer) => !flowIdSet.has(answer.questionId));
+    const previousSession = state.activeSession;
+    const scope = { mode, train, reviewTaskId };
+    const savedFlow = getSavedPracticeQuestionIds(previousSession, currentBank, scope);
+    const legacyFlow = getLegacyPracticeQuestionIds(previousSession, currentBank, scope);
+    const flow = savedFlow ?? legacyFlow ?? currentBank.map((question) => question.id);
+    const shouldResetSession = !savedFlow && !legacyFlow;
+    const isSameEntry = previousSession?.mode === mode && previousSession.train === train
+      && previousSession.reviewTaskId === reviewTaskId;
 
     if (shouldResetSession) {
       state.activeSession = createSession();
@@ -424,15 +441,19 @@ export function PracticePage() {
 
     activeSession.mode = mode;
     activeSession.train = train;
+    activeSession.reviewTaskId = reviewTaskId;
+    activeSession.questionIds = [...flow];
     activeSession.questionTotal = flow.length;
     activeSession.currentQuestionIndex = Math.min(
-      activeSession.currentQuestionIndex,
+      legacyFlow ? new Set(activeSession.answers.map((answer) => answer.questionId)).size : activeSession.currentQuestionIndex,
       Math.max(flow.length - 1, 0),
     );
 
     saveState(state);
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSessionRestartMessage(shouldResetSession && isSameEntry && previousSession?.answers.length
+      ? '本轮题目已更新，已重新安排练习；以前的错题记录仍然保留。'
+      : '');
     setQuestionFlow(flow);
     setQuestionIndex(activeSession.currentQuestionIndex);
     setSelected(null);
@@ -447,14 +468,7 @@ export function PracticePage() {
     setSpeechCheckMessage('');
     setSpeechCheckPassed(null);
     autoPlayAfterSubmitRef.current = false;
-  }, [currentBank, mode, train]);
-
-  useEffect(() => {
-    if (train === 'spaced') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setNowForSpaced(Date.now());
-    }
-  }, [mode, train]);
+  }, [currentBank, mode, train, reviewTaskId]);
 
   useEffect(() => {
     if (!('speechSynthesis' in window)) return;
@@ -487,7 +501,7 @@ export function PracticePage() {
     const state = loadState();
     const session = state.activeSession;
     const existed = session?.answers.find((a) => a.questionId === question.id);
-    const savedExampleReview = getSavedExampleReview(question, existed);
+    const savedExampleReview = getSavedExampleReview(question, existed, Boolean(REVIEW_KINDS[train]));
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelected(existed && existed.selectedIndex >= 0 ? existed.selectedIndex : null);
@@ -497,7 +511,7 @@ export function PracticePage() {
     setSpeechChecking(false);
     setSpeechCheckMessage('');
     setSpeechCheckPassed(null);
-  }, [question]);
+  }, [question, train]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -626,7 +640,8 @@ export function PracticePage() {
         <Link className="practice-back-button" to="/" aria-label="返回首页">
           返回首页
         </Link>
-        当前模式暂无可练习内容。
+        <p>{reviewTaskId ? '这项任务已完成、尚未到期，或暂无可复习内容。' : train === 'weekly' || train === 'spaced' ? '暂时没有可复习的旧词，先完成一轮单词学习吧。' : '当前模式暂无可练习内容。'}</p>
+        {REVIEW_KINDS[train] ? <Link to="/review">查看复习安排</Link> : null}
       </main>
     );
   }
@@ -699,11 +714,13 @@ export function PracticePage() {
     stopUsWordAudioPlayback();
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     const nextIndex = Math.min(questionIndex + 1, Math.max(flow.length - 1, 0));
-    session.currentQuestionIndex = Math.max(session.currentQuestionIndex, nextIndex);
+    session.currentQuestionIndex = nextIndex;
+    session.questionIds = [...flow];
 
     if (questionIndex >= flow.length - 1) {
       const finishedAt = new Date().toISOString();
       session.finishedAt = finishedAt;
+      state.reviewTasks = applyReviewAnswers(state.reviewTasks, session.answers, new Date(finishedAt));
       const rewarded = awardPerfectTrainingStar(
         {
           ...state,
@@ -732,15 +749,28 @@ export function PracticePage() {
     setQuestionIndex(nextIndex);
   };
 
-  const goPrev = () => {
-    if (questionIndex === 0) return;
+  const moveToQuestion = (nextIndex: number) => {
+    const state = loadState();
+    if (!state.activeSession || state.activeSession.mode !== mode || state.activeSession.train !== train
+      || state.activeSession.reviewTaskId !== reviewTaskId) {
+      setFeedback('学习记录暂不可用，请刷新后重试。');
+      return;
+    }
     stopUsWordAudioPlayback();
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    state.activeSession.currentQuestionIndex = nextIndex;
+    state.activeSession.questionIds = [...questionFlow];
+    saveState(state);
     setFeedback('');
     setSpeechCheckMessage('');
     setSpeechCheckPassed(null);
     autoPlayAfterSubmitRef.current = false;
-    setQuestionIndex((v) => v - 1);
+    setQuestionIndex(nextIndex);
+  };
+
+  const goPrev = () => {
+    if (questionIndex === 0) return;
+    moveToQuestion(questionIndex - 1);
   };
 
   const goNext = () => {
@@ -749,13 +779,7 @@ export function PracticePage() {
       return;
     }
     if (questionIndex >= totalCount - 1) return;
-    stopUsWordAudioPlayback();
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-    setFeedback('');
-    setSpeechCheckMessage('');
-    setSpeechCheckPassed(null);
-    autoPlayAfterSubmitRef.current = false;
-    setQuestionIndex((v) => v + 1);
+    moveToQuestion(questionIndex + 1);
   };
 
   const submit = () => {
@@ -771,10 +795,11 @@ export function PracticePage() {
       Boolean(state.activeSession) &&
       state.activeSession?.mode === mode &&
       state.activeSession?.train === train &&
+      state.activeSession?.reviewTaskId === reviewTaskId &&
       state.activeSession.answers.every((answer) => questionById.has(answer.questionId));
 
     const session = hasCompatibleSession && state.activeSession ? state.activeSession : createSession();
-    const savedExampleReview = getSavedExampleReview(question, session.answers.find((answer) => answer.questionId === question.id));
+    const savedExampleReview = getSavedExampleReview(question, session.answers.find((answer) => answer.questionId === question.id), Boolean(REVIEW_KINDS[train]));
     if (savedExampleReview) {
       setSubmittedExampleQuestionId(savedExampleReview.questionId);
       setFeedback(savedExampleReview.feedback);
@@ -806,6 +831,7 @@ export function PracticePage() {
     session.questionTotal = totalCount;
     session.mode = mode;
     session.train = train;
+    session.reviewTaskId = reviewTaskId;
 
     let nextFeedback = '';
     let nextFlow = questionFlow;
@@ -828,7 +854,7 @@ export function PracticePage() {
         if (reorderedFlow !== questionFlow) {
           nextFlow = reorderedFlow;
           setQuestionFlow(reorderedFlow);
-          nextFeedback += question.examples?.length ? ' 下一题会练习相似内容。' : ' 已为你切换到相似题继续练习。';
+          nextFeedback += question.examples?.length || REVIEW_KINDS[train] ? ' 下一题会练习相似内容。' : ' 已为你切换到相似题继续练习。';
         }
       }
     } else {
@@ -838,9 +864,10 @@ export function PracticePage() {
     }
 
     state.activeSession = session;
-    session.currentQuestionIndex = Math.max(session.currentQuestionIndex, questionIndex);
+    session.currentQuestionIndex = questionIndex;
+    session.questionIds = [...nextFlow];
     saveState(state);
-    if (question.examples?.length && (isChoiceQuestion || isSpellingQuestion)) {
+    if ((question.examples?.length || REVIEW_KINDS[train]) && (isChoiceQuestion || isSpellingQuestion)) {
       setSubmittedExampleQuestionId(question.id);
       setFeedback(nextFeedback);
       return;
@@ -884,13 +911,18 @@ export function PracticePage() {
         </p>
         <div className="badge-row">
           <span className="info-pill">共 {totalCount} 题</span>
+          {REVIEW_KINDS[train] ? <span className="info-pill">本轮包含 {reviewFocusCount} 个待巩固错词</span> : null}
           <span className="info-pill">连续答对 {streak} 题</span>
           <span className={`info-pill ${speechRecognitionSupported ? '' : 'info-pill-warn'}`}>
             {speechRecognitionSupported ? '支持跟读判定' : '当前浏览器不支持跟读'}
           </span>
         </div>
+        {REVIEW_KINDS[train] ? (
+          <p className="field-note">{reviewTaskId ? '完成本轮后，答对的词会计入这项到期任务的进度。' : train === 'wrongFirst' ? '优先练习尚未掌握的错题，错题不足时穿插旧词巩固。' : '错词充足时，每 10 题约 7 题优先复习错词，其余旧词穿插巩固。'}答对会降低后续复习优先级，反复出错的词会优先再练。</p>
+        ) : null}
         <img className="practice-hero-illustration" src="/images/ui-ipad/hero-child-rabbit.png" alt="" aria-hidden="true" />
       </section>
+      {sessionRestartMessage ? <p className="field-note" role="status">{sessionRestartMessage}</p> : null}
       <ProgressBar current={questionIndex + 1} total={totalCount} />
       <Card className={isSpellingQuestion ? 'card-tone-yellow' : 'card-tone-blue'} title={cardTitle} subtitle={cardSubtitle}>
         <div className="card-chip-row">

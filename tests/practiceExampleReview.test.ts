@@ -43,4 +43,38 @@ describe('saved example review', () => {
   it('keeps the existing behavior of questions without examples', () => {
     expect(getSavedExampleReview({ ...question, examples: undefined }, savedWrongAnswer)).toBeNull();
   });
+
+  it('restores a correct answer without examples when review mode requests it', () => {
+    const answeredQuestion = { ...question, examples: undefined };
+    const answer = { ...savedWrongAnswer, selectedIndex: question.answerIndex, isCorrect: true };
+    const review = getSavedExampleReview(answeredQuestion, answer, true);
+    expect(review?.questionId).toBe(question.id);
+    expect(review?.feedback).toContain('已经答对');
+    expect(review?.feedback).not.toContain('例句');
+    expect(answer.isCorrect).toBe(true);
+  });
+
+  it('restores an incorrect answer without examples and preserves its original result', () => {
+    const answer = { ...savedWrongAnswer };
+    const originalAnswer = { ...answer };
+    const review = getSavedExampleReview({ ...question, examples: undefined }, answer, true);
+    expect(review?.questionId).toBe(question.id);
+    expect(review?.feedback).toContain(question.options[question.answerIndex]);
+    expect(answer).toEqual(originalAnswer);
+    expect(answer.isCorrect).toBe(false);
+  });
+
+  it('does not invent an incorrect spelling when restoring review without examples', () => {
+    const answer = { ...savedWrongAnswer, selectedIndex: -1 };
+    const review = getSavedExampleReview({ ...question, examples: undefined }, answer, true);
+    expect(review?.spellingInput).toBe('');
+    expect(review?.feedback).toContain('原来的拼写未保存');
+    expect(answer.isCorrect).toBe(false);
+  });
+
+  it('still requires a saved answer for the same question in review mode', () => {
+    const answeredQuestion = { ...question, examples: undefined };
+    expect(getSavedExampleReview(answeredQuestion, undefined, true)).toBeNull();
+    expect(getSavedExampleReview(answeredQuestion, { ...savedWrongAnswer, questionId: question.id + 1 }, true)).toBeNull();
+  });
 });

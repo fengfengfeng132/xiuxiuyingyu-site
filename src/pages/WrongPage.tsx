@@ -1,7 +1,9 @@
 ﻿import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { useNavigate } from 'react-router-dom';
+import { WeeklyReviewEntry } from '../components/WeeklyReviewEntry';
 import { questionBank } from '../data/loadQuestionBank';
-import { loadState, saveState } from '../lib/storage';
+import { loadState, saveState, startSession } from '../lib/storage';
 
 function extractMeaning(explanation?: string): string {
   if (!explanation) return '暂无释义';
@@ -10,6 +12,7 @@ function extractMeaning(explanation?: string): string {
 }
 
 export function WrongPage() {
+  const navigate = useNavigate();
   const state = loadState();
   const wrongBook = state.wrongBook;
 
@@ -29,6 +32,15 @@ export function WrongPage() {
         <h1>优先回看这些词</h1>
         <p className="page-lead">错题会自动累计到这里，方便孩子和家长集中处理最容易卡住的部分。</p>
       </section>
+
+      <WeeklyReviewEntry
+        bank={questionBank}
+        state={state}
+        onStart={() => {
+          startSession();
+          navigate('/practice?mode=vocab&train=weekly');
+        }}
+      />
 
       <Card className="card-tone-coral" title="本地错题记录">
         <div className="stats-grid stats-grid-compact">

@@ -3390,6 +3390,29 @@ body {
   overflow-wrap: anywhere;
 }
 
+.weekly-review-entry p {
+  margin: 0 0 14px;
+  line-height: 1.7;
+}
+
+.weekly-review-entry .weekly-review-plan {
+  color: #286846;
+  font-weight: 800;
+}
+
+.mode-card-weekly {
+  grid-template-rows: auto 56px;
+}
+
+.mode-card-weekly > div {
+  min-width: 0;
+}
+
+.mode-card-weekly p {
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
 .example-sentences-heading,
 .example-sentence-actions {
   display: flex;

@@ -1,5 +1,5 @@
 import type { AppState, DictationHistoryEntry, DictationHistoryWord, SessionAnswer, StarRecord, StudySession } from '../types/schema';
-import { parseReviewTasks } from './reviewSchema';
+import { isQuestionIdArray, parseReviewTasks } from './reviewSchema';
 import { parseWrongBook } from './wrongBookSchema';
 
 function isSessionAnswer(value: unknown): value is SessionAnswer {
@@ -29,7 +29,9 @@ export function isStudySession(value: unknown): value is StudySession {
     (s.finishedAt === undefined || typeof s.finishedAt === 'string') &&
     (s.mode === undefined || s.mode === 'all' || s.mode === 'vocab' || s.mode === 'dialogue') &&
     (s.train === undefined || typeof s.train === 'string') &&
+    (s.reviewTaskId === undefined || typeof s.reviewTaskId === 'string') &&
     (s.questionTotal === undefined || typeof s.questionTotal === 'number') &&
+    (s.questionIds === undefined || isQuestionIdArray(s.questionIds)) &&
     typeof s.currentQuestionIndex === 'number' &&
     Array.isArray(s.answers) &&
     s.answers.every(isSessionAnswer) &&

@@ -118,4 +118,51 @@ describe('question ID migration', () => {
     expect(loaded.wrongBook[0].questionId).toBe(9102);
     expect(loaded.sessions[0].answers.map((answer) => answer.questionId)).toEqual([9102, 9101]);
   });
+
+  it('migrates and deduplicates round snapshots and correct review progress without changing scores or task state', () => {
+    const session = { ...makeSession([19, 73]), questionIds: [19, 9102, 73, 9001], reviewTaskId: 'review' };
+    const state = makeState({
+      activeSession: session,
+      sessions: [session],
+      reviewTasks: [{
+        id: 'review', questionIds: [19, 9102, 73, 9001], completedQuestionIds: [19, 9102, 73],
+        dueAt: '2026-11-11T11:00:00.000Z', completed: false,
+      }],
+    });
+    const snapshot = structuredClone(state);
+    deepFreeze(state);
+    const migrated = migrateQuestionIds(state, questionIdAliases);
+
+    expect(migrated.activeSession?.questionIds).toEqual([9102, 9101, 9001]);
+    expect(migrated.sessions[0].questionIds).toEqual([9102, 9101, 9001]);
+    expect(migrated.sessions[0].score).toBe(session.score);
+    expect(migrated.sessions[0].questionTotal).toBe(session.questionTotal);
+    expect(migrated.sessions[0].reviewTaskId).toBe('review');
+    expect(migrated.reviewTasks[0]).toEqual({
+      ...state.reviewTasks[0], questionIds: [9102, 9101, 9001], completedQuestionIds: [9102, 9101],
+    });
+    expect(state).toEqual(snapshot);
+    expect(migrateQuestionIds(migrated, questionIdAliases)).toBe(migrated);
+  });
+
+  it('marks a task complete when alias merging leaves every distinct question already correct', () => {
+    const state = makeState({
+      reviewTasks: [{
+        id: 'collision', questionIds: [19, 9102], completedQuestionIds: [19],
+        dueAt: '2026-11-11T11:00:00.000Z', completed: false,
+      }, {
+        id: 'legacy-complete', questionIds: [73], dueAt: '2026-11-11T11:00:00.000Z', completed: true,
+      }],
+    });
+    const snapshot = structuredClone(state);
+    deepFreeze(state);
+    const migrated = migrateQuestionIds(state, questionIdAliases);
+
+    expect(migrated.reviewTasks[0]).toEqual({
+      ...state.reviewTasks[0], questionIds: [9102], completedQuestionIds: [9102], completed: true,
+    });
+    expect(migrated.reviewTasks[1]).toEqual({ ...state.reviewTasks[1], questionIds: [9101] });
+    expect(state).toEqual(snapshot);
+    expect(migrateQuestionIds(migrated, questionIdAliases)).toBe(migrated);
+  });
 });

@@ -40,7 +40,9 @@ export interface StudySession {
   finishedAt?: string;
   mode?: 'all' | 'vocab' | 'dialogue';
   train?: string;
+  reviewTaskId?: string;
   questionTotal?: number;
+  questionIds?: number[];
   currentQuestionIndex: number;
   answers: SessionAnswer[];
   score: number;
@@ -79,6 +81,7 @@ export interface DictationWeeklyWordSummary {
 export interface ReviewTask {
   id: string;
   questionIds: number[];
+  completedQuestionIds?: number[];
   dueAt: string;
   completed: boolean;
 }

@@ -40,6 +40,10 @@ function ids(questions: Question[]): number[] {
   return questions.map((item) => item.id);
 }
 
+function sorted(values: number[]): number[] {
+  return [...values].sort((a, b) => a - b);
+}
+
 function reviewed(questionId: number, lastReviewedAt: string): QuestionLearningRecord {
   return {
     questionId, firstSeenAt: lastReviewedAt, lastReviewedAt,
@@ -294,8 +298,8 @@ describe('review selection', () => {
     const leftOut = questions.map((item) => item.id).filter((id) => !first.includes(id));
 
     expect(first).toHaveLength(10);
-    expect([...second.slice(0, 5)].sort((a, b) => a - b)).toEqual(leftOut);
-    expect(second.slice(5)).toEqual(first.slice(0, 5));
+    // The five left out come back, together with the five that were answered earliest in the first round.
+    expect(sorted(second)).toEqual(sorted([...leftOut, ...first.slice(0, 5)]));
   });
 
   it.each<ReviewKind>(['daily', 'weekly', 'spaced', 'wrongFirst'])('reaches all 32 old words in four recorded %s rounds', (kind) => {
@@ -334,11 +338,10 @@ describe('review selection', () => {
     });
 
     const weekly = ids(selectReviewQuestions(questions, snapshot, { kind: 'weekly', now: NOW }));
-    expect(weekly.slice(0, 6)).toEqual([101, 102, 103, 104, 105, 106]);
-    expect(weekly.slice(6)).toEqual([1, 2, 3, 4]);
+    expect(sorted(weekly)).toEqual([1, 2, 3, 4, 101, 102, 103, 104, 105, 106]);
 
     const daily = ids(selectReviewQuestions(questions, snapshot, { kind: 'daily', now: NOW }));
-    expect(daily).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(sorted(daily)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
   it('ignores invalid and future review times when ordering old words', () => {
@@ -350,9 +353,27 @@ describe('review selection', () => {
         { ...reviewed(3, '2026-11-09T10:00:00+08:00'), lastReviewedAt: 'invalid' },
       ]),
     });
-    const order = ids(selectReviewQuestions(questions, snapshot, { kind: 'weekly', now: NOW }));
-    expect(order.at(-1)).toBe(1);
-    expect([...order.slice(0, 2)].sort((a, b) => a - b)).toEqual([2, 3]);
+    // Both count as never reviewed, so they are picked before the word with a real review time.
+    expect(sorted(ids(selectReviewQuestions(questions, snapshot, { kind: 'weekly', now: NOW, count: 2 })))).toEqual([2, 3]);
+  });
+
+  it('shows the same picked old words in a different order on other days and keeps one order within a day', () => {
+    const questions = bank(10);
+    const pick = (time: string) => ids(selectReviewQuestions(questions, state(), { kind: 'weekly', now: new Date(time) }));
+    const monday = pick('2026-11-16T09:00:00+08:00');
+    const otherDays = ['2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20'].map((day) => pick(`${day}T09:00:00+08:00`));
+
+    expect(pick('2026-11-16T21:00:00+08:00')).toEqual(monday);
+    otherDays.forEach((order) => expect(sorted(order)).toEqual(sorted(monday)));
+    expect(new Set([monday, ...otherDays].map((order) => order.join())).size).toBe(5);
+  });
+
+  it('keeps unmastered wrong words in front of the shuffled old words', () => {
+    const snapshot = state({ wrongBook: [wrong(4, { wrongCount: 3 }), wrong(9)] });
+    ['2026-11-16', '2026-11-17', '2026-11-18'].forEach((day) => {
+      const order = ids(selectReviewQuestions(bank(12), snapshot, { kind: 'weekly', now: new Date(`${day}T09:00:00+08:00`) }));
+      expect(order.slice(0, 2)).toEqual([4, 9]);
+    });
   });
 });
 
@@ -368,7 +389,18 @@ describe('least recently reviewed pick', () => {
     expect(first).toHaveLength(10);
     expect(second).toHaveLength(10);
     expect(new Set([...first, ...second]).size).toBe(17);
-    expect(second.slice(7)).toEqual(first.slice(0, 3));
+    // The three repeats are the ones answered earliest in the first round.
+    expect(sorted(second.filter((id) => first.includes(id)))).toEqual(sorted(first.slice(0, 3)));
+  });
+
+  it('presents the same lesson words in a different order on another day', () => {
+    const lesson = bank(10, false);
+    const monday = ids(pickLeastRecentlyReviewed(lesson, state(), { now: new Date('2026-11-16T09:00:00+08:00') }));
+    const tuesday = ids(pickLeastRecentlyReviewed(lesson, state(), { now: new Date('2026-11-17T09:00:00+08:00') }));
+
+    expect(ids(pickLeastRecentlyReviewed(lesson, state(), { now: new Date('2026-11-16T20:00:00+08:00') }))).toEqual(monday);
+    expect(sorted(tuesday)).toEqual(sorted(monday));
+    expect(tuesday).not.toEqual(monday);
   });
 
   it('counts answers of the round in progress, deduplicates IDs and does not mutate frozen inputs', () => {

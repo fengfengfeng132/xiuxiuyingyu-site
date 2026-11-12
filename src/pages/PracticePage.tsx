@@ -35,18 +35,18 @@ import {
   getPracticeCardTitle,
   maskSpellingWord,
 } from '../lib/practiceDisplay';
-import { isRevealGuardActive, revealAboveBottomNav } from '../lib/answerReview';
+import { isRevealGuardActive, isSubmitEnter, revealAboveBottomNav } from '../lib/answerReview';
 import { buildDialogueFillQuestion } from '../lib/dialogueFill';
 import { stableShuffle } from '../lib/stableOptions';
 import { getLegacyPracticeQuestionIds, getSavedPracticeQuestionIds } from '../lib/practiceSession';
 import { getPendingReviewQuestionIds } from '../lib/reviewProgress';
 import { pickLeastRecentlyReviewed, selectReviewQuestions, type ReviewKind } from '../lib/reviewSelection';
-import { recordCompletedTraining } from '../lib/learningRecords';
+import { finishPracticeRound, isPracticeRoundFullyAnswered } from '../lib/practiceRound';
 import { createSession, loadState, saveState } from '../lib/storage';
 import { playCorrectAnswerTone, playWrongAnswerTone, updateWrongBookForQuestion } from '../lib/studyFeedback';
 import { fetchWordImage } from '../lib/wordImage';
 import { buildSpellingFeedback } from '../lib/spellingFeedback';
-import type { AppState, Question, SessionAnswer } from '../types/schema';
+import type { AppState, Question, SessionAnswer, StudySession } from '../types/schema';
 
 type TrainMode =
   | 'normal'
@@ -531,8 +531,14 @@ export function PracticePage() {
     // Once an answer is revealed the card grows (verdict, examples, spelling review), which can push "下一题"
     // under the floating bottom navigation. Late content such as a looked-up phonetic can push it down again.
     if (!question || submittedExampleQuestionId !== question.id) return;
-    revealAboveBottomNav(actionDockRef.current);
-  }, [question, submittedExampleQuestionId, feedback, phonetic, wordImageUrl, spellingCopied]);
+    const card = actionDockRef.current?.closest('.card');
+    // What must stay on screen: the word in listening practice (it is shown only now, in the card title), the
+    // letter comparison after a wrong spelling, otherwise the marked options or the typed word.
+    const answerArea = train === 'audio'
+      ? '.card-title'
+      : train === 'spelling' && submittedAnswerCorrect === false ? '.spelling-feedback-panel' : '.options, .learning-block';
+    revealAboveBottomNav(actionDockRef.current, card?.querySelector(answerArea) ?? null);
+  }, [question, submittedExampleQuestionId, submittedAnswerCorrect, train, feedback, phonetic, wordImageUrl, spellingCopied]);
 
   const audioText = question ? getPracticeAudioText(train, question, submittedExampleQuestionId === question.id) : '';
   const sentenceList = splitSentences(audioText);
@@ -674,6 +680,10 @@ export function PracticePage() {
     );
   };
 
+  const finishRound = (state: AppState, session: StudySession, keepActive: boolean): AppState => finishPracticeRound(state, session, {
+    train, mode, title: getTrainTitle(train), questionTotal: totalCount, keepActive,
+  });
+
   const advanceAfterAnswer = (flow = questionFlow) => {
     const state = loadState();
     const session = state.activeSession;
@@ -689,27 +699,8 @@ export function PracticePage() {
     session.questionIds = [...flow];
 
     if (questionIndex >= flow.length - 1) {
-      const finishedAt = new Date().toISOString();
-      const finishedSession = { ...session, finishedAt };
-      const nextState = recordCompletedTraining(
-        {
-          ...state,
-          activeSession: null,
-          sessions: [finishedSession, ...state.sessions.filter((item) => item.id !== finishedSession.id)].slice(0, 30),
-        },
-        {
-          id: session.id,
-          source: 'practice',
-          train,
-          mode,
-          title: getTrainTitle(train),
-          startedAt: session.startedAt,
-          finishedAt,
-          questionTotal: session.questionTotal ?? totalCount,
-          answers: session.answers.map((answer) => ({ ...answer, kind: 'practice' as const })),
-        },
-      );
-      saveState(nextState);
+      // A fully answered round was already recorded with its last answer; this call then only closes the session.
+      saveState(finishRound(state, session, false));
       navigate('/result');
       return;
     }
@@ -749,6 +740,7 @@ export function PracticePage() {
 
   const goNext = () => {
     if (submittedExampleQuestionId === question.id) {
+      if (isRevealGuardActive(revealedAtRef.current)) return;
       advanceAfterAnswer();
       return;
     }
@@ -843,6 +835,15 @@ export function PracticePage() {
     session.currentQuestionIndex = questionIndex;
     session.questionIds = [...nextFlow];
     saveState(state);
+    // Once every question has an answer nothing can change any more, so the round is recorded right away.
+    // Leaving from the last card without tapping "查看结果" then still counts (star, statistics, rotation).
+    if (isPracticeRoundFullyAnswered(nextFlow, session)) {
+      try {
+        saveState(finishRound(state, session, true));
+      } catch {
+        // A round that fails validation is not recorded early; the same check runs again on "查看结果".
+      }
+    }
     // Every answered question stays on screen with the right answer marked; the child moves on with "下一题".
     if (isChoiceQuestion || isSpellingQuestion) {
       revealedAtRef.current = Date.now();
@@ -956,7 +957,7 @@ export function PracticePage() {
               onChange={(event) => setSpellingInput(event.target.value)}
               onKeyDown={(event) => {
                 // The keyboard's return key submits, like the 提交 button; an empty box does nothing.
-                if (event.key === 'Enter' && !event.nativeEvent.isComposing) submit();
+                if (isSubmitEnter(event)) submit();
               }}
               enterKeyHint="done"
               placeholder="输入单词"

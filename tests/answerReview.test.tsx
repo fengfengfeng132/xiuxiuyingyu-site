@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SpellingReview } from '../src/components/SpellingReview';
-import { ANSWER_REVEAL_GUARD_MS, isRevealGuardActive, revealAboveBottomNav } from '../src/lib/answerReview';
+import { ANSWER_REVEAL_GUARD_MS, isRevealGuardActive, isSubmitEnter, revealAboveBottomNav } from '../src/lib/answerReview';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -50,6 +50,7 @@ describe('action row and the floating bottom navigation', () => {
     return scrollBy;
   }
   const rowEndingAt = (bottom: number) => ({ getBoundingClientRect: () => ({ bottom }) }) as unknown as Element;
+  const answerStartingAt = (top: number) => ({ getBoundingClientRect: () => ({ top }) }) as unknown as Element;
 
   it('moves the page just far enough to clear the navigation', () => {
     const scrollBy = stubPage(1170);
@@ -68,6 +69,38 @@ describe('action row and the floating bottom navigation', () => {
     const scrollBy = stubPage(null);
     revealAboveBottomNav(rowEndingAt(1400));
     expect(scrollBy).toHaveBeenCalledWith({ top: 46, behavior: 'smooth' });
+  });
+
+  it('scrolls the full distance while the revealed answer stays on screen', () => {
+    const scrollBy = stubPage(1170);
+    revealAboveBottomNav(rowEndingAt(1256), answerStartingAt(400));
+    expect(scrollBy).toHaveBeenCalledWith({ top: 98, behavior: 'smooth' });
+  });
+
+  it('stops before the revealed answer would leave the top of the screen', () => {
+    const scrollBy = stubPage(626);
+    revealAboveBottomNav(rowEndingAt(900), answerStartingAt(72));
+    expect(scrollBy).toHaveBeenCalledWith({ top: 60, behavior: 'smooth' });
+  });
+
+  it('does not move at all when the answer already sits at the top edge', () => {
+    const scrollBy = stubPage(626);
+    revealAboveBottomNav(rowEndingAt(900), answerStartingAt(8));
+    revealAboveBottomNav(rowEndingAt(900), answerStartingAt(-40));
+    expect(scrollBy).not.toHaveBeenCalled();
+  });
+});
+
+describe('return key in spelling boxes', () => {
+  it('submits on a plain Enter only', () => {
+    expect(isSubmitEnter({ key: 'Enter', keyCode: 13, nativeEvent: { isComposing: false } })).toBe(true);
+    expect(isSubmitEnter({ key: 'Enter' })).toBe(true);
+    expect(isSubmitEnter({ key: 'a', keyCode: 65, nativeEvent: { isComposing: false } })).toBe(false);
+  });
+
+  it('ignores the Enter that only confirms an input-method composition', () => {
+    expect(isSubmitEnter({ key: 'Enter', keyCode: 13, nativeEvent: { isComposing: true } })).toBe(false);
+    expect(isSubmitEnter({ key: 'Enter', keyCode: 229, nativeEvent: { isComposing: false } })).toBe(false);
   });
 });
 
@@ -96,8 +129,15 @@ describe('answer review flow', () => {
   });
 
   it('submits a spelling with the return key in both spelling boxes', () => {
-    expect(practicePageSource).toContain("if (event.key === 'Enter' && !event.nativeEvent.isComposing) submit();");
-    expect(dictationPageSource).toContain("if (event.key === 'Enter' && !event.nativeEvent.isComposing) submitStep();");
+    expect(practicePageSource).toContain('if (isSubmitEnter(event)) submit();');
+    expect(dictationPageSource).toContain('if (isSubmitEnter(event)) submitStep();');
+  });
+
+  it('records a round as soon as its last open question is answered', () => {
+    const submitTail = practicePageSource.slice(practicePageSource.indexOf('session.questionIds = [...nextFlow];'));
+    expect(submitTail.indexOf('isPracticeRoundFullyAnswered(nextFlow, session)')).toBeGreaterThan(-1);
+    expect(submitTail.indexOf('finishRound(state, session, true)')).toBeLessThan(submitTail.indexOf('advanceAfterAnswer(nextFlow)'));
+    expect(practicePageSource).toContain('saveState(finishRound(state, session, false));');
   });
 
   it('gives the spelling review a key of its own next to the example sentences', () => {

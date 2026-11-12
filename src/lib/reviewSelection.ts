@@ -1,6 +1,7 @@
 import type { AppState, Question, StudySession, WrongItem } from '../types/schema';
-import { pickDailyQuestions, PRACTICE_SESSION_QUESTION_COUNT } from './practiceUtils';
+import { getLocalDaySeed, pickDailyQuestions, PRACTICE_SESSION_QUESTION_COUNT } from './practiceUtils';
 import { getPendingReviewQuestionIds } from './reviewProgress';
+import { hashText } from './stableOptions';
 
 export type ReviewKind = 'daily' | 'weekly' | 'wrongFirst' | 'spaced';
 export const REVIEW_FOCUS_RATIO = 0.7;
@@ -166,6 +167,14 @@ function focusWeight(
   return cumulative + recent + overdue + unreviewed - correctDiscount;
 }
 
+// Which old words are picked follows the rotation. The order they are shown in changes from day to day, so a fixed
+// sequence cannot turn into a memory cue; within one day the order stays the same.
+function shuffleForDay(questions: Question[], now: Date): Question[] {
+  const day = getLocalDaySeed(now);
+  const rank = new Map(questions.map((question) => [question.id, hashText(`${day}:${question.id}`)]));
+  return [...questions].sort((a, b) => rank.get(a.id)! - rank.get(b.id)! || a.id - b.id);
+}
+
 export function selectReviewQuestions(
   bank: Question[],
   state: ReviewState,
@@ -224,7 +233,7 @@ export function selectReviewQuestions(
   });
   const focusCount = options.kind === 'wrongFirst' ? count : Math.ceil(count * REVIEW_FOCUS_RATIO);
   const chosenFocus = focus.slice(0, focusCount);
-  const chosenNormal = normal.slice(0, count - chosenFocus.length);
+  const chosenNormal = shuffleForDay(normal.slice(0, count - chosenFocus.length), now);
   const remaining = count - chosenFocus.length - chosenNormal.length;
   return [...chosenFocus, ...chosenNormal, ...focus.slice(chosenFocus.length, chosenFocus.length + remaining)];
 }
@@ -240,7 +249,8 @@ export function pickLeastRecentlyReviewed(
   const { lastReviewedAt } = collectPracticeEvidence(state, new Map(), now.getTime(), getRecentWindowStart(now));
   const seedRank = new Map(pickDailyQuestions(uniqueBank, uniqueBank.length, now).map((question, index) => [question.id, index]));
   const count = Math.min(Math.max(0, Math.floor(options.count ?? PRACTICE_SESSION_QUESTION_COUNT)), uniqueBank.length);
-  return uniqueBank
+  const leastRecent = uniqueBank
     .sort((a, b) => (lastReviewedAt.get(a.id) ?? 0) - (lastReviewedAt.get(b.id) ?? 0) || seedRank.get(a.id)! - seedRank.get(b.id)!)
     .slice(0, count);
+  return shuffleForDay(leastRecent, now);
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { isSubmitEnter } from '../lib/answerReview';
 import { buildSpellingFeedback } from '../lib/spellingFeedback';
 
 interface SpellingReviewProps {
@@ -60,7 +61,7 @@ export function SpellingReview({ typed, answer, inputId, className, nextLabel, f
             if (buildSpellingFeedback(nextValue, answer).isCorrect) onCopied();
           }}
           onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.nativeEvent.isComposing && copied) onNext();
+            if (isSubmitEnter(event) && copied) onNext();
           }}
           autoFocus={focusOnMount}
           autoCapitalize="none"

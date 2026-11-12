@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   CORRECT_ANSWER_TONE_PATTERN,
   WRONG_ANSWER_TONE_PATTERN,
@@ -24,6 +24,8 @@ function makeQuestion(id: number, prompt: string, explanation: string, tags: str
     audioText: prompt,
   };
 }
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe('studyFeedback', () => {
   it('collects wrong review words and merges repeated misses for the same prompt', () => {
@@ -97,8 +99,30 @@ describe('studyFeedback', () => {
     expect(WRONG_ANSWER_TONE_PATTERN[1].frequency).toBeLessThan(WRONG_ANSWER_TONE_PATTERN[0].frequency);
   });
 
-  it('treats answer tones as best effort where no audio context exists', () => {
+  it('schedules the rising notes for a correct answer and the falling notes for a wrong one', () => {
+    const frequencies: number[] = [];
+    class FakeAudioContext {
+      currentTime = 0;
+      destination = {};
+      createGain() {
+        return { connect() {}, gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {} } };
+      }
+      createOscillator() {
+        return { type: '', frequency: { setValueAtTime: (value: number) => frequencies.push(value) }, connect() {}, start() {}, stop() {} };
+      }
+      close() { return Promise.resolve(); }
+    }
+    vi.stubGlobal('window', { AudioContext: FakeAudioContext, setTimeout: () => 0 });
+
+    playCorrectAnswerTone();
+    expect(frequencies).toEqual([523, 784]);
+    playWrongAnswerTone();
+    expect(frequencies).toEqual([523, 784, 392, 262]);
+  });
+
+  it('treats answer tones as best effort where sound is unavailable', () => {
     expect(() => playCorrectAnswerTone()).not.toThrow();
+    vi.stubGlobal('window', { AudioContext: class { constructor() { throw new Error('blocked'); } } });
     expect(() => playWrongAnswerTone()).not.toThrow();
   });
 });

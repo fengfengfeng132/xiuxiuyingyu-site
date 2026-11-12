@@ -70,10 +70,14 @@ export function getOptionRevealState(
   return selectedIndex === index ? 'wrong' : 'idle';
 }
 
-// Spelling hint: one slot per letter. Words of three letters or fewer show only the first letter,
-// longer words also show the last one. "go" is "g _", never "g _ _".
+// Spelling hint: one slot per letter. Words of three letters or fewer show only the first letter, longer words
+// also show the last one ("go" is "g _", never "g _ _"). Apostrophes, hyphens and spaces are shown as they are,
+// because a blank there would look like a missing letter ("isn't" is "i _ _ ' t").
 export function maskSpellingWord(word: string): string {
   const chars = Array.from(word);
-  if (chars.length <= 3) return chars.map((char, index) => (index === 0 ? char : '_')).join(' ');
-  return chars.map((char, index) => (index === 0 || index === chars.length - 1 ? char : '_')).join(' ');
+  const isLetter = (char: string) => /\p{L}/u.test(char);
+  const letterIndexes = chars.flatMap((char, index) => (isLetter(char) ? [index] : []));
+  const first = letterIndexes[0];
+  const last = letterIndexes.length > 3 ? letterIndexes[letterIndexes.length - 1] : -1;
+  return chars.map((char, index) => (!isLetter(char) || index === first || index === last ? char : '_')).join(' ');
 }

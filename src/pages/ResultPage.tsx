@@ -4,6 +4,7 @@ import { Card } from '../components/Card';
 import { questionBank } from '../data/loadQuestionBank';
 import { loadState, startSession } from '../lib/storage';
 import { collectWrongWordReviewItems } from '../lib/studyFeedback';
+import type { ReviewTask, StudySession } from '../types/schema';
 
 function getTargetCount(score: number, answered: number, storedTotal?: number): number {
   if (typeof storedTotal === 'number' && storedTotal > 0) {
@@ -12,8 +13,21 @@ function getTargetCount(score: number, answered: number, storedTotal?: number): 
   return Math.max(answered, score, 1);
 }
 
+// "再来一轮" repeats the kind of round that was just finished instead of falling back to the standard mode.
+function buildRepeatRoundPath(latest: StudySession, reviewTasks: ReviewTask[]): string {
+  const query = new URLSearchParams();
+  if (latest.mode) query.set('mode', latest.mode);
+  if (latest.train) query.set('train', latest.train);
+  // A review task is offered again only while it still has words left; otherwise the general review round opens.
+  const task = latest.reviewTaskId ? reviewTasks.find((item) => item.id === latest.reviewTaskId) : undefined;
+  if (task && !task.completed) query.set('task', task.id);
+  const search = query.toString();
+  return search ? `/practice?${search}` : '/practice';
+}
+
 export function ResultPage() {
-  const latest = loadState().sessions[0];
+  const state = loadState();
+  const latest = state.sessions[0];
 
   if (!latest) {
     return (
@@ -116,7 +130,7 @@ export function ResultPage() {
               打开错题本
             </Button>
           </Link>
-          <Link className="link-reset" to="/practice" onClick={() => startSession()}>
+          <Link className="link-reset" to={buildRepeatRoundPath(latest, state.reviewTasks)} onClick={() => startSession()}>
             <Button fullWidth>再来一轮</Button>
           </Link>
           <Link className="link-reset" to="/">

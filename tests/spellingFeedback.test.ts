@@ -86,4 +86,65 @@ describe('spellingFeedback', () => {
       { char: 's', isWrong: true },
     ]);
   });
+
+  it('marks only the gap when one letter is left out in the middle', () => {
+    const result = buildSpellingFeedback('lonly', 'lonely');
+
+    expect(result.isCorrect).toBe(false);
+    expect(result.typedLetters).toEqual([
+      { char: 'l', isWrong: false },
+      { char: 'o', isWrong: false },
+      { char: 'n', isWrong: false },
+      { char: '＿', isWrong: true },
+      { char: 'l', isWrong: false },
+      { char: 'y', isWrong: false },
+    ]);
+  });
+
+  it('marks only the extra letter when one letter is doubled in the middle', () => {
+    const result = buildSpellingFeedback('familly', 'family');
+
+    expect(result.typedLetters.map((letter) => letter.char).join('')).toBe('familly');
+    expect(result.typedLetters.filter((letter) => letter.isWrong)).toEqual([{ char: 'l', isWrong: true }]);
+  });
+
+  it('keeps the correctly typed ending unmarked after an earlier mistake', () => {
+    const result = buildSpellingFeedback('elefant', 'elephant');
+
+    expect(result.typedLetters).toEqual([
+      { char: 'e', isWrong: false },
+      { char: 'l', isWrong: false },
+      { char: 'e', isWrong: false },
+      { char: 'f', isWrong: true },
+      { char: '＿', isWrong: true },
+      { char: 'a', isWrong: false },
+      { char: 'n', isWrong: false },
+      { char: 't', isWrong: false },
+    ]);
+  });
+
+  it('marks both letters of a swapped pair and every letter of an unrelated word', () => {
+    expect(buildSpellingFeedback('friut', 'fruit').typedLetters.map((letter) => letter.isWrong)).toEqual([false, false, true, true, false]);
+    expect(buildSpellingFeedback('zzzz', 'play').typedLetters.every((letter) => letter.isWrong)).toBe(true);
+  });
+
+  it('shows what was typed first and the letters still missing after it', () => {
+    expect(buildSpellingFeedback('zzq', 'strong').typedLetters).toEqual([
+      { char: 'z', isWrong: true },
+      { char: 'z', isWrong: true },
+      { char: 'q', isWrong: true },
+      { char: '＿', isWrong: true },
+      { char: '＿', isWrong: true },
+      { char: '＿', isWrong: true },
+    ]);
+    expect(buildSpellingFeedback('ong', 'strong').typedLetters.map((letter) => letter.char).join('')).toBe('＿＿＿ong');
+  });
+
+  it('shows one gap per answer letter when nothing was typed', () => {
+    expect(buildSpellingFeedback('', 'cat').typedLetters).toEqual([
+      { char: '＿', isWrong: true },
+      { char: '＿', isWrong: true },
+      { char: '＿', isWrong: true },
+    ]);
+  });
 });

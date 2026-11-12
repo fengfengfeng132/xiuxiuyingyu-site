@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { selectReviewQuestions, type ReviewKind } from '../src/lib/reviewSelection';
-import type { Question, ReviewTask, StudySession, WrongItem } from '../src/types/schema';
+import { pickLeastRecentlyReviewed, selectReviewQuestions, type ReviewKind } from '../src/lib/reviewSelection';
+import type { LearningRecords, Question, QuestionLearningRecord, ReviewTask, StudySession, WrongItem } from '../src/types/schema';
 
 type ReviewState = Parameters<typeof selectReviewQuestions>[1];
 const NOW = new Date('2026-11-12T12:00:00+08:00');
@@ -38,6 +38,17 @@ function state(overrides: Partial<ReviewState> = {}): ReviewState {
 
 function ids(questions: Question[]): number[] {
   return questions.map((item) => item.id);
+}
+
+function reviewed(questionId: number, lastReviewedAt: string): QuestionLearningRecord {
+  return {
+    questionId, firstSeenAt: lastReviewedAt, lastReviewedAt,
+    answeredCount: 1, correctCount: 1, wrongCount: 0, recentErrors: [], correctRounds: [],
+  };
+}
+
+function records(questions: QuestionLearningRecord[]): LearningRecords {
+  return { version: 1, rounds: [], questions };
 }
 
 function deepFreeze<T>(value: T): T {
@@ -271,5 +282,105 @@ describe('review selection', () => {
     expect(new Set(ids(selected)).size).toBe(10);
     expect(questions).toEqual(originalBank);
     expect(snapshot).toEqual(originalState);
+  });
+
+  it('starts the next round with the old words that were left out instead of repeating the same ten', () => {
+    const questions = bank(15);
+    const first = ids(selectReviewQuestions(questions, state(), { kind: 'daily', now: NOW }));
+    const afterFirstRound = state({
+      learningRecords: records(first.map((id, index) => reviewed(id, `2026-11-12T10:0${index}:00+08:00`))),
+    });
+    const second = ids(selectReviewQuestions(questions, afterFirstRound, { kind: 'daily', now: new Date('2026-11-13T12:00:00+08:00') }));
+    const leftOut = questions.map((item) => item.id).filter((id) => !first.includes(id));
+
+    expect(first).toHaveLength(10);
+    expect([...second.slice(0, 5)].sort((a, b) => a - b)).toEqual(leftOut);
+    expect(second.slice(5)).toEqual(first.slice(0, 5));
+  });
+
+  it.each<ReviewKind>(['daily', 'weekly', 'spaced', 'wrongFirst'])('reaches all 32 old words in four recorded %s rounds', (kind) => {
+    const questions = bank(32);
+    let history: QuestionLearningRecord[] = [];
+    const seen = new Set<number>();
+    for (let day = 0; day < 4; day += 1) {
+      const now = new Date(NOW.getTime() + day * 86_400_000);
+      const picked = ids(selectReviewQuestions(questions, state({ learningRecords: records(history) }), { kind, now }));
+      expect(picked).toHaveLength(10);
+      picked.forEach((id) => seen.add(id));
+      history = [
+        ...history.filter((item) => !picked.includes(item.questionId)),
+        ...picked.map((id, index) => reviewed(id, new Date(now.getTime() + index * 1000).toISOString())),
+      ];
+    }
+    expect(seen.size).toBe(32);
+  });
+
+  it('keeps the same plan for the whole day until a round is actually recorded', () => {
+    const questions = bank(32);
+    const snapshot = state({ learningRecords: records(Array.from({ length: 12 }, (_, index) => reviewed(index + 1, `2026-11-1${index % 3}T10:00:00+08:00`))) });
+    const morning = ids(selectReviewQuestions(questions, snapshot, { kind: 'weekly', now: NOW }));
+    const evening = ids(selectReviewQuestions(questions, snapshot, { kind: 'weekly', now: new Date('2026-11-12T23:00:00+08:00') }));
+    expect(evening).toEqual(morning);
+  });
+
+  it('lets studied words of the current lesson take turns in weekly review while daily review keeps archived lessons first', () => {
+    const currentLesson = Array.from({ length: 6 }, (_, index) => question(101 + index, false));
+    const questions = [...bank(12), ...currentLesson];
+    const snapshot = state({
+      learningRecords: records([
+        ...Array.from({ length: 12 }, (_, index) => reviewed(index + 1, `2026-11-12T09:${10 + index}:00+08:00`)),
+        ...currentLesson.map((item, index) => reviewed(item.id, `2026-11-10T09:${10 + index}:00+08:00`)),
+      ]),
+    });
+
+    const weekly = ids(selectReviewQuestions(questions, snapshot, { kind: 'weekly', now: NOW }));
+    expect(weekly.slice(0, 6)).toEqual([101, 102, 103, 104, 105, 106]);
+    expect(weekly.slice(6)).toEqual([1, 2, 3, 4]);
+
+    const daily = ids(selectReviewQuestions(questions, snapshot, { kind: 'daily', now: NOW }));
+    expect(daily).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
+
+  it('ignores invalid and future review times when ordering old words', () => {
+    const questions = bank(3);
+    const snapshot = state({
+      learningRecords: records([
+        reviewed(1, '2026-11-11T10:00:00+08:00'),
+        { ...reviewed(2, '2026-11-10T10:00:00+08:00'), lastReviewedAt: '2026-11-20T10:00:00+08:00' },
+        { ...reviewed(3, '2026-11-09T10:00:00+08:00'), lastReviewedAt: 'invalid' },
+      ]),
+    });
+    const order = ids(selectReviewQuestions(questions, snapshot, { kind: 'weekly', now: NOW }));
+    expect(order.at(-1)).toBe(1);
+    expect([...order.slice(0, 2)].sort((a, b) => a - b)).toEqual([2, 3]);
+  });
+});
+
+describe('least recently reviewed pick', () => {
+  it('covers a 17-word lesson in two rounds of ten', () => {
+    const lesson = bank(17, false);
+    const first = ids(pickLeastRecentlyReviewed(lesson, state(), { now: NOW }));
+    const afterFirstRound = state({
+      learningRecords: records(first.map((id, index) => reviewed(id, `2026-11-12T10:0${index}:00+08:00`))),
+    });
+    const second = ids(pickLeastRecentlyReviewed(lesson, afterFirstRound, { now: NOW }));
+
+    expect(first).toHaveLength(10);
+    expect(second).toHaveLength(10);
+    expect(new Set([...first, ...second]).size).toBe(17);
+    expect(second.slice(7)).toEqual(first.slice(0, 3));
+  });
+
+  it('counts answers of the round in progress, deduplicates IDs and does not mutate frozen inputs', () => {
+    const lesson = [...bank(12, false), question(1, false)];
+    const snapshot = state({ learningRecords: records([]), activeSession: session('in-progress', 1, true) });
+    deepFreeze(lesson);
+    deepFreeze(snapshot);
+    const picked = ids(pickLeastRecentlyReviewed(lesson, snapshot, { now: NOW, count: 11 }));
+
+    expect(picked).toHaveLength(11);
+    expect(new Set(picked).size).toBe(11);
+    expect(picked).not.toContain(1);
+    expect(pickLeastRecentlyReviewed(lesson, snapshot, { now: NOW, count: 0 })).toEqual([]);
   });
 });

@@ -3,13 +3,8 @@ import { Card } from '../components/Card';
 import { useNavigate } from 'react-router-dom';
 import { WeeklyReviewEntry } from '../components/WeeklyReviewEntry';
 import { questionBank } from '../data/loadQuestionBank';
+import { getQuestionMeaning } from '../lib/practiceDisplay';
 import { loadState, saveState, startSession } from '../lib/storage';
-
-function extractMeaning(explanation?: string): string {
-  if (!explanation) return '暂无释义';
-  const parts = explanation.trim().split(/\s+/);
-  return parts.length >= 2 ? parts.slice(1).join(' ') : explanation;
-}
 
 export function WrongPage() {
   const navigate = useNavigate();
@@ -72,7 +67,7 @@ export function WrongPage() {
                 title={q?.prompt ?? `题目 #${item.questionId}`}
                 subtitle={q?.stem}
               >
-                <p>重点词义：{extractMeaning(q?.explanation)}</p>
+                <p>重点词义：{(q && getQuestionMeaning(q)) || '暂无释义'}</p>
                 <p>错误次数：{item.wrongCount}</p>
                 <p>状态：{item.mastered ? '已掌握' : '待复习'}</p>
                 <p>最近错题时间：{new Date(item.lastWrongAt).toLocaleString()}</p>

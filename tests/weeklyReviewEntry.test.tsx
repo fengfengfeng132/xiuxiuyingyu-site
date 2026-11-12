@@ -58,6 +58,20 @@ describe('weekly review entry', () => {
   });
 });
 
+describe('wrong book meaning', () => {
+  it('shows the whole answer of a dialogue question', () => {
+    state.wrongBook = [{ questionId: 57, wrongCount: 1, mastered: false, lastWrongAt: '2026-11-12T03:00:00.000Z' }];
+    const html = renderToStaticMarkup(<MemoryRouter><WrongPage /></MemoryRouter>);
+    expect(html).toContain('重点词义：We strum the guitar.');
+    expect(html).not.toContain('重点词义：do we play');
+  });
+
+  it('keeps the placeholder for a record whose question no longer exists', () => {
+    state.wrongBook = [{ questionId: 999999, wrongCount: 1, mastered: false, lastWrongAt: '2026-11-12T03:00:00.000Z' }];
+    expect(renderToStaticMarkup(<MemoryRouter><WrongPage /></MemoryRouter>)).toContain('重点词义：暂无释义');
+  });
+});
+
 describe('review task cards', () => {
   it('previews only unfinished questions that still exist in the current bank', () => {
     state.reviewTasks = [{

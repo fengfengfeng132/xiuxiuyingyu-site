@@ -58,13 +58,18 @@ function collectPracticeEvidence(
   wrongById: ReadonlyMap<number, WrongItem>,
   now: number,
   recentStart: number,
-): { seenIds: Set<number>; evidence: Map<number, PracticeEvidence> } {
+): { seenIds: Set<number>; evidence: Map<number, PracticeEvidence>; lastReviewedAt: Map<number, number> } {
   const seenIds = new Set<number>();
   const evidence = new Map<number, PracticeEvidence>();
+  const lastReviewedAt = new Map<number, number>();
+  const markReviewed = (questionId: number, time: number | null) => {
+    if (time !== null && time > (lastReviewedAt.get(questionId) ?? 0)) lastReviewedAt.set(questionId, time);
+  };
 
   state.learningRecords?.questions.forEach((record) => {
     if (validPastTime(record.firstSeenAt, now) === null) return;
     seenIds.add(record.questionId);
+    markReviewed(record.questionId, validPastTime(record.lastReviewedAt, now));
     const wrong = wrongById.get(record.questionId);
     const lastWrongAt = wrong ? validPastTime(wrong.lastWrongAt, now) : null;
     const correctRounds = record.correctRounds.filter((round) => {
@@ -89,6 +94,7 @@ function collectPracticeEvidence(
       const answeredAt = validPastTime(answer.answeredAt, now);
       if (answeredAt === null || answeredAt < startedAt) return;
       seenIds.add(answer.questionId);
+      markReviewed(answer.questionId, answeredAt);
       const item = evidence.get(answer.questionId) ?? { recentErrors: 0, correctRoundsAfterWrong: 0, reviewedAfterWrong: false };
       if (!answer.isCorrect && answeredAt >= recentStart) item.recentErrors += 1;
 
@@ -103,7 +109,7 @@ function collectPracticeEvidence(
     });
   });
 
-  return { seenIds, evidence };
+  return { seenIds, evidence, lastReviewedAt };
 }
 
 function collectRecentDictationBonuses(state: ReviewState, bank: Question[], now: number, recentStart: number): Map<number, number> {
@@ -170,7 +176,7 @@ export function selectReviewQuestions(
   const recentStart = getRecentWindowStart(now);
   const uniqueBank = [...new Map(bank.map((question) => [question.id, question])).values()];
   const wrongById = new Map(state.wrongBook.map((wrong) => [wrong.questionId, wrong]));
-  const { seenIds, evidence } = collectPracticeEvidence(state, wrongById, nowTime, recentStart);
+  const { seenIds, evidence, lastReviewedAt } = collectPracticeEvidence(state, wrongById, nowTime, recentStart);
   const dictationBonuses = collectRecentDictationBonuses(state, uniqueBank, nowTime, recentStart);
   const { taskIds, dueIds } = getTaskEvidence(state, nowTime);
   const isPendingWrong = (id: number) => {
@@ -208,12 +214,33 @@ export function selectReviewQuestions(
     return score(b) - score(a) || compareSeed(a, b);
   });
   const normal = candidates.filter((question) => !isPendingWrong(question.id)).sort((a, b) => {
-    const priority = (question: Question) => question.tags.includes('archived-dictation') ? 2 : isOld(question) ? 1 : 0;
-    return priority(b) - priority(a) || compareSeed(a, b);
+    // 每日 10 题 keeps archived lessons ahead of other studied words; the other review entries treat every old word alike.
+    const archivedPriority = options.kind === 'daily' ? 2 : 1;
+    const priority = (question: Question) => question.tags.includes('archived-dictation') ? archivedPriority : isOld(question) ? 1 : 0;
+    // Within a tier the word reviewed longest ago goes first (never-reviewed ones before all), so old words take
+    // turns instead of the same ten coming back every day. The daily seed only breaks ties.
+    const reviewedAt = (question: Question) => lastReviewedAt.get(question.id) ?? 0;
+    return priority(b) - priority(a) || reviewedAt(a) - reviewedAt(b) || compareSeed(a, b);
   });
   const focusCount = options.kind === 'wrongFirst' ? count : Math.ceil(count * REVIEW_FOCUS_RATIO);
   const chosenFocus = focus.slice(0, focusCount);
   const chosenNormal = normal.slice(0, count - chosenFocus.length);
   const remaining = count - chosenFocus.length - chosenNormal.length;
   return [...chosenFocus, ...chosenNormal, ...focus.slice(chosenFocus.length, chosenFocus.length + remaining)];
+}
+
+// Picks the words reviewed longest ago (never-reviewed ones first) so a lesson larger than one round is fully covered over a few rounds.
+export function pickLeastRecentlyReviewed(
+  bank: Question[],
+  state: ReviewState,
+  options: { now?: Date; count?: number } = {},
+): Question[] {
+  const now = options.now ?? new Date();
+  const uniqueBank = [...new Map(bank.map((question) => [question.id, question])).values()];
+  const { lastReviewedAt } = collectPracticeEvidence(state, new Map(), now.getTime(), getRecentWindowStart(now));
+  const seedRank = new Map(pickDailyQuestions(uniqueBank, uniqueBank.length, now).map((question, index) => [question.id, index]));
+  const count = Math.min(Math.max(0, Math.floor(options.count ?? PRACTICE_SESSION_QUESTION_COUNT)), uniqueBank.length);
+  return uniqueBank
+    .sort((a, b) => (lastReviewedAt.get(a.id) ?? 0) - (lastReviewedAt.get(b.id) ?? 0) || seedRank.get(a.id)! - seedRank.get(b.id)!)
+    .slice(0, count);
 }

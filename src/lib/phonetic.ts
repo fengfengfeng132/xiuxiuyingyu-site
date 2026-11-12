@@ -20,12 +20,13 @@ interface PronunciationData {
 
 export type WordAudioPlaybackResult =
   | { ok: true; reason: 'played' }
-  | { ok: false; reason: 'missing' | 'stale' | 'failed' };
+  | { ok: false; reason: 'missing' | 'stale' | 'failed' | 'blocked' };
 type WordAudioFailureReason = Extract<WordAudioPlaybackResult, { ok: false }>['reason'];
 
 const pronunciationCache = new Map<string, PronunciationData>();
 let wordAudioPlayer: HTMLAudioElement | null = null;
 let wordAudioRequestId = 0;
+let failedAudioUrl: string | null = null;
 const LOCAL_NORMAL_WORD_AUDIO_BASE = '/audio/words/us';
 const LOCAL_SLOW_WORD_AUDIO_BASE = '/audio/words/us-slow';
 const localAudioWarmupCache = new Map<string, Promise<boolean>>();
@@ -80,6 +81,12 @@ export function classifyWordAudioFailure(error: unknown, latestRequest: boolean)
 
   if (error instanceof DOMException && error.name === 'AbortError') {
     return 'stale';
+  }
+
+  // The browser refused to start sound (autoplay policy). The file itself is fine, so callers that
+  // started playback automatically stay quiet; a tap that gets refused is still reported.
+  if ((error as { name?: unknown } | null)?.name === 'NotAllowedError') {
+    return 'blocked';
   }
 
   if (error instanceof Error) {
@@ -316,10 +323,12 @@ async function playAudioUrl(url: string | null, requestId: number): Promise<Word
     const absoluteUrl = toAbsoluteAudioUrl(url);
     player.pause();
     player.currentTime = 0;
-    if (player.src !== absoluteUrl) {
+    // After a failed load the element stays in an error state; assigning the same URL again is the only way to retry.
+    if (player.src !== absoluteUrl || player.error || failedAudioUrl === absoluteUrl) {
       player.src = absoluteUrl;
       player.load();
     }
+    failedAudioUrl = null;
     player.playbackRate = 1;
     await player.play();
     if (!isLatestWordAudioRequest(requestId)) {
@@ -327,7 +336,9 @@ async function playAudioUrl(url: string | null, requestId: number): Promise<Word
     }
     return { ok: true, reason: 'played' };
   } catch (error) {
-    return { ok: false, reason: classifyWordAudioFailure(error, isLatestWordAudioRequest(requestId)) };
+    const reason = classifyWordAudioFailure(error, isLatestWordAudioRequest(requestId));
+    if (reason === 'failed') failedAudioUrl = toAbsoluteAudioUrl(url);
+    return { ok: false, reason };
   }
 }
 

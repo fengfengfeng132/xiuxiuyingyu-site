@@ -4,6 +4,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ExampleSentences } from '../components/ExampleSentences';
 import { ProgressBar } from '../components/ProgressBar';
+import { SpellingReview } from '../components/SpellingReview';
 import { questionBank } from '../data/loadQuestionBank';
 import {
   fetchUsPhonetic,
@@ -15,6 +16,7 @@ import {
   playLocalUsWordAudio,
   playUsWordAudio,
   stopUsWordAudioPlayback,
+  type WordAudioPlaybackResult,
 } from '../lib/phonetic';
 import {
   assessSpokenText,
@@ -24,16 +26,27 @@ import {
 } from '../lib/speechAssessment';
 import { pickDailyQuestions, pickPracticeSessionQuestions } from '../lib/practiceUtils';
 import { getSavedExampleReview } from '../lib/practiceExampleReview';
-import { buildTranslationQuestion, canRevealPracticeAnswer, getPracticeCardTitle } from '../lib/practiceDisplay';
+import {
+  buildTranslationQuestion,
+  canRevealPracticeAnswer,
+  canShowPracticePhonetic,
+  getOptionRevealState,
+  getPracticeAudioText,
+  getPracticeCardTitle,
+  maskSpellingWord,
+} from '../lib/practiceDisplay';
+import { isRevealGuardActive, revealAboveBottomNav } from '../lib/answerReview';
+import { buildDialogueFillQuestion } from '../lib/dialogueFill';
+import { stableShuffle } from '../lib/stableOptions';
 import { getLegacyPracticeQuestionIds, getSavedPracticeQuestionIds } from '../lib/practiceSession';
 import { getPendingReviewQuestionIds } from '../lib/reviewProgress';
-import { selectReviewQuestions, type ReviewKind } from '../lib/reviewSelection';
+import { pickLeastRecentlyReviewed, selectReviewQuestions, type ReviewKind } from '../lib/reviewSelection';
 import { recordCompletedTraining } from '../lib/learningRecords';
 import { createSession, loadState, saveState } from '../lib/storage';
-import { playWrongAnswerTone, updateWrongBookForQuestion } from '../lib/studyFeedback';
+import { playCorrectAnswerTone, playWrongAnswerTone, updateWrongBookForQuestion } from '../lib/studyFeedback';
 import { fetchWordImage } from '../lib/wordImage';
 import { buildSpellingFeedback } from '../lib/spellingFeedback';
-import type { Question, SessionAnswer } from '../types/schema';
+import type { AppState, Question, SessionAnswer } from '../types/schema';
 
 type TrainMode =
   | 'normal'
@@ -104,13 +117,14 @@ function pickUsVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | nul
   );
 }
 
-function pickDailyLearningSet(bank: Question[], count: number): Question[] {
+function pickDailyLearningSet(bank: Question[], count: number, state: AppState, now: Date): Question[] {
   const preferredBank = bank.filter((item) => item.tags.includes(DAILY_DICTATION_TAG));
   if (!preferredBank.length) {
     return pickDailyQuestions(bank, count);
   }
 
-  const preferredQuestions = pickDailyQuestions(preferredBank, count);
+  // Words practiced longest ago come first, so a lesson with more than ten words is covered within a few rounds.
+  const preferredQuestions = pickLeastRecentlyReviewed(preferredBank, state, { now, count });
   if (preferredQuestions.length >= count) {
     return preferredQuestions;
   }
@@ -130,12 +144,6 @@ function shuffleArray<T>(arr: T[]): T[] {
   return a;
 }
 
-function maskWord(word: string): string {
-  if (word.length <= 3) return `${word[0]} _ _`;
-  const chars = word.split('');
-  return chars.map((ch, i) => (i === 0 || i === chars.length - 1 ? ch : '_')).join(' ');
-}
-
 function personTransform(text: string): string {
   return text
     .replace(/^I\s+/i, 'He ')
@@ -152,16 +160,6 @@ function splitSentences(text: string): string[] {
     .split(/(?<=[.!?])\s+/)
     .map((item) => item.trim())
     .filter(Boolean);
-}
-
-function extractDialogueKeyword(sentence: string): string {
-  const words = sentence
-    .replace(/[^a-zA-Z']/g, ' ')
-    .split(/\s+/)
-    .filter(Boolean);
-  if (words.length >= 2) return words[1].toLowerCase();
-  if (words.length === 1) return words[0].toLowerCase();
-  return sentence.trim().toLowerCase();
 }
 
 function scoreSimilarity(source: Question, candidate: Question): number {
@@ -211,8 +209,8 @@ function moveFutureQuestionToNext(questionFlow: number[], questionIndex: number,
   return next;
 }
 
-function getAudioText(question: Question): string {
-  return (question.audioText || question.prompt || '').trim();
+function isDialogueQuestion(question: Question): boolean {
+  return question.tags.includes('dialogue-qa') || question.tags.includes('dialogue');
 }
 
 function isVocabQuestion(question: Question): boolean {
@@ -235,12 +233,15 @@ export function PracticePage() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [feedback, setFeedback] = useState('');
+  const [audioMessage, setAudioMessage] = useState('');
   const [sessionRestartMessage, setSessionRestartMessage] = useState('');
   const [submittedExampleQuestionId, setSubmittedExampleQuestionId] = useState<number | null>(null);
+  const [submittedAnswerCorrect, setSubmittedAnswerCorrect] = useState<boolean | null>(null);
+  const [spellingCopied, setSpellingCopied] = useState(false);
   const [streak, setStreak] = useState(0);
   const [listenRate, setListenRate] = useState(1);
   const [sentenceCursor, setSentenceCursor] = useState(0);
-  const [phonetic, setPhonetic] = useState('');
+  const [phonetic, setPhonetic] = useState<{ questionId: number; text: string } | null>(null);
   const [spellingInput, setSpellingInput] = useState('');
   const [wordImageUrl, setWordImageUrl] = useState('');
   const [wordImageLoading, setWordImageLoading] = useState(false);
@@ -248,6 +249,8 @@ export function PracticePage() {
   const [speechCheckMessage, setSpeechCheckMessage] = useState('');
   const [speechCheckPassed, setSpeechCheckPassed] = useState<boolean | null>(null);
   const autoPlayAfterSubmitRef = useRef(false);
+  const revealedAtRef = useRef(0);
+  const actionDockRef = useRef<HTMLDivElement | null>(null);
   const preferredVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
 
   const currentBank = useMemo(() => {
@@ -279,7 +282,7 @@ export function PracticePage() {
     }
 
     if (train === 'today10' && !savedIds) {
-      bank = pickDailyLearningSet(bank, 10);
+      bank = pickDailyLearningSet(bank, 10, stateSnapshot, selectionNow);
     }
 
     if (train === 'level10' && !savedIds) {
@@ -301,7 +304,7 @@ export function PracticePage() {
       bank = vocabBank.map((q) => ({
         ...q,
         type: 'spell' as const,
-        stem: `拼写提示：${maskWord(q.prompt)}`,
+        stem: `拼写提示：${maskSpellingWord(q.prompt)}`,
         options: [],
         answerIndex: 0,
       }));
@@ -316,48 +319,20 @@ export function PracticePage() {
     }
 
     if (train === 'dialogueFill') {
-      const dialogueBank = bank.filter((q) => q.tags.includes('dialogue-qa') || q.tags.includes('dialogue'));
-      const keywordPool = dialogueBank
-        .map((q) => q.options[q.answerIndex])
-        .map((sentence) => extractDialogueKeyword(sentence || ''))
-        .filter(Boolean);
-
-      bank = dialogueBank.map((q) => {
-        const answerSentence = q.options[q.answerIndex] ?? '';
-        const cleanAnswer = answerSentence.replace(/[.?!]/g, '').trim();
-        const answerWords = cleanAnswer.split(/\s+/).filter(Boolean);
-        const blankIndex = answerWords.length >= 2 ? 1 : 0;
-        const correctWord = extractDialogueKeyword(answerSentence);
-        const displayWords = [...answerWords];
-        if (displayWords.length > 0) {
-          displayWords[blankIndex] = '_____';
-        }
-
-        const distractors = shuffleArray(keywordPool.filter((word) => word !== correctWord)).slice(0, 3);
-        const options = shuffleArray(Array.from(new Set([correctWord, ...distractors]))).slice(0, 4);
-
-        if (!options.includes(correctWord)) {
-          options[0] = correctWord;
-        }
-
-        return {
-          ...q,
-          stem: `对话填空：${q.prompt} ${displayWords.join(' ')}。`,
-          options,
-          answerIndex: options.indexOf(correctWord),
-        };
-      });
+      // Options come from the whole dialogue bank, not this round's sample, so a refresh rebuilds the same choices.
+      const dialoguePool = questionBank.filter(isDialogueQuestion);
+      bank = bank.filter(isDialogueQuestion).map((q) => buildDialogueFillQuestion(q, dialoguePool));
     }
 
     if (train === 'qaMatch') {
-      const dialogueBank = bank.filter((q) => q.tags.includes('dialogue-qa') || q.tags.includes('dialogue'));
-      const questionPool = dialogueBank.map((q) => q.prompt);
+      const dialogueBank = bank.filter(isDialogueQuestion);
+      const questionPool = questionBank.filter(isDialogueQuestion).map((q) => q.prompt);
 
       bank = dialogueBank.map((q) => {
         const correctQuestion = q.prompt;
         const answerSentence = q.options[q.answerIndex] ?? q.prompt;
-        const distract = shuffleArray(questionPool.filter((item) => item !== correctQuestion)).slice(0, 3);
-        const options = shuffleArray([correctQuestion, ...distract]);
+        const distract = stableShuffle(questionPool.filter((item) => item !== correctQuestion), `qa-match:${q.id}`).slice(0, 3);
+        const options = stableShuffle([correctQuestion, ...distract], `qa-match-options:${q.id}`);
 
         return {
           ...q,
@@ -373,7 +348,7 @@ export function PracticePage() {
       bank = bank.filter((q) => q.tags.includes('dialogue-qa') || q.tags.includes('verb') || q.tags.includes('grammar'));
       bank = bank.map((q) => {
         const transformed = personTransform(q.prompt);
-        const options = shuffleArray(Array.from(new Set([transformed, q.prompt, 'They throw the ball.', 'We throw the ball.']))).slice(0, 4);
+        const options = stableShuffle(Array.from(new Set([transformed, q.prompt, 'They throw the ball.', 'We throw the ball.'])), `person:${q.id}`).slice(0, 4);
         if (!options.includes(transformed)) {
           options[0] = transformed;
         }
@@ -487,17 +462,22 @@ export function PracticePage() {
     const state = loadState();
     const session = state.activeSession;
     const existed = session?.answers.find((a) => a.questionId === question.id);
-    const savedExampleReview = getSavedExampleReview(question, existed, Boolean(REVIEW_KINDS[train]) || train === 'zh2en');
+    // A submitted answer is restored locked in every mode, so going back or refreshing cannot replace the original result.
+    const savedExampleReview = getSavedExampleReview(question, existed, true);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelected(existed && existed.selectedIndex >= 0 ? existed.selectedIndex : null);
     setFeedback(savedExampleReview?.feedback ?? '');
+    setAudioMessage('');
     setSubmittedExampleQuestionId(savedExampleReview?.questionId ?? null);
+    setSubmittedAnswerCorrect(savedExampleReview && existed ? existed.isCorrect : null);
+    // Copy-typing is asked for once, right after a wrong spelling; coming back to the question later does not block on it.
+    setSpellingCopied(Boolean(savedExampleReview));
     setSpellingInput(savedExampleReview?.spellingInput ?? '');
     setSpeechChecking(false);
     setSpeechCheckMessage('');
     setSpeechCheckPassed(null);
-  }, [question, train]);
+  }, [question]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -505,18 +485,13 @@ export function PracticePage() {
   }, [question]);
 
   useEffect(() => {
-    if (!question || !isVocabQuestion(question) || !isSingleEnglishWord(question.prompt)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setPhonetic('');
-      return;
-    }
-
-    if (question.phonetic) return;
+    if (!question || !isVocabQuestion(question) || !isSingleEnglishWord(question.prompt) || question.phonetic) return;
 
     let canceled = false;
     fetchUsPhonetic(question.prompt).then((result) => {
       if (canceled) return;
-      setPhonetic(result ?? '');
+      // Stored with its question id: a looked-up phonetic can never be shown on a different card.
+      setPhonetic({ questionId: question.id, text: result ?? '' });
     });
 
     return () => {
@@ -552,45 +527,48 @@ export function PracticePage() {
     };
   }, [question, isSpellingQuestion]);
 
-  const audioText = question ? getAudioText(question) : '';
+  useEffect(() => {
+    // Once an answer is revealed the card grows (verdict, examples, spelling review), which can push "下一题"
+    // under the floating bottom navigation. Late content such as a looked-up phonetic can push it down again.
+    if (!question || submittedExampleQuestionId !== question.id) return;
+    revealAboveBottomNav(actionDockRef.current);
+  }, [question, submittedExampleQuestionId, feedback, phonetic, wordImageUrl, spellingCopied]);
+
+  const audioText = question ? getPracticeAudioText(train, question, submittedExampleQuestionId === question.id) : '';
   const sentenceList = splitSentences(audioText);
 
-  const speakAudio = useCallback(async (text: string, rate: number) => {
+  const speakAudio = useCallback(async (text: string, rate: number, automatic = false) => {
     if (!text) return;
     if (!canRevealPracticeAnswer(train, submittedExampleQuestionId === question?.id)) return;
+    // Audio status has its own line so it never replaces the answer feedback.
+    setAudioMessage('');
+    // Automatic playback refused by the browser is not a broken file: no error and no fallback voice.
+    const isQuietRefusal = (playback: WordAudioPlaybackResult) => automatic && playback.reason === 'blocked';
 
     const isDailyDictationWord = Boolean(question?.tags.includes(DAILY_DICTATION_TAG) || question?.tags.includes('archived-dictation'));
     if (isDailyDictationWord) {
       const audioKey = question?.audioKey ?? text;
-      if (rate < 1) {
-        const playback = await playLocalUsSlowWordAudio(audioKey);
-        if (playback.ok || playback.reason === 'stale') return;
-        const nextFeedback = getLocalSlowWordAudioFeedback(playback);
-        if (nextFeedback) setFeedback(nextFeedback);
-        return;
-      }
-
-      const playback = await playLocalUsWordAudio(audioKey);
-      if (playback.ok || playback.reason === 'stale') return;
-      setFeedback(getLocalWordAudioFeedback(playback));
+      const playback = rate < 1 ? await playLocalUsSlowWordAudio(audioKey) : await playLocalUsWordAudio(audioKey);
+      if (playback.ok || playback.reason === 'stale' || isQuietRefusal(playback)) return;
+      setAudioMessage(rate < 1 ? getLocalSlowWordAudioFeedback(playback) : getLocalWordAudioFeedback(playback));
       return;
     }
 
     const localQuestionBankPlayback = await playLocalQuestionBankAudio(text, rate);
-    if (localQuestionBankPlayback.ok || localQuestionBankPlayback.reason === 'stale') return;
+    if (localQuestionBankPlayback.ok || localQuestionBankPlayback.reason === 'stale' || isQuietRefusal(localQuestionBankPlayback)) return;
 
     if (isSingleEnglishWord(text)) {
       const playback = await playUsWordAudio(text, rate);
-      if (playback.ok || playback.reason === 'stale') return;
+      if (playback.ok || playback.reason === 'stale' || isQuietRefusal(playback)) return;
     }
 
     if (rate < 1) {
-      setFeedback('当前内容的慢速音频暂不可用，请先听正常发音。');
+      setAudioMessage('当前内容的慢速音频暂不可用，请先听正常发音。');
       return;
     }
 
     if (!('speechSynthesis' in window)) {
-      setFeedback('当前浏览器不支持语音朗读。');
+      setAudioMessage('当前浏览器不支持语音朗读。');
       return;
     }
 
@@ -614,7 +592,7 @@ export function PracticePage() {
     if (!question || !isVocabQuestion(question)) return;
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void speakAudio(audioText, 1);
+    void speakAudio(audioText, 1, true);
   }, [audioText, question, speakAudio]);
 
   useEffect(() => {
@@ -658,7 +636,7 @@ export function PracticePage() {
     if (!question) return;
     if (!canRevealPracticeAnswer(train, submittedExampleQuestionId === question.id)) return;
 
-    const targetText = getAudioText(question).trim();
+    const targetText = audioText.trim();
     if (!targetText) {
       setSpeechCheckPassed(false);
       setSpeechCheckMessage('当前题目没有可跟读文本。');
@@ -696,7 +674,7 @@ export function PracticePage() {
     );
   };
 
-  const advanceAfterAnswer = (nextFeedback = feedback, flow = questionFlow) => {
+  const advanceAfterAnswer = (flow = questionFlow) => {
     const state = loadState();
     const session = state.activeSession;
     if (!session) {
@@ -740,7 +718,8 @@ export function PracticePage() {
     const nextQuestionId = flow[nextIndex];
     const nextQuestion = nextQuestionId !== undefined ? questionById.get(nextQuestionId) : undefined;
     autoPlayAfterSubmitRef.current = Boolean(nextQuestion && isVocabQuestion(nextQuestion));
-    setFeedback(nextFeedback);
+    // The verdict belongs to the question just left; the next card starts clean.
+    setFeedback('');
     setQuestionIndex(nextIndex);
   };
 
@@ -779,6 +758,7 @@ export function PracticePage() {
 
   const submit = () => {
     if (submittedExampleQuestionId === question.id) {
+      if (isRevealGuardActive(revealedAtRef.current)) return;
       advanceAfterAnswer();
       return;
     }
@@ -794,9 +774,11 @@ export function PracticePage() {
       state.activeSession.answers.every((answer) => questionById.has(answer.questionId));
 
     const session = hasCompatibleSession && state.activeSession ? state.activeSession : createSession();
-    const savedExampleReview = getSavedExampleReview(question, session.answers.find((answer) => answer.questionId === question.id), Boolean(REVIEW_KINDS[train]) || train === 'zh2en');
-    if (savedExampleReview) {
+    const savedAnswer = session.answers.find((answer) => answer.questionId === question.id);
+    const savedExampleReview = getSavedExampleReview(question, savedAnswer, true);
+    if (savedExampleReview && savedAnswer) {
       setSubmittedExampleQuestionId(savedExampleReview.questionId);
+      setSubmittedAnswerCorrect(savedAnswer.isCorrect);
       setFeedback(savedExampleReview.feedback);
       setSpellingInput(savedExampleReview.spellingInput);
       return;
@@ -847,25 +829,30 @@ export function PracticePage() {
         if (reorderedFlow !== questionFlow) {
           nextFlow = reorderedFlow;
           setQuestionFlow(reorderedFlow);
-          nextFeedback += question.examples?.length || REVIEW_KINDS[train] || train === 'zh2en' ? ' 下一题会练习相似内容。' : ' 已为你切换到相似题继续练习。';
+          nextFeedback += ' 下一题会练习相似内容。';
         }
       }
     } else {
       const nextStreak = streak + 1;
       setStreak(nextStreak);
       nextFeedback = nextStreak >= 3 ? `连续答对 ${nextStreak} 题，真棒！` : '回答正确。';
+      if (isChoiceQuestion || isSpellingQuestion) playCorrectAnswerTone();
     }
 
     state.activeSession = session;
     session.currentQuestionIndex = questionIndex;
     session.questionIds = [...nextFlow];
     saveState(state);
-    if ((question.examples?.length || REVIEW_KINDS[train] || train === 'zh2en') && (isChoiceQuestion || isSpellingQuestion)) {
+    // Every answered question stays on screen with the right answer marked; the child moves on with "下一题".
+    if (isChoiceQuestion || isSpellingQuestion) {
+      revealedAtRef.current = Date.now();
       setSubmittedExampleQuestionId(question.id);
+      setSubmittedAnswerCorrect(isCorrect);
+      setSpellingCopied(false);
       setFeedback(nextFeedback);
       return;
     }
-    advanceAfterAnswer(nextFeedback, nextFlow);
+    advanceAfterAnswer(nextFlow);
   };
 
   const modeTitle = mode === 'vocab' ? '词汇' : mode === 'dialogue' ? '对话' : '全部';
@@ -873,10 +860,14 @@ export function PracticePage() {
   const canRevealAnswer = canRevealPracticeAnswer(train, hasSubmittedExampleQuestion);
   const cardTitle = getPracticeCardTitle(train, question, hasSubmittedExampleQuestion);
 
-  const cardSubtitle = train === 'audio' ? '听音后选择正确选项' : question.stem;
-  const displayedPhonetic = question.phonetic || phonetic;
+  const cardSubtitle = train === 'audio' && !hasSubmittedExampleQuestion ? '听音后选择正确选项' : question.stem;
+  const displayedPhonetic = question.phonetic || (phonetic?.questionId === question.id ? phonetic.text : '');
 
-  const submitDisabled = hasSubmittedExampleQuestion ? false : isChoiceQuestion
+  const showSpellingReview = isSpellingQuestion && hasSubmittedExampleQuestion && submittedAnswerCorrect === false;
+  // After a wrong spelling the child copies the correct word once; "跳过" stays available so nobody gets stuck.
+  const needsSpellingCopy = showSpellingReview && !spellingCopied;
+  const nextLabel = questionIndex >= totalCount - 1 ? '查看结果' : '下一题';
+  const submitDisabled = hasSubmittedExampleQuestion ? needsSpellingCopy : isChoiceQuestion
     ? selected === null
     : isSpellingQuestion
       ? spellingInput.trim().length === 0
@@ -922,7 +913,7 @@ export function PracticePage() {
           </span>
         </div>
         <img className="practice-card-dog" src="/images/ui-ipad/dog.png" alt="" aria-hidden="true" />
-        {canRevealAnswer && displayedPhonetic ? <p className="field-note">美式音标：{displayedPhonetic}</p> : null}
+        {canShowPracticePhonetic(train, hasSubmittedExampleQuestion) && displayedPhonetic ? <p className="field-note">美式音标：{displayedPhonetic}</p> : null}
         {(!isChoiceQuestion && !isSpellingQuestion || hasSubmittedExampleQuestion) && (question.partOfSpeech || question.sources?.length) ? (
           <p className="word-learning-metadata">{[question.partOfSpeech, question.sources?.join(' · ')].filter(Boolean).join(' · ')}</p>
         ) : null}
@@ -941,6 +932,7 @@ export function PracticePage() {
             {speechChecking ? '识别中...' : '跟读判定'}
           </Button>
         </div> : <p className="field-note">先选出正确英文，提交后可以听发音和跟读。</p>}
+        {audioMessage ? <p className="speech-check speech-check-warn" role="status">{audioMessage}</p> : null}
         {speechCheckMessage ? <p className={speechCheckClassName}>{speechCheckMessage}</p> : null}
         {!speechRecognitionSupported ? (
           <p className="speech-check speech-check-warn">当前浏览器不支持语音识别。iPad 请使用 Safari，并确认已开启 Siri。</p>
@@ -962,25 +954,47 @@ export function PracticePage() {
               className="spelling-input"
               value={spellingInput}
               onChange={(event) => setSpellingInput(event.target.value)}
+              onKeyDown={(event) => {
+                // The keyboard's return key submits, like the 提交 button; an empty box does nothing.
+                if (event.key === 'Enter' && !event.nativeEvent.isComposing) submit();
+              }}
+              enterKeyHint="done"
               placeholder="输入单词"
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
               disabled={hasSubmittedExampleQuestion}
             />
+            {showSpellingReview ? (
+              <SpellingReview
+                key={`spelling-review-${question.id}`}
+                inputId="spelling-copy-input"
+                typed={spellingInput}
+                answer={question.prompt}
+                nextLabel={nextLabel}
+                focusOnMount={needsSpellingCopy}
+                onCopied={() => setSpellingCopied(true)}
+                onNext={goNext}
+              />
+            ) : null}
           </div>
         ) : isChoiceQuestion ? (
           <div className="options">
-            {question.options.map((op, idx) => (
-              <button
-                key={`${question.id}-${op}`}
-                className={`option ${selected === idx ? 'option-selected' : ''}`}
-                onClick={() => setSelected(idx)}
-                disabled={hasSubmittedExampleQuestion}
-              >
-                {String.fromCharCode(65 + idx)}. {op}
-              </button>
-            ))}
+            {question.options.map((op, idx) => {
+              const reveal = getOptionRevealState(idx, selected, question.answerIndex, hasSubmittedExampleQuestion);
+              return (
+                <button
+                  key={`${question.id}-${op}`}
+                  className={reveal === 'idle' ? 'option' : `option option-${reveal}`}
+                  onClick={() => setSelected(idx)}
+                  disabled={hasSubmittedExampleQuestion}
+                >
+                  {String.fromCharCode(65 + idx)}. {op}
+                  {reveal === 'correct' ? <span className="option-mark"> ✓ 正确答案</span> : null}
+                  {reveal === 'wrong' ? <span className="option-mark"> ✗ 你选的</span> : null}
+                </button>
+              );
+            })}
           </div>
         ) : (
           <div className="learning-block">
@@ -995,16 +1009,20 @@ export function PracticePage() {
         />
         {feedback ? <p className="feedback">{feedback}</p> : null}
 
-        <div className="practice-action-dock">
+        <div className="practice-action-dock" ref={actionDockRef}>
           <Button variant="secondary" onClick={goPrev} disabled={questionIndex === 0}>
             上一题
           </Button>
           <Button onClick={submit} disabled={submitDisabled}>
-            {hasSubmittedExampleQuestion ? questionIndex >= totalCount - 1 ? '查看结果' : '下一题' : isChoiceQuestion || isSpellingQuestion ? '提交' : '我会了，下一题'}
+            {needsSpellingCopy ? '先打一遍' : hasSubmittedExampleQuestion ? nextLabel : isChoiceQuestion || isSpellingQuestion ? '提交' : '我会了，下一题'}
           </Button>
           {!hasSubmittedExampleQuestion ? (
             <Button variant="secondary" onClick={goNext} disabled={questionIndex >= totalCount - 1}>
               下一题
+            </Button>
+          ) : needsSpellingCopy ? (
+            <Button variant="secondary" onClick={goNext}>
+              跳过
             </Button>
           ) : null}
         </div>

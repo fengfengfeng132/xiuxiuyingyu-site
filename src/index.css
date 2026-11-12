@@ -3508,3 +3508,126 @@ body {
     font-size: 1.1rem;
   }
 }
+
+/* Answer review: the right option and a wrong pick stay marked after submission in every practice mode. */
+.option-mark {
+  margin-left: 8px;
+  font-size: 0.85em;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.practice-learning-page .option-correct {
+  border-color: #2f9d57;
+  background: #e6f9ec;
+  color: #1f6a4c;
+  /* The iPad layout already uses green for "selected", so the revealed answer gets an extra ring. */
+  box-shadow: inset 0 0 0 2px #2f9d57;
+}
+
+.practice-learning-page .option-wrong {
+  border-color: #ea7a63;
+  background: #fff0ec;
+  color: #a44838;
+}
+
+.spelling-review-copy {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 2px dashed rgba(63, 116, 220, 0.42);
+  border-radius: 18px;
+  color: #315da8;
+  background: rgba(240, 247, 255, 0.94);
+  font-weight: 800;
+}
+
+.spelling-review-copy input {
+  width: 100%;
+  border: 1px solid rgba(126, 166, 232, 0.6);
+  border-radius: 14px;
+  padding: 10px 12px;
+  color: #26304a;
+  background: #fff;
+  font-size: 1.4rem;
+  font-weight: 900;
+}
+
+.spelling-review-copy input:focus-visible {
+  outline: 3px solid rgba(47, 110, 219, 0.35);
+  outline-offset: 2px;
+}
+
+.spelling-review-copy-done {
+  border-style: solid;
+  border-color: rgba(61, 159, 126, 0.5);
+  color: #21684c;
+  background: rgba(239, 252, 245, 0.96);
+}
+
+.learning-block .spelling-feedback-panel {
+  margin-top: 12px;
+}
+
+.spelling-review-next {
+  justify-self: start;
+  min-height: 48px;
+  padding: 10px 28px;
+}
+
+.lesson-answer-feedback,
+.lesson-audio-message {
+  position: relative;
+  z-index: 2;
+  margin-top: 14px;
+}
+
+.lesson-skip-action:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+@media (min-width: 768px) {
+  /* The in-flow action bar needs a little more room than the fixed one to clear the floating navigation. */
+  .dictation-lesson-page-with-examples {
+    padding-bottom: 222px;
+  }
+
+  .lesson-answer-feedback,
+  .lesson-audio-message,
+  .lesson-word-card .lesson-spelling-feedback {
+    width: min(820px, 100%);
+    margin: 22px auto 0;
+  }
+
+  .lesson-answer-feedback,
+  .lesson-audio-message {
+    padding: 14px 20px;
+    font-size: 22px;
+  }
+
+  .lesson-word-card .spelling-feedback-label {
+    font-size: 22px;
+  }
+
+  .lesson-word-card .spelling-feedback-letter {
+    min-width: 2.6rem;
+    font-size: 26px;
+  }
+
+  .lesson-word-card .spelling-review-copy {
+    padding: 18px 24px;
+    font-size: 22px;
+  }
+
+  .lesson-word-card .spelling-review-copy input {
+    padding: 12px 16px;
+    font-size: 40px;
+  }
+
+  .lesson-word-card .spelling-review-next {
+    min-height: 64px;
+    padding: 12px 48px;
+    font-size: 24px;
+  }
+}

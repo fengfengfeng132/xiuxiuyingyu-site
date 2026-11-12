@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CORRECT_ANSWER_TONE_PATTERN,
   WRONG_ANSWER_TONE_PATTERN,
   collectWrongWordReviewItems,
+  playCorrectAnswerTone,
+  playWrongAnswerTone,
   updateWrongBookForQuestion,
 } from '../src/lib/studyFeedback';
 import type { Question, ReviewTask, SessionAnswer, WrongItem } from '../src/types/schema';
@@ -41,6 +44,19 @@ describe('studyFeedback', () => {
     ]);
   });
 
+  it('shows the whole answer of a missed dialogue instead of cutting off its first word', () => {
+    const answers: SessionAnswer[] = [
+      { questionId: 57, selectedIndex: 1, isCorrect: false, answeredAt: '2026-11-12T10:00:00.000Z' },
+    ];
+    const bank: Question[] = [
+      makeQuestion(57, 'How do we play the guitar?', 'How do we play the guitar? We strum the guitar.', ['dialogue']),
+    ];
+
+    expect(collectWrongWordReviewItems(answers, bank)).toEqual([
+      { questionId: 57, prompt: 'How do we play the guitar?', meaning: 'We strum the guitar.', wrongCount: 1 },
+    ]);
+  });
+
   it('updates wrong book and review tasks without mutating inputs', () => {
     const wrongBook: WrongItem[] = [
       { questionId: 9001, wrongCount: 1, lastWrongAt: '2026-04-15T10:00:00.000Z', mastered: true },
@@ -70,5 +86,19 @@ describe('studyFeedback', () => {
       { frequency: 392, durationMs: 120 },
       { frequency: 262, durationMs: 180 },
     ]);
+  });
+
+  it('uses a short rising tone for correct answers so it cannot be mistaken for the wrong-answer tone', () => {
+    expect(CORRECT_ANSWER_TONE_PATTERN).toEqual([
+      { frequency: 523, durationMs: 90 },
+      { frequency: 784, durationMs: 150 },
+    ]);
+    expect(CORRECT_ANSWER_TONE_PATTERN[1].frequency).toBeGreaterThan(CORRECT_ANSWER_TONE_PATTERN[0].frequency);
+    expect(WRONG_ANSWER_TONE_PATTERN[1].frequency).toBeLessThan(WRONG_ANSWER_TONE_PATTERN[0].frequency);
+  });
+
+  it('treats answer tones as best effort where no audio context exists', () => {
+    expect(() => playCorrectAnswerTone()).not.toThrow();
+    expect(() => playWrongAnswerTone()).not.toThrow();
   });
 });

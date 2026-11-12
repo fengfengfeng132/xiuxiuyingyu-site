@@ -1,3 +1,4 @@
+import { getQuestionMeaning } from './practiceDisplay';
 import { cloneReviewTasks, scheduleReviewTasks } from './practiceUtils';
 import type { Question, ReviewTask, SessionAnswer, WrongItem } from '../types/schema';
 
@@ -12,11 +13,6 @@ export const WRONG_ANSWER_TONE_PATTERN = [
   { frequency: 392, durationMs: 120 },
   { frequency: 262, durationMs: 180 },
 ] as const;
-
-function extractMeaning(explanation: string): string {
-  const parts = explanation.trim().split(/\s+/);
-  return parts.length >= 2 ? parts.slice(1).join(' ') : explanation.trim();
-}
 
 export function findQuestionIdByPrompt(bank: Question[], prompt: string): number | null {
   const normalizedPrompt = prompt.trim().toLowerCase();
@@ -44,7 +40,7 @@ export function collectWrongWordReviewItems(
     reviewMap.set(question.id, {
       questionId: question.id,
       prompt: question.prompt,
-      meaning: extractMeaning(question.explanation),
+      meaning: getQuestionMeaning(question),
       wrongCount: 1,
     });
   });
@@ -86,7 +82,20 @@ export function updateWrongBookForQuestion(
   };
 }
 
+export const CORRECT_ANSWER_TONE_PATTERN = [
+  { frequency: 523, durationMs: 90 },
+  { frequency: 784, durationMs: 150 },
+] as const;
+
 export function playWrongAnswerTone(): void {
+  playTonePattern(WRONG_ANSWER_TONE_PATTERN);
+}
+
+export function playCorrectAnswerTone(): void {
+  playTonePattern(CORRECT_ANSWER_TONE_PATTERN);
+}
+
+function playTonePattern(pattern: readonly { frequency: number; durationMs: number }[]): void {
   if (typeof window === 'undefined') return;
   const AudioContextCtor = window.AudioContext ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AudioContextCtor) return;
@@ -97,7 +106,7 @@ export function playWrongAnswerTone(): void {
     gainNode.connect(audioContext.destination);
 
     let offsetSeconds = 0;
-    WRONG_ANSWER_TONE_PATTERN.forEach((step) => {
+    pattern.forEach((step) => {
       const oscillator = audioContext.createOscillator();
       oscillator.type = 'triangle';
       oscillator.frequency.setValueAtTime(step.frequency, audioContext.currentTime + offsetSeconds);

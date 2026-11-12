@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ExampleSentences } from '../components/ExampleSentences';
+import { SpellingReview } from '../components/SpellingReview';
 import { DAILY_LEARNING_QUESTION_ID_BASE } from '../data/dailyLearningQuestions';
 import { dictationWords, type DictationWord } from '../data/dictationWords';
 import { questionBank } from '../data/loadQuestionBank';
@@ -23,7 +24,7 @@ import {
   recognizeSpeechOnce,
 } from '../lib/speechAssessment';
 import { loadState, saveState } from '../lib/storage';
-import { playWrongAnswerTone, updateWrongBookForQuestion } from '../lib/studyFeedback';
+import { playCorrectAnswerTone, playWrongAnswerTone, updateWrongBookForQuestion } from '../lib/studyFeedback';
 import {
   getDictationHintText,
   getDictationWordCardTitle,
@@ -32,8 +33,9 @@ import {
 } from '../lib/dictationDisplay';
 import { createDictationHistoryEntry, summarizeWeeklyDictationHistory } from '../lib/dictationHistory';
 import { summarizeWrongDictationAnswers, type DictationAnswerRecord } from '../lib/dictationSummary';
-import { buildSpellingFeedback, type SpellingFeedback as SpellingFeedbackData } from '../lib/spellingFeedback';
+import { buildSpellingFeedback } from '../lib/spellingFeedback';
 import { getStarCount } from '../lib/starRewards';
+import { isRevealGuardActive, revealAboveBottomNav } from '../lib/answerReview';
 import { recordCompletedTraining } from '../lib/learningRecords';
 
 type DictationStep =
@@ -114,8 +116,10 @@ export function DictationPage() {
   const [selectedMeaning, setSelectedMeaning] = useState<string | null>(null);
   const [spellingInput, setSpellingInput] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [audioMessage, setAudioMessage] = useState('');
   const [phonetic, setPhonetic] = useState('');
-  const [spellingFeedbackData, setSpellingFeedbackData] = useState<SpellingFeedbackData | null>(null);
+  const [revealedBySkip, setRevealedBySkip] = useState(false);
+  const [spellingCopied, setSpellingCopied] = useState(false);
   const [answers, setAnswers] = useState<DictationAnswer[]>([]);
   const [speechChecking, setSpeechChecking] = useState(false);
   const [speechCheckMessage, setSpeechCheckMessage] = useState('');
@@ -126,6 +130,8 @@ export function DictationPage() {
   const autoPlayStepRef = useRef('');
   const autoPlayTimerRef = useRef<number | null>(null);
   const roundHistorySavedRef = useRef(false);
+  const revealedAtRef = useRef(0);
+  const actionBarRef = useRef<HTMLDivElement | null>(null);
 
   const currentStep = stepIndex < steps.length ? steps[stepIndex] : null;
   const speechRecognitionSupported = isSpeechRecognitionSupported();
@@ -146,18 +152,17 @@ export function DictationPage() {
     autoPlayTimerRef.current = null;
   }, []);
 
-  const playCurrentWord = useCallback(async () => {
+  const playCurrentWord = useCallback(async (automatic = false) => {
     if (!currentStep) return;
 
     clearAutoPlayTimer();
     stopAudioPlayback();
     const playback = await playLocalUsWordAudio(currentStep.word.audioKey);
-    if (playback.ok || playback.reason === 'stale') {
-      setFeedback('');
-      return;
-    }
-
-    setFeedback(getLocalWordAudioFeedback(playback));
+    if (playback.reason === 'stale') return;
+    // Audio status has its own line: it must never lock the spelling box or replace the answer feedback.
+    // Automatic playback refused by the browser is not a broken file, so it shows no error; the play button still works.
+    const quiet = playback.ok || (automatic && playback.reason === 'blocked');
+    setAudioMessage(quiet ? '' : getLocalWordAudioFeedback(playback));
   }, [clearAutoPlayTimer, currentStep, stopAudioPlayback]);
 
   const playSlowWord = useCallback(async () => {
@@ -166,13 +171,8 @@ export function DictationPage() {
     clearAutoPlayTimer();
     stopAudioPlayback();
     const playback = await playLocalUsSlowWordAudio(currentStep.word.audioKey);
-    if (!playback.ok) {
-      const nextFeedback = getLocalSlowWordAudioFeedback(playback);
-      if (nextFeedback) setFeedback(nextFeedback);
-      return;
-    }
-
-    setFeedback('');
+    if (playback.reason === 'stale') return;
+    setAudioMessage(playback.ok ? '' : getLocalSlowWordAudioFeedback(playback));
   }, [clearAutoPlayTimer, currentStep, stopAudioPlayback]);
 
   const runSpeechCheck = useCallback(async () => {
@@ -248,7 +248,7 @@ export function DictationPage() {
     clearAutoPlayTimer();
     autoPlayTimerRef.current = window.setTimeout(() => {
       autoPlayTimerRef.current = null;
-      void playCurrentWord();
+      void playCurrentWord(true);
     }, 180);
 
     return () => {
@@ -262,6 +262,12 @@ export function DictationPage() {
       stopAudioPlayback();
     };
   }, [clearAutoPlayTimer, stopAudioPlayback]);
+
+  useEffect(() => {
+    // After an answer is shown the action bar follows the grown card; keep "下一题" clear of the floating navigation.
+    if (!currentStep || !answers.some((answer) => answer.stepId === currentStep.id)) return;
+    revealAboveBottomNav(actionBarRef.current);
+  }, [answers, currentStep, spellingCopied]);
 
   useEffect(() => {
     if (!isCompleted || roundHistorySavedRef.current) return;
@@ -301,8 +307,10 @@ export function DictationPage() {
     setSelectedMeaning(null);
     setSpellingInput('');
     setFeedback('');
+    setAudioMessage('');
     setPhonetic('');
-    setSpellingFeedbackData(null);
+    setRevealedBySkip(false);
+    setSpellingCopied(false);
     setSpeechChecking(false);
     setSpeechCheckMessage('');
     setSpeechCheckPassed(null);
@@ -337,6 +345,7 @@ export function DictationPage() {
     }
 
     if (hasSubmittedCurrentStep) {
+      if (isRevealGuardActive(revealedAtRef.current)) return;
       moveNext();
       return;
     }
@@ -344,6 +353,8 @@ export function DictationPage() {
     if (currentStep.type === 'listenChoose') {
       if (!selectedMeaning) return;
 
+      // The answer is revealed from here on and this button becomes "下一题".
+      revealedAtRef.current = Date.now();
       const isCorrect = selectedMeaning === currentStep.word.meaning;
       setAnswers((previous) => [
         ...previous,
@@ -361,6 +372,8 @@ export function DictationPage() {
       if (!isCorrect) {
         recordWrongWord(currentStep.word);
         playWrongAnswerTone();
+      } else {
+        playCorrectAnswerTone();
       }
       setFeedback(isCorrect ? '答对了，继续下一题。' : `答错了，正确意思是“${currentStep.word.meaning}”。`);
       return;
@@ -368,9 +381,9 @@ export function DictationPage() {
 
     if (spellingInput.trim().length === 0) return;
 
+    revealedAtRef.current = Date.now();
     const trimmedInput = spellingInput.trim();
-    const nextSpellingFeedback = buildSpellingFeedback(trimmedInput, currentStep.word.word);
-    const isCorrect = nextSpellingFeedback.isCorrect;
+    const isCorrect = buildSpellingFeedback(trimmedInput, currentStep.word.word).isCorrect;
 
     setAnswers((previous) => [
       ...previous,
@@ -385,19 +398,26 @@ export function DictationPage() {
           answeredAt: new Date().toISOString(),
         },
       ]);
-    setSpellingFeedbackData(isCorrect ? null : nextSpellingFeedback);
     if (!isCorrect) {
       recordWrongWord(currentStep.word);
       playWrongAnswerTone();
+    } else {
+      playCorrectAnswerTone();
     }
-    setFeedback(isCorrect ? '拼写正确，继续下一题。' : '拼错了，先看下面红色和绿色提示。');
+    setFeedback(isCorrect ? '拼写正确，继续下一题。' : '拼错了。看看红色的地方，再照着正确单词打一遍。');
   };
 
   const skipStep = () => {
     if (!currentStep) return;
 
-    if (hasSubmittedCurrentStep || currentStep.type === 'study') {
+    if (currentStep.type === 'study') {
       moveNext();
+      return;
+    }
+
+    if (hasSubmittedCurrentStep) {
+      // Once the answer is on screen this button only works as "跳过" for the copy-typing step.
+      if (needsSpellingCopy && !isRevealGuardActive(revealedAtRef.current)) moveNext();
       return;
     }
 
@@ -417,7 +437,14 @@ export function DictationPage() {
     ]);
     recordWrongWord(currentStep.word);
     playWrongAnswerTone();
-    moveNext();
+    // "不会" still counts as a wrong answer, but the child stays here and sees the answer before moving on.
+    revealedAtRef.current = Date.now();
+    setRevealedBySkip(true);
+    // An option that was tapped but never submitted is not an answer, so only the right one stays marked.
+    setSelectedMeaning(null);
+    setFeedback(currentStep.type === 'listenChoose'
+      ? `没关系，正确意思是“${currentStep.word.meaning}”。再听一听，记住它。`
+      : '没关系，正确单词在下面。再听一听，照着打一遍。');
   };
 
   if (isCompleted) {
@@ -550,13 +577,19 @@ export function DictationPage() {
   const isStudyStep = currentStep.type === 'study';
   const isChooseStep = currentStep.type === 'listenChoose';
   const isSpellStep = currentStep.type === 'listenSpell';
-  const hasSubmittedCurrentStep = answers.some((answer) => answer.stepId === currentStep.id);
+  const currentAnswer = answers.find((answer) => answer.stepId === currentStep.id);
+  const hasSubmittedCurrentStep = currentAnswer !== undefined;
+  const showSpellingReview = isSpellStep && currentAnswer !== undefined && !currentAnswer.isCorrect;
+  // After a wrong or skipped spelling the child copies the correct word once; "跳过" keeps nobody stuck.
+  const needsSpellingCopy = showSpellingReview && !spellingCopied;
   const displayProgressCurrent = (stepIndex % dictationWords.length) + 1;
   const displayProgressTotal = dictationWords.length;
   const currentProgress = Math.round((displayProgressCurrent / displayProgressTotal) * 100);
   const meaningLine = `${currentStep.word.partOfSpeech ? `${currentStep.word.partOfSpeech} ` : '释义：'}${currentStep.word.meaning}`;
   const shouldShowMeaningLine = shouldShowDictationMeaningLine(currentStep.type, hasSubmittedCurrentStep);
   const shouldShowPhoneticLine = shouldShowDictationPhoneticLine(currentStep.type, hasSubmittedCurrentStep);
+  // Once the card grows (examples, answer feedback, spelling review) the action bar follows the content instead of floating over it.
+  const actionBarInFlow = shouldShowMeaningLine && (Boolean(currentStep.word.examples?.length) || hasSubmittedCurrentStep);
   const displayedPhonetic = currentStep.word.phonetic || phonetic;
   const wordCardTitle = getDictationWordCardTitle(currentStep.type, currentStep.word.word, hasSubmittedCurrentStep);
   const wordTitleStyle = {
@@ -588,7 +621,7 @@ export function DictationPage() {
   };
 
   return (
-    <main className={`reference-page dictation-lesson-page${currentStep.word.examples?.length && shouldShowMeaningLine ? ' dictation-lesson-page-with-examples' : ''}`}>
+    <main className={`reference-page dictation-lesson-page${actionBarInFlow ? ' dictation-lesson-page-with-examples' : ''}`}>
       <img className="lesson-dog-image" src="/images/ui-ipad/dog.png" alt="" aria-hidden="true" />
 
       <header className="lesson-topbar">
@@ -636,6 +669,7 @@ export function DictationPage() {
             <strong>慢速播放</strong>
           </button>
         </div>
+        {audioMessage ? <p className="feedback lesson-audio-message" role="status">{audioMessage}</p> : null}
 
         <button
           className="lesson-speech-button"
@@ -653,11 +687,16 @@ export function DictationPage() {
               id="dictation-spell-input"
               value={spellingInput}
               onChange={(event) => setSpellingInput(event.target.value)}
+              onKeyDown={(event) => {
+                // The keyboard's return key submits, like the 提交 button; an empty box does nothing.
+                if (event.key === 'Enter' && !event.nativeEvent.isComposing) submitStep();
+              }}
+              enterKeyHint="done"
               placeholder={currentStep.mask}
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
-              disabled={Boolean(feedback)}
+              disabled={hasSubmittedCurrentStep}
             />
           </label>
         ) : null}
@@ -680,6 +719,21 @@ export function DictationPage() {
           </div>
         ) : null}
 
+        {feedback ? <p className="feedback lesson-answer-feedback">{feedback}</p> : null}
+        {showSpellingReview ? (
+          <SpellingReview
+            key={`spelling-review-${currentStep.id}`}
+            className="lesson-spelling-feedback"
+            inputId="dictation-copy-input"
+            typed={revealedBySkip ? '' : spellingInput}
+            answer={currentStep.word.word}
+            nextLabel="下一题"
+            focusOnMount
+            onCopied={() => setSpellingCopied(true)}
+            onNext={moveNext}
+          />
+        ) : null}
+
         <p className="lesson-hint">
           <strong>提示：</strong>
           {hintText}
@@ -693,48 +747,27 @@ export function DictationPage() {
         <img className="lesson-heart-image" src="/images/ui-ipad/heart-bubble.png" alt="" aria-hidden="true" />
 
         {speechCheckMessage ? <p className={speechCheckClassName}>{speechCheckMessage}</p> : null}
-        {feedback ? <p className="feedback">{feedback}</p> : null}
-
-        {spellingFeedbackData && !spellingFeedbackData.isCorrect ? (
-          <div className="spelling-feedback-panel lesson-spelling-feedback">
-            <p className="spelling-feedback-label">你写的：</p>
-            <div className="spelling-feedback-word" aria-label="你写的单词逐字对比">
-              {spellingFeedbackData.typedLetters.map((letter, index) => (
-                <span
-                  key={`typed-${currentStep.id}-${index}-${letter.char}`}
-                  className={`spelling-feedback-letter ${letter.isWrong ? 'spelling-feedback-letter-wrong' : ''}`}
-                >
-                  {letter.char}
-                </span>
-              ))}
-            </div>
-
-            <p className="spelling-feedback-label spelling-feedback-label-correct">正确单词：</p>
-            <div className="spelling-feedback-word spelling-feedback-word-correct" aria-label="正确单词">
-              {Array.from(currentStep.word.word).map((letter, index) => (
-                <span key={`answer-${currentStep.id}-${index}-${letter}`} className="spelling-feedback-letter spelling-feedback-letter-correct">
-                  {letter}
-                </span>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
       </section>
 
-      <div className="lesson-bottom-action">
+      <div className="lesson-bottom-action" ref={actionBarRef}>
         <Button
           className="lesson-primary-action"
           onClick={submitStep}
           disabled={
             (isChooseStep && !selectedMeaning && !hasSubmittedCurrentStep) ||
-            (isSpellStep && spellingInput.trim().length === 0 && !hasSubmittedCurrentStep)
+            (isSpellStep && spellingInput.trim().length === 0 && !hasSubmittedCurrentStep) ||
+            needsSpellingCopy
           }
         >
-          ✓ {primaryLabel}
+          {needsSpellingCopy ? '先打一遍' : `✓ ${primaryLabel}`}
         </Button>
-        <button className="lesson-skip-action" type="button" onClick={skipStep}>
-          不会
+        <button
+          className="lesson-skip-action"
+          type="button"
+          onClick={skipStep}
+          disabled={hasSubmittedCurrentStep && !needsSpellingCopy}
+        >
+          {needsSpellingCopy ? '跳过' : '不会'}
         </button>
       </div>
     </main>

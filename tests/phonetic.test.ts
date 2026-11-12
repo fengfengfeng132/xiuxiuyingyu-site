@@ -151,3 +151,65 @@ describe('phonetic', () => {
     expect(await playLocalExampleAudio('../undeclared')).toEqual({ ok: false, reason: 'missing' });
   });
 });
+
+describe('audio retry and autoplay refusal', () => {
+  function stubAudio(play: () => Promise<void>) {
+    const counters = { loads: 0 };
+    class CountingAudio {
+      currentTime = 0;
+      error: unknown = null;
+      playbackRate = 1;
+      preload = '';
+      src = '';
+      load() { counters.loads += 1; }
+      pause() {}
+      play() { return play(); }
+    }
+    vi.stubGlobal('Audio', CountingAudio);
+    vi.stubGlobal('window', { location: { origin: 'https://example.test' } });
+    return counters;
+  }
+
+  it('reloads the same recording on the next tap after a failed load', async () => {
+    vi.resetModules();
+    let failures = 1;
+    const counters = stubAudio(() => (failures-- > 0
+      ? Promise.reject(new Error('Failed to load because no supported source was found.'))
+      : Promise.resolve()));
+    const audio = await import('../src/lib/phonetic');
+    const audioKey = dictationWords[0].audioKey;
+
+    expect(await audio.playLocalUsWordAudio(audioKey)).toEqual({ ok: false, reason: 'failed' });
+    expect(counters.loads).toBe(1);
+    expect(await audio.playLocalUsWordAudio(audioKey)).toEqual({ ok: true, reason: 'played' });
+    expect(counters.loads).toBe(2);
+    expect(await audio.playLocalUsWordAudio(audioKey)).toEqual({ ok: true, reason: 'played' });
+    expect(counters.loads).toBe(2);
+  });
+
+  it('reports a refused automatic start as blocked and does not treat the file as broken', async () => {
+    vi.resetModules();
+    let refusals = 1;
+    const counters = stubAudio(() => (refusals-- > 0
+      ? Promise.reject(new DOMException('play() failed because the user did not interact with the document first.', 'NotAllowedError'))
+      : Promise.resolve()));
+    const audio = await import('../src/lib/phonetic');
+    const audioKey = dictationWords[0].audioKey;
+
+    expect(await audio.playLocalUsWordAudio(audioKey)).toEqual({ ok: false, reason: 'blocked' });
+    expect(await audio.playLocalUsWordAudio(audioKey)).toEqual({ ok: true, reason: 'played' });
+    expect(counters.loads).toBe(1);
+  });
+
+  it('classifies a refused start separately from broken, stale and interrupted playback', () => {
+    const refused = new DOMException('not allowed', 'NotAllowedError');
+    expect(classifyWordAudioFailure(refused, true)).toBe('blocked');
+    expect(classifyWordAudioFailure(refused, false)).toBe('stale');
+    expect(classifyWordAudioFailure(new Error('Unable to decode audio'), true)).toBe('failed');
+  });
+
+  it('still tells the child when a tap on the play button was refused', () => {
+    expect(getLocalWordAudioFeedback({ ok: false, reason: 'blocked' })).toBe('本地语音暂时没播出来，请再试一次。');
+    expect(getLocalSlowWordAudioFeedback({ ok: false, reason: 'blocked' })).toBe('本地慢速语音暂时没播出来，请再试一次。');
+  });
+});

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { dailyLearningQuestions } from '../src/data/dailyLearningQuestions';
 import { questionBank } from '../src/data/loadQuestionBank';
 import {
   buildTranslationQuestion,
@@ -12,7 +11,7 @@ import {
   maskSpellingWord,
 } from '../src/lib/practiceDisplay';
 
-const question = dailyLearningQuestions[0];
+const question = questionBank.find((item) => item.id === 9101)!;
 const vocabularyBank = questionBank.filter((item) => item.tags.includes('vocab-qa') || item.tags.includes('vocab'));
 
 describe('translation question display', () => {

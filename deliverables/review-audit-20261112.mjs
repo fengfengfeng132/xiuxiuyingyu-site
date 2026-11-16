@@ -39,7 +39,10 @@ globalThis.localStorage = {
 
 const now = new Date('2026-11-12T12:00:00+08:00');
 const dailyBank = questionBank.filter((question) => question.tags.includes('daily-dictation'));
-assert.equal(dailyBank.length, 17);
+// This smoke follows the current lesson; the dated audit report retains its original historical measurements.
+const wordCount = dailyBank.length;
+const attemptCount = wordCount * 2;
+assert.ok(wordCount > 0);
 assert.equal(dailyBank.length, dictationWords.length);
 const dictationStartedAt = now.getTime() - 10 * 60_000;
 const answers = dailyBank.flatMap((question, index) => ['meaning', 'spelling'].map((kind, part) => ({
@@ -62,13 +65,13 @@ saveState(perfectState);
 const restoredPerfectState = loadState();
 const weeklyAfterPerfectDictation = selectReviewQuestions(dailyBank, restoredPerfectState, { kind: 'weekly', now, count: dailyBank.length });
 const stats = getLearningStatistics(restoredPerfectState, questionBank, now);
-assert.equal(answers.length, 34);
+assert.equal(answers.length, attemptCount);
 assert.deepEqual(new Set(weeklyAfterPerfectDictation.map((question) => question.id)), new Set(dailyBank.map((question) => question.id)));
 assert.equal(restoredPerfectState.reviewTasks[0].completed, true);
 assert.equal(restoredPerfectState.starRecords.length, 1);
-assert.equal(restoredPerfectState.learningRecords.rounds[0].correctCount, 34);
+assert.equal(restoredPerfectState.learningRecords.rounds[0].correctCount, attemptCount);
 assert.equal(stats.totalRounds, 1);
-assert.equal(stats.learnedWordCount, 17);
+assert.equal(stats.learnedWordCount, wordCount);
 
 const keyboard = questionBank.find((question) => question.prompt === 'keyboard');
 assert.ok(keyboard && !keyboard.tags.includes('archived-dictation'));

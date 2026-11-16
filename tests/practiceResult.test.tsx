@@ -1,15 +1,16 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { dailyLearningQuestions } from '../src/data/dailyLearningQuestions';
+import { questionBank } from '../src/data/loadQuestionBank';
 import { initialState } from '../src/lib/storage';
 import { ResultPage } from '../src/pages/ResultPage';
+
+const question = questionBank.find((item) => item.id === 9101)!;
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe('practice result answer', () => {
   it('uses the correct English word when reviewing a failed translation question', () => {
-    const question = dailyLearningQuestions[0];
     const state = {
       ...initialState,
       sessions: [{
@@ -31,7 +32,6 @@ describe('practice result answer', () => {
   });
 
   function renderResult(session: Record<string, unknown>, reviewTasks: unknown[] = []) {
-    const question = dailyLearningQuestions[0];
     const state = {
       ...initialState,
       reviewTasks,

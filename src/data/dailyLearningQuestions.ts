@@ -2,6 +2,7 @@ import type { Question } from '../types/schema';
 import { archivedDictationWords, dictationWords, type DictationWord } from './dictationWords';
 
 export const DAILY_LEARNING_QUESTION_ID_BASE = 9000;
+const WORD_LESSON_ID_BLOCK_SIZE = 100;
 
 function buildOptions(words: DictationWord[], wordIndex: number): { options: string[]; answerIndex: number } {
   const word = words[wordIndex];
@@ -25,8 +26,15 @@ function buildOptions(words: DictationWord[], wordIndex: number): { options: str
 }
 
 function buildLearningQuestions(words: DictationWord[], lessonTag: string): Question[] {
-  return words.map((word, index) => {
-    const { options, answerIndex } = buildOptions(words, index);
+  const lessons = new Map<number, DictationWord[]>();
+  words.forEach((word) => {
+    const lessonId = Math.floor(word.id / WORD_LESSON_ID_BLOCK_SIZE);
+    lessons.set(lessonId, [...(lessons.get(lessonId) ?? []), word]);
+  });
+
+  // Archiving a lesson must preserve the choices referenced by its saved answers.
+  return [...lessons.values()].flatMap((lessonWords) => lessonWords.map((word, index): Question => {
+    const { options, answerIndex } = buildOptions(lessonWords, index);
     const labeledWord = word.grammarLabel ? `${word.word}（${word.grammarLabel}）` : word.word;
 
     return {
@@ -48,7 +56,7 @@ function buildLearningQuestions(words: DictationWord[], lessonTag: string): Ques
       partOfSpeech: word.partOfSpeech,
       sources: word.sources,
     };
-  });
+  }));
 }
 
 export const dailyLearningQuestions = buildLearningQuestions(dictationWords, 'daily-dictation');

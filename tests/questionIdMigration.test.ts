@@ -57,6 +57,24 @@ describe('question ID migration', () => {
     expect(questionBank.find((question) => question.id === 9001)?.prompt).toBe('am');
   });
 
+  it('migrates the original home question into Unit 3 while retaining the archived Unit 2 question IDs', () => {
+    expect(questionIdAliases.get(43)).toBe(9204);
+    expect(questionBank.find((question) => question.id === 9204)?.prompt).toBe('home');
+    expect(questionBank.filter((question) => question.prompt === 'home')).toHaveLength(1);
+    const previous = makeState({
+      sessions: [makeSession([43, 9101])],
+      wrongBook: [{ questionId: 43, wrongCount: 2, lastWrongAt: '2026-11-15T10:00:00.000Z', mastered: false }],
+      reviewTasks: [{ id: 'home-review', questionIds: [43, 9101], completedQuestionIds: [43], dueAt: '2026-11-16T11:00:00.000Z', completed: false }],
+    });
+    const migrated = migrateQuestionIds(previous, questionIdAliases);
+    expect(migrated.sessions[0].answers.map((answer) => answer.questionId)).toEqual([9204, 9101]);
+    expect(migrated.wrongBook[0].questionId).toBe(9204);
+    expect(migrated.reviewTasks[0]).toMatchObject({ questionIds: [9204, 9101], completedQuestionIds: [9204], completed: false });
+    expect(questionBank.find((question) => question.id === 9101)?.prompt).toBe('baby');
+    expect(questionBank.find((question) => question.id === 9117)?.prompt).toBe('sleep');
+    expect(previous.sessions[0].answers[0].questionId).toBe(43);
+  });
+
   it('merges old and replacement wrong-word records without dropping mistakes or unmastered status', () => {
     const state = makeState({
       wrongBook: [

@@ -19,8 +19,11 @@
 
 当前数据约定（2026-11-11 更新）：
 
+- 当前每日课为 Unit 3 · Part A（2026-11-16）：address、afternoon、come、home、letter、lunch、make、need、people、start，10 词及 10 条教材例句；此前 17 词已原样归档，归档共 32 词。
+
 - `src/data/dictationWords.json` 是当前每日词的唯一词源；`dictationWords.ts` 只负责类型和导出。
 - 旧每日词保存在 `src/data/archivedDictationWords.json`，继续进入日常学习；归档时保留原 ID，后续新课使用未占用 ID，不能让旧错题记录指向新词。
+- 单词 ID 按百位段预留课次（现有 1–15、101–117、201–210），不要跨课混用编号段或重排旧课词序。`dailyLearningQuestions.ts` 按此课次词池生成选项，确保归档后旧答案的选项文本与位置不变。
 - `src/data/dailyLearningQuestions.ts` 从这两份不同课次的数据自动生成题目，不另写一份手工词表。
 - 两组词的普通/慢速音频都要保留；不能因为替换每日课而删除归档词音频。
 - 首页“今日 10 分钟”优先抽当前每日词；“每日 10 题”优先巩固未掌握错词，其余名额优先抽归档词，没有错词时沿用旧词巩固。

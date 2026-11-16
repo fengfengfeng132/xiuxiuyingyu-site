@@ -1,9 +1,9 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import words from '../src/data/dictationWords.json';
+import { vocabularyWords } from '../src/data/dictationWords';
 
-const examples = words.flatMap((word) => word.examples);
+const examples = vocabularyWords.flatMap((word) => word.examples ?? []);
 
 function readWave(relativePath: string) {
   const bytes = readFileSync(resolve(relativePath));
@@ -40,7 +40,7 @@ function readWave(relativePath: string) {
   return { ...format, peak, duration: samples.length / format.byteRate };
 }
 
-describe('daily example audio assets', () => {
+describe('current and archived example audio assets', () => {
   it('ships exactly one normal and one slow recording for every example', () => {
     const expectedFiles = examples.map((example) => `${example.audioKey}.wav`).sort();
     expect(new Set(expectedFiles).size).toBe(examples.length);

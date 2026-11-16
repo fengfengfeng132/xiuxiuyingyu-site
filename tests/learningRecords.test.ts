@@ -35,23 +35,25 @@ function freeze<T>(value: T): T {
 
 describe('persistent learning records', () => {
   it('records all-correct dictation as learned words, updates due tasks and awards one star', () => {
+    const wordCount = dailyLearningQuestions.length;
+    const attemptCount = wordCount * 2;
     const answers = dailyLearningQuestions.flatMap((item) => [answer(item.id, 'meaning'), answer(item.id, 'spelling')]);
     const original = state({ reviewTasks: [
       { id: 'due', questionIds: [dailyLearningQuestions[0].id], dueAt: '2026-11-12T09:00:00+08:00', completed: false },
       { id: 'future', questionIds: [dailyLearningQuestions[1].id], dueAt: '2026-11-12T19:00:00+08:00', completed: false },
     ] });
-    const completed = recordCompletedTraining(original, training({ source: 'dictation', train: 'dictation', questionTotal: 34, answers }));
+    const completed = recordCompletedTraining(original, training({ source: 'dictation', train: 'dictation', questionTotal: attemptCount, answers }));
     const records = getLearningRecords(completed);
 
-    expect(records.questions).toHaveLength(17);
+    expect(records.questions).toHaveLength(wordCount);
     expect(records.questions.every((item) => item.correctCount === 2 && item.correctRounds.length === 1)).toBe(true);
-    expect(records.rounds[0]).toMatchObject({ source: 'dictation', answeredCount: 34, correctCount: 34, questionTotal: 34, totalsKnown: true, durationSeconds: 600 });
-    expect(records.rounds[0].questionIds).toHaveLength(17);
-    expect(selectReviewQuestions(dailyLearningQuestions, completed, { kind: 'weekly', now: new Date(END) })).toHaveLength(10);
+    expect(records.rounds[0]).toMatchObject({ source: 'dictation', answeredCount: attemptCount, correctCount: attemptCount, questionTotal: attemptCount, totalsKnown: true, durationSeconds: 600 });
+    expect(records.rounds[0].questionIds).toHaveLength(wordCount);
+    expect(selectReviewQuestions(dailyLearningQuestions, completed, { kind: 'weekly', now: new Date(END) })).toHaveLength(Math.min(10, wordCount));
     expect(completed.reviewTasks[0].completed).toBe(true);
     expect(completed.reviewTasks[1]).toEqual(original.reviewTasks[1]);
     expect(completed.starRecords).toHaveLength(1);
-    expect(recordCompletedTraining(completed, training({ source: 'dictation', train: 'dictation', questionTotal: 34, answers }))).toBe(completed);
+    expect(recordCompletedTraining(completed, training({ source: 'dictation', train: 'dictation', questionTotal: attemptCount, answers }))).toBe(completed);
   });
 
   it('requires both meaning and spelling to be correct before counting a correct dictation word', () => {

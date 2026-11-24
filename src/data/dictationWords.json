@@ -1,221 +1,373 @@
 [
   {
-    "id": 201,
-    "word": "address",
-    "meaning": "地址",
-    "note": "address 是联系或寄信用的地址，email address 是电子邮箱地址。",
-    "imageHint": "an email address shown on a computer screen",
-    "phonetic": "/əˈdres/",
-    "audioKey": "address",
-    "spokenText": "address",
-    "partOfSpeech": "n.",
-    "sources": [
-      "Unit 3 · Part A"
-    ],
-    "examples": [
-      {
-        "text": "My email address is fun54@yoohoo.com.",
-        "translation": "我的电子邮箱地址是 fun54@yoohoo.com。",
-        "audioKey": "address-1",
-        "source": "Unit 3 · Part A"
-      }
-    ]
-  },
-  {
-    "id": 202,
-    "word": "afternoon",
-    "meaning": "下午",
-    "note": "afternoon 是中午以后、傍晚以前的下午。",
-    "imageHint": "a man washing his car in the afternoon sunshine",
-    "phonetic": "/ˌæftərˈnuːn/",
-    "audioKey": "afternoon",
-    "spokenText": "afternoon",
-    "partOfSpeech": "n.",
-    "sources": [
-      "Unit 3 · Part A"
-    ],
-    "examples": [
-      {
-        "text": "He cleans his car in the afternoon.",
-        "translation": "他在下午清洗汽车。",
-        "audioKey": "afternoon-1",
-        "source": "Unit 3 · Part A"
-      }
-    ]
-  },
-  {
-    "id": 203,
-    "word": "come",
-    "meaning": "来",
-    "note": "come 表示来到这里，come with me 表示跟我来。",
-    "imageHint": "a child inviting a friend to come along",
-    "phonetic": "/kʌm/",
-    "audioKey": "come",
-    "spokenText": "come",
+    "id": 301,
+    "word": "cook",
+    "meaning": "烹饪",
+    "note": "cook 是动词，指把食物做熟。",
+    "imageHint": "a dad cooking dinner for his children",
+    "phonetic": "/kʊk/",
+    "audioKey": "cook",
+    "spokenText": "cook",
     "partOfSpeech": "v.",
     "sources": [
-      "Unit 3 · Part A"
+      "Unit 3 · Part B"
     ],
     "examples": [
       {
-        "text": "Please come with me.",
-        "translation": "请跟我来。",
-        "audioKey": "come-1",
-        "source": "Unit 3 · Part A"
+        "text": "Dad cooks dinner for us.",
+        "translation": "爸爸给我们做晚饭。",
+        "audioKey": "cook-1",
+        "source": "Unit 3 · Part B"
       }
     ]
   },
   {
-    "id": 204,
-    "word": "home",
-    "meaning": "家",
-    "note": "home 是我们和家人一起生活的家。",
-    "imageHint": "a cozy family home with three bedrooms",
-    "phonetic": "/hoʊm/",
-    "audioKey": "home",
-    "spokenText": "home",
+    "id": 302,
+    "word": "day",
+    "meaning": "天",
+    "note": "一周有七天，which day 用来问星期几。",
+    "imageHint": "a child pointing to art class on a weekly calendar",
+    "phonetic": "/deɪ/",
+    "audioKey": "day",
+    "spokenText": "day",
     "partOfSpeech": "n.",
     "sources": [
-      "Unit 3 · Part A"
+      "Unit 3 · Part B"
     ],
     "examples": [
       {
-        "text": "Their home has three bedrooms.",
-        "translation": "他们的家有三间卧室。",
-        "audioKey": "home-1",
-        "source": "Unit 3 · Part A"
+        "text": "Which day do you have art class?",
+        "translation": "你星期几上美术课？",
+        "audioKey": "day-1",
+        "source": "Unit 3 · Part B"
       }
     ]
   },
   {
-    "id": 205,
-    "word": "letter",
-    "meaning": "信",
-    "note": "这里的 letter 是写给别人的信，letters 表示多封信。",
-    "imageHint": "a girl writing a funny letter to her family",
-    "phonetic": "/ˈletər/",
-    "audioKey": "letter",
-    "spokenText": "letter",
-    "partOfSpeech": "n.",
-    "sources": [
-      "Unit 3 · Part A"
-    ],
-    "examples": [
-      {
-        "text": "She often writes funny letters to her family.",
-        "translation": "她经常给家人写有趣的信。",
-        "audioKey": "letter-1",
-        "source": "Unit 3 · Part A"
-      }
-    ]
-  },
-  {
-    "id": 206,
-    "word": "lunch",
-    "meaning": "午饭",
-    "note": "lunch 是中午吃的午餐。",
-    "imageHint": "a girl eating a sandwich for lunch",
-    "phonetic": "/lʌntʃ/",
-    "audioKey": "lunch",
-    "spokenText": "lunch",
-    "partOfSpeech": "n.",
-    "sources": [
-      "Unit 3 · Part A"
-    ],
-    "examples": [
-      {
-        "text": "She eats a sandwich for lunch every day.",
-        "translation": "她每天午餐都吃一个三明治。",
-        "audioKey": "lunch-1",
-        "source": "Unit 3 · Part A"
-      }
-    ]
-  },
-  {
-    "id": 207,
-    "word": "make",
-    "meaning": "做",
-    "note": "make 表示做出或制作一样东西，比如做馅饼。",
-    "imageHint": "parents making delicious pies together in a kitchen",
-    "phonetic": "/meɪk/",
-    "audioKey": "make",
-    "spokenText": "make",
+    "id": 303,
+    "word": "drink",
+    "meaning": "喝",
+    "note": "drink 表示喝水、牛奶或果汁等。",
+    "imageHint": "a child drinking a glass of juice",
+    "phonetic": "/drɪŋk/",
+    "audioKey": "drink",
+    "spokenText": "drink",
     "partOfSpeech": "v.",
     "sources": [
-      "Unit 3 · Part A"
+      "Unit 3 · Part B"
     ],
     "examples": [
       {
-        "text": "My parents make good pies.",
-        "translation": "我的父母做的馅饼很好吃。",
-        "audioKey": "make-1",
-        "source": "Unit 3 · Part A"
+        "text": "What kind of juice do you want to drink?",
+        "translation": "你想喝哪种果汁？",
+        "audioKey": "drink-1",
+        "source": "Unit 3 · Part B"
       }
     ]
   },
   {
-    "id": 208,
-    "word": "need",
-    "meaning": "需要",
-    "note": "need 表示需要，比如我们每天都需要水。",
-    "imageHint": "children drinking clean water from cups",
-    "phonetic": "/niːd/",
-    "audioKey": "need",
-    "spokenText": "need",
-    "partOfSpeech": "v.",
-    "sources": [
-      "Unit 3 · Part A"
-    ],
-    "examples": [
-      {
-        "text": "We need water to live.",
-        "translation": "我们需要水才能生存。",
-        "audioKey": "need-1",
-        "source": "Unit 3 · Part A"
-      }
-    ]
-  },
-  {
-    "id": 209,
-    "word": "people",
-    "meaning": "人",
-    "note": "people 表示人们，many people 表示很多人。",
-    "imageHint": "many people gathered together in a park",
-    "phonetic": "/ˈpiːpəl/",
-    "audioKey": "people",
-    "spokenText": "people",
+    "id": 304,
+    "word": "front",
+    "meaning": "前面",
+    "note": "教室靠近黑板的地方就是教室前面。",
+    "imageHint": "a boy standing by the board at the front of his classroom",
+    "phonetic": "/frʌnt/",
+    "audioKey": "front",
+    "spokenText": "front",
     "partOfSpeech": "n.",
     "sources": [
-      "Unit 3 · Part A"
+      "Unit 3 · Part B"
     ],
     "examples": [
       {
-        "text": "There are a lot of people here.",
-        "translation": "这里有很多人。",
-        "audioKey": "people-1",
-        "source": "Unit 3 · Part A"
+        "text": "The boy stands at the front of the classroom.",
+        "translation": "那个男孩站在教室前面。",
+        "audioKey": "front-1",
+        "source": "Unit 3 · Part B"
       }
     ]
   },
   {
-    "id": 210,
-    "word": "start",
-    "meaning": "开始",
-    "note": "start 表示开始做一件事，比如开始跑步。",
-    "imageHint": "a man starting to run on a path",
-    "phonetic": "/stɑːrt/",
-    "audioKey": "start",
-    "spokenText": "start",
-    "partOfSpeech": "v.",
+    "id": 305,
+    "word": "great",
+    "meaning": "很棒的",
+    "note": "夸别人做得好，可以说 Great job!",
+    "imageHint": "a smiling child holding up a test with a gold star",
+    "phonetic": "/ɡreɪt/",
+    "audioKey": "great",
+    "spokenText": "great",
+    "partOfSpeech": "adj.",
     "sources": [
-      "Unit 3 · Part A"
+      "Unit 3 · Part B"
     ],
     "examples": [
       {
-        "text": "The man starts to run.",
-        "translation": "那个男人开始跑步。",
-        "audioKey": "start-1",
-        "source": "Unit 3 · Part A"
+        "text": "Nick does a great job on tests!",
+        "translation": "尼克在考试中表现很棒！",
+        "audioKey": "great-1",
+        "source": "Unit 3 · Part B"
+      }
+    ]
+  },
+  {
+    "id": 306,
+    "word": "play",
+    "meaning": "玩耍",
+    "note": "play 可以表示做游戏，也可以和球类连用，如 play soccer（踢足球）。",
+    "imageHint": "children playing soccer together after school",
+    "phonetic": "/pleɪ/",
+    "audioKey": "play",
+    "spokenText": "play",
+    "partOfSpeech": "v.",
+    "sources": [
+      "Unit 3 · Part B",
+      "宠物词汇"
+    ],
+    "examples": [
+      {
+        "text": "We are able to play soccer after school today.",
+        "translation": "我们今天放学后可以踢足球。",
+        "audioKey": "play-2",
+        "source": "Unit 3 · Part B"
+      },
+      {
+        "text": "We play together.",
+        "translation": "我们一起玩。",
+        "audioKey": "play-3",
+        "source": "宠物词汇"
+      }
+    ]
+  },
+  {
+    "id": 307,
+    "word": "see",
+    "meaning": "看到",
+    "note": "用眼睛看到了人或东西，就可以用 see。",
+    "imageHint": "a child seeing a baby smile",
+    "phonetic": "/siː/",
+    "audioKey": "see",
+    "spokenText": "see",
+    "partOfSpeech": "v.",
+    "sources": [
+      "Unit 3 · Part B"
+    ],
+    "examples": [
+      {
+        "text": "He sees the baby smile.",
+        "translation": "他看到宝宝笑了。",
+        "audioKey": "see-1",
+        "source": "Unit 3 · Part B"
+      }
+    ]
+  },
+  {
+    "id": 308,
+    "word": "send",
+    "meaning": "发送",
+    "note": "发送邮件、短信时都可以用 send。",
+    "imageHint": "a child sending an email on a computer",
+    "phonetic": "/send/",
+    "audioKey": "send",
+    "spokenText": "send",
+    "partOfSpeech": "v.",
+    "sources": [
+      "Unit 3 · Part B"
+    ],
+    "examples": [
+      {
+        "text": "I send about ten emails a day.",
+        "translation": "我每天大约发十封电子邮件。",
+        "audioKey": "send-1",
+        "source": "Unit 3 · Part B"
+      }
+    ]
+  },
+  {
+    "id": 309,
+    "word": "small",
+    "meaning": "小的",
+    "note": "形容个头小，可以用 small。",
+    "imageHint": "Betty holding a small dog in her arms",
+    "phonetic": "/smɔːl/",
+    "audioKey": "small",
+    "spokenText": "small",
+    "partOfSpeech": "adj.",
+    "sources": [
+      "Unit 3 · Part B",
+      "宠物词汇"
+    ],
+    "examples": [
+      {
+        "text": "Betty has a small dog.",
+        "translation": "贝蒂有一只小狗。",
+        "audioKey": "small-1",
+        "source": "Unit 3 · Part B"
+      },
+      {
+        "text": "Her kitten is small.",
+        "translation": "她的小猫个头很小。",
+        "audioKey": "kitten-2",
+        "source": "宠物词汇"
+      }
+    ]
+  },
+  {
+    "id": 310,
+    "word": "time",
+    "meaning": "时间",
+    "note": "看钟表问几点，可以说 What time is it?",
+    "imageHint": "a child checking the time on a wall clock",
+    "phonetic": "/taɪm/",
+    "audioKey": "time",
+    "spokenText": "time",
+    "partOfSpeech": "n.",
+    "sources": [
+      "Unit 3 · Part B"
+    ],
+    "examples": [
+      {
+        "text": "What time is it now?",
+        "translation": "现在几点了？",
+        "audioKey": "time-1",
+        "source": "Unit 3 · Part B"
+      }
+    ]
+  },
+  {
+    "id": 311,
+    "word": "hamster",
+    "meaning": "仓鼠",
+    "note": "仓鼠是一种小动物，常把食物藏在腮帮子里。",
+    "imageHint": "a pet hamster running on a wheel",
+    "phonetic": "/ˈhæmstər/",
+    "audioKey": "hamster",
+    "spokenText": "hamster",
+    "partOfSpeech": "n.",
+    "sources": [
+      "宠物词汇"
+    ],
+    "examples": [
+      {
+        "text": "My hamster runs on its wheel.",
+        "translation": "我的仓鼠在跑轮上跑。",
+        "audioKey": "hamster-1",
+        "source": "补充例句"
+      }
+    ]
+  },
+  {
+    "id": 312,
+    "word": "goldfish",
+    "meaning": "金鱼",
+    "note": "一条金鱼、几条金鱼都可以用 goldfish。",
+    "imageHint": "three goldfish swimming in a tank",
+    "phonetic": "/ˈɡoʊldfɪʃ/",
+    "audioKey": "goldfish",
+    "spokenText": "goldfish",
+    "partOfSpeech": "n.",
+    "sources": [
+      "宠物词汇"
+    ],
+    "examples": [
+      {
+        "text": "Those are his goldfish.",
+        "translation": "那些是他的金鱼。",
+        "audioKey": "goldfish-1",
+        "source": "宠物词汇"
+      }
+    ]
+  },
+  {
+    "id": 313,
+    "word": "bird",
+    "meaning": "鸟",
+    "note": "鸟身上有羽毛，还有一对翅膀。",
+    "imageHint": "a small green bird perched on a branch",
+    "phonetic": "/bɜːrd/",
+    "audioKey": "bird",
+    "spokenText": "bird",
+    "partOfSpeech": "n.",
+    "sources": [
+      "宠物词汇"
+    ],
+    "examples": [
+      {
+        "text": "He has a bird.",
+        "translation": "他有一只鸟。",
+        "audioKey": "bird-1",
+        "source": "宠物词汇"
+      }
+    ]
+  },
+  {
+    "id": 314,
+    "word": "rabbit",
+    "meaning": "兔子",
+    "note": "兔子有两只长耳朵，喜欢蹦蹦跳跳。",
+    "imageHint": "a rabbit with long ears sitting in the grass",
+    "phonetic": "/ˈræbɪt/",
+    "audioKey": "rabbit",
+    "spokenText": "rabbit",
+    "partOfSpeech": "n.",
+    "sources": [
+      "宠物词汇"
+    ],
+    "examples": [
+      {
+        "text": "My rabbit has long ears.",
+        "translation": "我的兔子有长长的耳朵。",
+        "audioKey": "rabbit-1",
+        "source": "补充例句"
+      }
+    ]
+  },
+  {
+    "id": 315,
+    "word": "lizard",
+    "meaning": "蜥蜴",
+    "note": "蜥蜴的身上有鳞片，许多蜥蜴都有长尾巴。",
+    "imageHint": "a green lizard with a long tail on a tree",
+    "phonetic": "/ˈlɪzərd/",
+    "audioKey": "lizard",
+    "spokenText": "lizard",
+    "partOfSpeech": "n.",
+    "sources": [
+      "宠物词汇"
+    ],
+    "examples": [
+      {
+        "text": "Look at her lizard!",
+        "translation": "看她的蜥蜴！",
+        "audioKey": "lizard-1",
+        "source": "宠物词汇"
+      }
+    ]
+  },
+  {
+    "id": 316,
+    "word": "kitten",
+    "meaning": "小猫",
+    "note": "kitten 是还没长大的小猫。",
+    "imageHint": "a tiny kitten beside a girl",
+    "phonetic": "/ˈkɪtən/",
+    "audioKey": "kitten",
+    "spokenText": "kitten",
+    "partOfSpeech": "n.",
+    "sources": [
+      "宠物词汇"
+    ],
+    "examples": [
+      {
+        "text": "That’s her kitten.",
+        "translation": "那是她的小猫。",
+        "audioKey": "kitten-1",
+        "source": "宠物词汇"
+      },
+      {
+        "text": "Her kitten is small.",
+        "translation": "她的小猫个头很小。",
+        "audioKey": "kitten-2",
+        "source": "宠物词汇"
       }
     ]
   }

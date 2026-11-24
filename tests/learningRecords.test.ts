@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dailyLearningQuestions } from '../src/data/dailyLearningQuestions';
+import { questionBank } from '../src/data/loadQuestionBank';
 import { ensureLearningRecords, getLearningRecords, recordCompletedTraining } from '../src/lib/learningRecords';
 import { selectReviewQuestions } from '../src/lib/reviewSelection';
 import { migrateQuestionIds } from '../src/lib/questionIdMigration';
@@ -151,6 +152,18 @@ describe('persistent learning records', () => {
     expect(records.rounds.find((item) => item.id === 'perfect-no-word-list')?.durationSeconds).toBeUndefined();
     expect(ensureLearningRecords(hydrated)).toBe(hydrated);
     expect(original.learningRecords).toBeUndefined();
+  });
+
+  it('uses the saved meaning to identify a repeated lesson word in legacy dictation', () => {
+    const meanings = ['玩', '玩耍', '未记录'];
+    const original = state({ dictationHistory: meanings.map((meaning) => ({
+      id: meaning, finishedAt: END, wrongWords: [{ word: 'play', meaning, meaningWrongCount: 1, spellingWrongCount: 1 }],
+    })) });
+    const records = getLearningRecords(ensureLearningRecords(original, questionBank));
+    expect(records.rounds.map((round) => [round.id, round.questionIds, round.answeredCount])).toEqual([
+      ['玩', [9116], 2], ['玩耍', [9306], 2], ['未记录', [], 2],
+    ]);
+    expect(records.questions.map((item) => [item.questionId, item.wrongCount])).toEqual([[9116, 2], [9306, 2]]);
   });
 
   it('survives storage parsing and alias merges without losing question history or duplicating rounds', () => {

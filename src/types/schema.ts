@@ -30,6 +30,7 @@ export interface Question {
 export interface SessionAnswer {
   questionId: number;
   selectedIndex: number;
+  selectedOptionText?: string | null;
   isCorrect: boolean;
   answeredAt: string;
 }

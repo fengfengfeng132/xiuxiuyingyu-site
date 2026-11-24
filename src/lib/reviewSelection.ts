@@ -1,6 +1,7 @@
 import type { AppState, Question, StudySession, WrongItem } from '../types/schema';
 import { getLocalDaySeed, pickDailyQuestions, PRACTICE_SESSION_QUESTION_COUNT } from './practiceUtils';
 import { getPendingReviewQuestionIds } from './reviewProgress';
+import { findHistoryQuestionId } from './dictationHistory';
 import { hashText } from './stableOptions';
 
 export type ReviewKind = 'daily' | 'weekly' | 'wrongFirst' | 'spaced';
@@ -121,19 +122,20 @@ function collectRecentDictationBonuses(state: ReviewState, bank: Question[], now
         ? total + day.meaning * RECENT_MEANING_ERROR_WEIGHT + day.spelling * RECENT_SPELLING_ERROR_WEIGHT : total;
     }, 0)]));
   }
-  const bonuses = new Map<string, number>();
+  const bonuses = new Map<number, number>();
   const historyById = new Map(state.dictationHistory.map((entry) => [entry.id, entry]));
   historyById.forEach((entry) => {
     const finishedAt = validPastTime(entry.finishedAt, now);
     if (finishedAt === null || finishedAt < recentStart) return;
     entry.wrongWords.forEach((item) => {
-      const word = item.word.trim().toLowerCase();
+      const questionId = findHistoryQuestionId(bank, item);
+      if (questionId === undefined) return;
       const bonus = Math.max(0, item.meaningWrongCount) * RECENT_MEANING_ERROR_WEIGHT
         + Math.max(0, item.spellingWrongCount) * RECENT_SPELLING_ERROR_WEIGHT;
-      bonuses.set(word, (bonuses.get(word) ?? 0) + bonus);
+      bonuses.set(questionId, (bonuses.get(questionId) ?? 0) + bonus);
     });
   });
-  return new Map(bank.map((question) => [question.id, bonuses.get(question.prompt.trim().toLowerCase()) ?? 0]));
+  return bonuses;
 }
 
 function getTaskEvidence(state: ReviewState, now: number): { taskIds: Set<number>; dueIds: Set<number> } {

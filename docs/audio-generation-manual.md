@@ -7,6 +7,7 @@
 
 - 最近的每日词课沿用 `tools/New-DailyWordAudio.ps1`，使用 Microsoft Zira Desktop 美式女声，普通 `Rate=-1`、慢速 `Rate=-5` 分别原生合成。
 - 脚本读取 `dictationWords.json` 的单词及 `examples`，临时输出 `us`、`us-slow`、`examples/us`、`examples/us-slow` 四组目录；例句英文只在 JSON 维护。
+- 同一句出现在多张词卡上时可以共用例句音频键。脚本会为相同路径和朗读文本生成一对录音，同一路径对应不同文本时会在合成前报错。
 - WAV 保持 16-bit canonical PCM（`fmt` 长度 16），避免 iPad Safari 解码兼容问题；合成失败直接报错，不静默更换声音。
 - 先检查全部文件、非零信号、削波和慢速时长，再复制到正式目录。归档词进入日常学习后，旧词音频必须继续保留。
 - 单词最终目录是 `public/audio/words/us` 与 `us-slow`；例句最终目录是 `public/audio/examples/us` 与 `us-slow`。

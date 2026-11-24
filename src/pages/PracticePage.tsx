@@ -466,7 +466,7 @@ export function PracticePage() {
     const savedExampleReview = getSavedExampleReview(question, existed, true);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSelected(existed && existed.selectedIndex >= 0 ? existed.selectedIndex : null);
+    setSelected(savedExampleReview?.selectedIndex ?? null);
     setFeedback(savedExampleReview?.feedback ?? '');
     setAudioMessage('');
     setSubmittedExampleQuestionId(savedExampleReview?.questionId ?? null);
@@ -785,6 +785,7 @@ export function PracticePage() {
     const answerPayload: SessionAnswer = {
       questionId: question.id,
       selectedIndex,
+      ...(isChoiceQuestion ? { selectedOptionText: question.options[selectedIndex] } : {}),
       isCorrect,
       answeredAt: new Date().toISOString(),
     };

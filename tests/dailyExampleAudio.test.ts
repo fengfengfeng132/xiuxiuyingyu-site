@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { vocabularyWords } from '../src/data/dictationWords';
 
 const examples = vocabularyWords.flatMap((word) => word.examples ?? []);
+const recordingTexts = new Map(examples.map((example) => [example.audioKey, example.text]));
 
 function readWave(relativePath: string) {
   const bytes = readFileSync(resolve(relativePath));
@@ -42,18 +43,20 @@ function readWave(relativePath: string) {
 
 describe('current and archived example audio assets', () => {
   it('ships exactly one normal and one slow recording for every example', () => {
-    const expectedFiles = examples.map((example) => `${example.audioKey}.wav`).sort();
-    expect(new Set(expectedFiles).size).toBe(examples.length);
+    const expectedFiles = [...recordingTexts.keys()].map((key) => `${key}.wav`).sort();
+    for (const example of examples) {
+      expect(recordingTexts.get(example.audioKey), example.audioKey).toBe(example.text);
+    }
     for (const variant of ['us', 'us-slow']) {
       const actualFiles = readdirSync(resolve('public/audio/examples', variant)).filter((name) => name.endsWith('.wav')).sort();
       expect(actualFiles).toEqual(expectedFiles);
     }
   });
 
-  for (const example of examples) {
-    it(`keeps ${example.audioKey} playable, audible and slower in its separate slow recording`, () => {
-      const normal = readWave(`public/audio/examples/us/${example.audioKey}.wav`);
-      const slow = readWave(`public/audio/examples/us-slow/${example.audioKey}.wav`);
+  for (const key of recordingTexts.keys()) {
+    it(`keeps ${key} playable, audible and slower in its separate slow recording`, () => {
+      const normal = readWave(`public/audio/examples/us/${key}.wav`);
+      const slow = readWave(`public/audio/examples/us-slow/${key}.wav`);
       for (const audio of [normal, slow]) {
         expect(audio.audioFormat).toBe(1);
         expect(audio.fmtSize).toBe(16);

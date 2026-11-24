@@ -4,7 +4,7 @@ import { parseQuestionBank } from '../schema/questionBankSchema';
 
 const lessonQuestions = [...archivedLearningQuestions, ...dailyLearningQuestions];
 const lessonQuestionByPrompt = new Map(lessonQuestions.map((item) => [item.prompt.trim().toLowerCase(), item]));
-const parsedBaseQuestionBank = parseQuestionBank(rawQuestions);
+export const parsedBaseQuestionBank = parseQuestionBank(rawQuestions);
 
 export const questionIdAliases: ReadonlyMap<number, number> = new Map(
   parsedBaseQuestionBank.flatMap((question) => {

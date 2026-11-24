@@ -32,7 +32,7 @@ $exampleSlowDir = Join-Path $resolvedOutputDir "examples\us-slow"
 $normalRate = -1
 $slowRate = -5
 
-$audioJobs = @(
+$requestedJobs = @(
   foreach ($entry in $entries) {
     [PSCustomObject]@{ AudioKey = $entry.audioKey; Text = $entry.spokenText; NormalDir = $normalDir; SlowDir = $slowDir }
     if ($entry.PSObject.Properties.Name -contains "examples") {
@@ -43,15 +43,25 @@ $audioJobs = @(
   }
 )
 
-foreach ($job in $audioJobs) {
+$jobsByPath = [ordered]@{}
+foreach ($job in $requestedJobs) {
   if ([string]::IsNullOrWhiteSpace($job.AudioKey) -or [string]::IsNullOrWhiteSpace($job.Text)) {
     throw "Every word and example must have a nonempty audioKey and spoken text."
   }
   if ($job.AudioKey.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ge 0) {
     throw "Invalid audio key: $($job.AudioKey)"
   }
+  $outputPath = Join-Path $job.NormalDir "$($job.AudioKey).wav"
+  if ($jobsByPath.Contains($outputPath)) {
+    if ($jobsByPath[$outputPath].Text -cne $job.Text) {
+      throw "Conflicting spoken text for $outputPath"
+    }
+    continue
+  }
+  $jobsByPath[$outputPath] = $job
 }
 
+$audioJobs = $jobsByPath.Values
 $outputDirectories = @($audioJobs | ForEach-Object { $_.NormalDir; $_.SlowDir } | Sort-Object -Unique)
 New-Item -ItemType Directory -Force -Path $outputDirectories | Out-Null
 

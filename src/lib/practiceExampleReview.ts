@@ -4,15 +4,21 @@ export function getSavedExampleReview(question: Question, answer?: SessionAnswer
   if ((!question.examples?.length && !reviewWithoutExamples) || !answer || answer.questionId !== question.id) return null;
 
   const wasSpellingAnswer = answer.selectedIndex < 0;
+  const selectedIndex = answer.selectedOptionText === undefined
+    ? answer.selectedIndex : question.options.indexOf(answer.selectedOptionText ?? '');
+  const restoredChoice = answer.isCorrect ? question.answerIndex : selectedIndex;
+  const oldChoice = !answer.isCorrect && answer.selectedOptionText && selectedIndex < 0
+    ? `你当时选了“${answer.selectedOptionText}”。` : '';
   const feedback = answer.isCorrect
     ? question.examples?.length ? '这题已经答对，复习例句后继续。' : '这题已经答对，可以继续下一题。'
     : wasSpellingAnswer
       ? `这题已提交，原来的拼写未保存；正确拼写是 ${question.prompt}。`
-      : `这题已提交，正确答案是 ${question.options[question.answerIndex]}。`;
+      : `这题已提交，${oldChoice}正确答案是 ${question.options[question.answerIndex]}。`;
 
   return {
     questionId: question.id,
     feedback,
+    selectedIndex: !wasSpellingAnswer && restoredChoice >= 0 ? restoredChoice : null,
     spellingInput: wasSpellingAnswer && answer.isCorrect ? question.prompt : '',
   };
 }

@@ -1,4 +1,4 @@
-import type { AppState, ReviewTask, StudySession, WrongItem } from '../types/schema';
+import type { AppState, Question, ReviewTask, StudySession, WrongItem } from '../types/schema';
 import { migrateLearningRecordsQuestionIds } from './learningRecords';
 
 function migrateIdList(questionIds: number[], aliases: ReadonlyMap<number, number>): number[] {
@@ -8,10 +8,17 @@ function migrateIdList(questionIds: number[], aliases: ReadonlyMap<number, numbe
     : migrated;
 }
 
-function migrateSession(session: StudySession, aliases: ReadonlyMap<number, number>): StudySession {
+const GENERATED_CHOICE_MODES = new Set(['zh2en', 'person', 'dialogueFill', 'qaMatch']);
+
+function migrateSession(session: StudySession, aliases: ReadonlyMap<number, number>, originalQuestions: readonly Question[]): StudySession {
   const answers = session.answers.map((answer) => {
     const questionId = aliases.get(answer.questionId) ?? answer.questionId;
-    return questionId === answer.questionId ? answer : { ...answer, questionId };
+    if (questionId === answer.questionId) return answer;
+    const original = originalQuestions.find((question) => question.id === answer.questionId);
+    if (!original || answer.selectedIndex < 0 || answer.selectedOptionText !== undefined) return { ...answer, questionId };
+    // Older generated choices depended on the vocabulary pool in use when the child answered.
+    const selectedOptionText = GENERATED_CHOICE_MODES.has(session.train ?? '') ? null : original.options[answer.selectedIndex] ?? null;
+    return { ...answer, questionId, selectedOptionText };
   });
   const questionIds = session.questionIds ? migrateIdList(session.questionIds, aliases) : undefined;
   const answersChanged = answers.some((answer, index) => answer !== session.answers[index]);
@@ -59,11 +66,11 @@ function migrateReviewTask(task: ReviewTask, aliases: ReadonlyMap<number, number
   return { ...task, questionIds, completed, ...(completedQuestionIds ? { completedQuestionIds } : {}) };
 }
 
-export function migrateQuestionIds(state: AppState, aliases: ReadonlyMap<number, number>): AppState {
+export function migrateQuestionIds(state: AppState, aliases: ReadonlyMap<number, number>, originalQuestions: readonly Question[] = []): AppState {
   if (aliases.size === 0) return state;
 
-  const activeSession = state.activeSession ? migrateSession(state.activeSession, aliases) : null;
-  const sessions = state.sessions.map((session) => migrateSession(session, aliases));
+  const activeSession = state.activeSession ? migrateSession(state.activeSession, aliases, originalQuestions) : null;
+  const sessions = state.sessions.map((session) => migrateSession(session, aliases, originalQuestions));
   const wrongBook = migrateWrongBook(state.wrongBook, aliases);
   const reviewTasks = state.reviewTasks.map((task) => migrateReviewTask(task, aliases));
   const learningRecords = state.learningRecords ? migrateLearningRecordsQuestionIds(state.learningRecords, aliases) : undefined;

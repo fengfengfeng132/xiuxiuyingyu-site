@@ -529,5 +529,225 @@
         "source": "Unit 2"
       }
     ]
+  },
+  {
+    "id": 201,
+    "word": "address",
+    "meaning": "地址",
+    "note": "address 是联系或寄信用的地址，email address 是电子邮箱地址。",
+    "imageHint": "an email address shown on a computer screen",
+    "phonetic": "/əˈdres/",
+    "audioKey": "address",
+    "spokenText": "address",
+    "partOfSpeech": "n.",
+    "sources": [
+      "Unit 3 · Part A"
+    ],
+    "examples": [
+      {
+        "text": "My email address is fun54@yoohoo.com.",
+        "translation": "我的电子邮箱地址是 fun54@yoohoo.com。",
+        "audioKey": "address-1",
+        "source": "Unit 3 · Part A"
+      }
+    ]
+  },
+  {
+    "id": 202,
+    "word": "afternoon",
+    "meaning": "下午",
+    "note": "afternoon 是中午以后、傍晚以前的下午。",
+    "imageHint": "a man washing his car in the afternoon sunshine",
+    "phonetic": "/ˌæftərˈnuːn/",
+    "audioKey": "afternoon",
+    "spokenText": "afternoon",
+    "partOfSpeech": "n.",
+    "sources": [
+      "Unit 3 · Part A"
+    ],
+    "examples": [
+      {
+        "text": "He cleans his car in the afternoon.",
+        "translation": "他在下午清洗汽车。",
+        "audioKey": "afternoon-1",
+        "source": "Unit 3 · Part A"
+      }
+    ]
+  },
+  {
+    "id": 203,
+    "word": "come",
+    "meaning": "来",
+    "note": "come 表示来到这里，come with me 表示跟我来。",
+    "imageHint": "a child inviting a friend to come along",
+    "phonetic": "/kʌm/",
+    "audioKey": "come",
+    "spokenText": "come",
+    "partOfSpeech": "v.",
+    "sources": [
+      "Unit 3 · Part A"
+    ],
+    "examples": [
+      {
+        "text": "Please come with me.",
+        "translation": "请跟我来。",
+        "audioKey": "come-1",
+        "source": "Unit 3 · Part A"
+      }
+    ]
+  },
+  {
+    "id": 204,
+    "word": "home",
+    "meaning": "家",
+    "note": "home 是我们和家人一起生活的家。",
+    "imageHint": "a cozy family home with three bedrooms",
+    "phonetic": "/hoʊm/",
+    "audioKey": "home",
+    "spokenText": "home",
+    "partOfSpeech": "n.",
+    "sources": [
+      "Unit 3 · Part A"
+    ],
+    "examples": [
+      {
+        "text": "Their home has three bedrooms.",
+        "translation": "他们的家有三间卧室。",
+        "audioKey": "home-1",
+        "source": "Unit 3 · Part A"
+      }
+    ]
+  },
+  {
+    "id": 205,
+    "word": "letter",
+    "meaning": "信",
+    "note": "这里的 letter 是写给别人的信，letters 表示多封信。",
+    "imageHint": "a girl writing a funny letter to her family",
+    "phonetic": "/ˈletər/",
+    "audioKey": "letter",
+    "spokenText": "letter",
+    "partOfSpeech": "n.",
+    "sources": [
+      "Unit 3 · Part A"
+    ],
+    "examples": [
+      {
+        "text": "She often writes funny letters to her family.",
+        "translation": "她经常给家人写有趣的信。",
+        "audioKey": "letter-1",
+        "source": "Unit 3 · Part A"
+      }
+    ]
+  },
+  {
+    "id": 206,
+    "word": "lunch",
+    "meaning": "午饭",
+    "note": "lunch 是中午吃的午餐。",
+    "imageHint": "a girl eating a sandwich for lunch",
+    "phonetic": "/lʌntʃ/",
+    "audioKey": "lunch",
+    "spokenText": "lunch",
+    "partOfSpeech": "n.",
+    "sources": [
+      "Unit 3 · Part A"
+    ],
+    "examples": [
+      {
+        "text": "She eats a sandwich for lunch every day.",
+        "translation": "她每天午餐都吃一个三明治。",
+        "audioKey": "lunch-1",
+        "source": "Unit 3 · Part A"
+      }
+    ]
+  },
+  {
+    "id": 207,
+    "word": "make",
+    "meaning": "做",
+    "note": "make 表示做出或制作一样东西，比如做馅饼。",
+    "imageHint": "parents making delicious pies together in a kitchen",
+    "phonetic": "/meɪk/",
+    "audioKey": "make",
+    "spokenText": "make",
+    "partOfSpeech": "v.",
+    "sources": [
+      "Unit 3 · Part A"
+    ],
+    "examples": [
+      {
+        "text": "My parents make good pies.",
+        "translation": "我的父母做的馅饼很好吃。",
+        "audioKey": "make-1",
+        "source": "Unit 3 · Part A"
+      }
+    ]
+  },
+  {
+    "id": 208,
+    "word": "need",
+    "meaning": "需要",
+    "note": "need 表示需要，比如我们每天都需要水。",
+    "imageHint": "children drinking clean water from cups",
+    "phonetic": "/niːd/",
+    "audioKey": "need",
+    "spokenText": "need",
+    "partOfSpeech": "v.",
+    "sources": [
+      "Unit 3 · Part A"
+    ],
+    "examples": [
+      {
+        "text": "We need water to live.",
+        "translation": "我们需要水才能生存。",
+        "audioKey": "need-1",
+        "source": "Unit 3 · Part A"
+      }
+    ]
+  },
+  {
+    "id": 209,
+    "word": "people",
+    "meaning": "人",
+    "note": "people 表示人们，many people 表示很多人。",
+    "imageHint": "many people gathered together in a park",
+    "phonetic": "/ˈpiːpəl/",
+    "audioKey": "people",
+    "spokenText": "people",
+    "partOfSpeech": "n.",
+    "sources": [
+      "Unit 3 · Part A"
+    ],
+    "examples": [
+      {
+        "text": "There are a lot of people here.",
+        "translation": "这里有很多人。",
+        "audioKey": "people-1",
+        "source": "Unit 3 · Part A"
+      }
+    ]
+  },
+  {
+    "id": 210,
+    "word": "start",
+    "meaning": "开始",
+    "note": "start 表示开始做一件事，比如开始跑步。",
+    "imageHint": "a man starting to run on a path",
+    "phonetic": "/stɑːrt/",
+    "audioKey": "start",
+    "spokenText": "start",
+    "partOfSpeech": "v.",
+    "sources": [
+      "Unit 3 · Part A"
+    ],
+    "examples": [
+      {
+        "text": "The man starts to run.",
+        "translation": "那个男人开始跑步。",
+        "audioKey": "start-1",
+        "source": "Unit 3 · Part A"
+      }
+    ]
   }
 ]

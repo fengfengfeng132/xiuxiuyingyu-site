@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { questionBank, questionIdAliases } from '../src/data/loadQuestionBank';
 import { migrateQuestionIds } from '../src/lib/questionIdMigration';
+import { getSavedExampleReview } from '../src/lib/practiceExampleReview';
 import { APP_STORAGE_KEY, loadState } from '../src/lib/storage';
 import type { AppState, StudySession } from '../src/types/schema';
 
@@ -73,6 +74,36 @@ describe('question ID migration', () => {
     expect(questionBank.find((question) => question.id === 9101)?.prompt).toBe('baby');
     expect(questionBank.find((question) => question.id === 9117)?.prompt).toBe('sleep');
     expect(previous.sessions[0].answers[0].questionId).toBe(43);
+  });
+
+  it.each([
+    { train: 'normal', selectedIndex: 1, isCorrect: true, oldText: '小的' },
+    { train: 'normal', selectedIndex: 0, isCorrect: false, oldText: '重的' },
+    { train: 'zh2en', selectedIndex: 2, isCorrect: false, oldText: null },
+  ])('restores the original small result after its choices change ($train, option $selectedIndex)', ({ train, selectedIndex, isCorrect, oldText }) => {
+    const session = makeSession([80]);
+    session.train = train;
+    session.answers[0] = { ...session.answers[0], selectedIndex, isCorrect };
+    session.score = Number(isCorrect);
+    const previous = makeState({
+      activeSession: { ...session, finishedAt: undefined, questionIds: [80] },
+      sessions: [session],
+      wrongBook: [{ questionId: 80, wrongCount: 1, lastWrongAt: session.startedAt, mastered: false }],
+      reviewTasks: [{ id: 'old-small', questionIds: [80, 9116], completedQuestionIds: [9116], dueAt: session.startedAt, completed: false }],
+    });
+    vi.stubGlobal('localStorage', { getItem: () => JSON.stringify(previous) });
+    const loaded = loadState();
+    expect(questionIdAliases.get(80)).toBe(9309);
+    expect(loaded.activeSession?.questionIds).toEqual([9309]);
+    expect(loaded.wrongBook[0].questionId).toBe(9309);
+    expect(loaded.reviewTasks[0]).toMatchObject({ questionIds: [9309, 9116], completedQuestionIds: [9116] });
+    expect(loaded.sessions[0].score).toBe(session.score);
+    const saved = loaded.activeSession!.answers[0];
+    expect(saved).toEqual({ ...session.answers[0], questionId: 9309, selectedOptionText: oldText });
+    const small = questionBank.find((question) => question.id === 9309)!;
+    const review = getSavedExampleReview(small, saved);
+    expect(review?.selectedIndex).toBe(isCorrect ? small.answerIndex : null);
+    if (oldText && !isCorrect) expect(review?.feedback).toContain(oldText);
   });
 
   it('merges old and replacement wrong-word records without dropping mistakes or unmastered status', () => {

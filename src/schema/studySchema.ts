@@ -10,6 +10,7 @@ function isSessionAnswer(value: unknown): value is SessionAnswer {
   return (
     typeof item.questionId === 'number' &&
     typeof item.selectedIndex === 'number' &&
+    (item.selectedOptionText == null || typeof item.selectedOptionText === 'string') &&
     typeof item.isCorrect === 'boolean' &&
     typeof item.answeredAt === 'string'
   );

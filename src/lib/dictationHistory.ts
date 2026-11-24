@@ -1,5 +1,17 @@
-import type { DictationHistoryEntry, DictationWeeklyWordSummary } from '../types/schema';
+import type { DictationHistoryEntry, DictationHistoryWord, DictationWeeklyWordSummary, Question } from '../types/schema';
 import { summarizeWrongDictationAnswers, type DictationAnswerRecord } from './dictationSummary';
+
+type HistoryQuestion = Pick<Question, 'id' | 'prompt'> & Partial<Pick<Question, 'options' | 'answerIndex'>>;
+
+export function findHistoryQuestionId(bank: readonly HistoryQuestion[], word: DictationHistoryWord): number | undefined {
+  const prompt = word.word.trim().toLowerCase();
+  const matches = bank.filter((question) => question.prompt.trim().toLowerCase() === prompt);
+  if (matches.length === 1) return matches[0].id;
+  // Older rounds saved the Chinese meaning but no lesson ID. Only assign a repeated word when that meaning identifies one lesson.
+  const withMeaning = matches.filter((question) => question.answerIndex !== undefined
+    && question.options?.[question.answerIndex]?.trim() === word.meaning.trim());
+  return withMeaning.length === 1 ? withMeaning[0].id : undefined;
+}
 
 export function createDictationHistoryEntry(
   answers: DictationAnswerRecord[],

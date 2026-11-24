@@ -8,22 +8,26 @@ import { questionBank } from '../src/data/loadQuestionBank';
 import { fetchLocalUsAudioUrl, fetchLocalUsSlowAudioUrl } from '../src/lib/phonetic';
 
 const expectedWords = [
-  'address', 'afternoon', 'come', 'home', 'letter', 'lunch', 'make', 'need', 'people', 'start',
+  'cook', 'day', 'drink', 'front', 'great', 'play', 'see', 'send', 'small', 'time',
+  'hamster', 'goldfish', 'bird', 'rabbit', 'lizard', 'kitten',
 ];
 const expectedMeanings = [
-  '地址', '下午', '来', '家', '信', '午饭', '做', '需要', '人', '开始',
+  '烹饪', '天', '喝', '前面', '很棒的', '玩耍', '看到', '发送', '小的', '时间',
+  '仓鼠', '金鱼', '鸟', '兔子', '蜥蜴', '小猫',
 ];
 const expectedArchivedWords = [
   'am', 'is', 'are', "isn't", "aren't", 'cry', 'drive', 'funny', 'hope', 'laugh',
   'nice', 'smile', 'strong', 'student', 'young',
   'baby', 'clean', 'eat', 'enjoy', 'family', 'fruit', 'jump', 'kind', 'man', 'parent',
   'elephant', 'tortoise', 'sad', 'lonely', 'scared', 'play', 'sleep',
+  'address', 'afternoon', 'come', 'home', 'letter', 'lunch', 'make', 'need', 'people', 'start',
 ];
 const expectedArchivedIds = [
   ...Array.from({ length: 15 }, (_, index) => index + 1),
   ...Array.from({ length: 17 }, (_, index) => index + 101),
+  ...Array.from({ length: 10 }, (_, index) => index + 201),
 ];
-const expectedAudioKeys = [...expectedArchivedWords, ...expectedWords];
+const expectedAudioKeys = new Set([...expectedArchivedWords, ...expectedWords]);
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(testDir, '..');
@@ -74,12 +78,12 @@ function readWavDurationSeconds(relativePath: string): number {
 }
 
 describe('daily word sync', () => {
-  it('keeps the dictation word list on the requested 10-entry set', () => {
+  it('keeps both supplied word lists in textbook order', () => {
     expect(dictationWords.map((item) => item.word)).toEqual(expectedWords);
     expect(dictationWords.map((item) => item.meaning)).toEqual(expectedMeanings);
   });
 
-  it('reuses the same 10 entries in daily learning questions', () => {
+  it('reuses the same entries in daily learning questions', () => {
     expect(dailyLearningQuestions).toHaveLength(expectedWords.length);
     expect(dailyLearningQuestions.map((item) => item.prompt)).toEqual(expectedWords);
     expect(dailyLearningQuestions.map((item) => item.audioText)).toEqual(expectedWords);
@@ -108,13 +112,14 @@ describe('daily word sync', () => {
       expectedArchivedIds.map((id) => 9000 + id),
     );
     expect(dailyLearningQuestions.map((question) => question.id)).toEqual(
-      expectedWords.map((_, index) => 9201 + index),
+      expectedWords.map((_, index) => 9301 + index),
     );
     archivedLearningQuestions.forEach((question) => {
       expect(question.tags).toContain('archived-dictation');
       expect(question.tags).not.toContain('daily-dictation');
       expect(questionBank.find((item) => item.id === question.id)).toEqual(question);
-      expect(questionBank.filter((item) => item.prompt === question.prompt)).toHaveLength(1);
+      const matchingIds = questionBank.filter((item) => item.prompt === question.prompt).map((item) => item.id);
+      expect(matchingIds).toEqual(question.id === 9116 ? [9116, 9306] : [question.id]);
     });
     expect(new Set(questionBank.map((question) => question.id)).size).toBe(questionBank.length);
   });
@@ -131,6 +136,9 @@ describe('daily word sync', () => {
     });
     expect(archivedLearningQuestions.find((question) => question.id === 9015)).toMatchObject({
       prompt: 'young', options: ['是（和 I 连用）', '是（用于单数）', '年轻的', '是（和 you 或复数连用）'], answerIndex: 2,
+    });
+    expect(archivedLearningQuestions.find((question) => question.id === 9210)).toMatchObject({
+      prompt: 'start', options: ['地址', '开始', '下午', '来'], answerIndex: 1,
     });
   });
 

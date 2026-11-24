@@ -1,6 +1,6 @@
 import type { AppState, StudySession } from '../types/schema';
 import { parseAppState } from '../schema/studySchema';
-import { questionBank, questionIdAliases } from '../data/loadQuestionBank';
+import { parsedBaseQuestionBank, questionBank, questionIdAliases } from '../data/loadQuestionBank';
 import { migrateQuestionIds } from './questionIdMigration';
 import { createLearningRecords, ensureLearningRecords } from './learningRecords';
 
@@ -25,7 +25,7 @@ export function loadState(): AppState {
   } catch {
     return createInitialState();
   }
-  return ensureLearningRecords(migrateQuestionIds(state, questionIdAliases), questionBank);
+  return ensureLearningRecords(migrateQuestionIds(state, questionIdAliases, parsedBaseQuestionBank), questionBank);
 }
 
 export function saveState(state: AppState): void {

@@ -3,6 +3,7 @@ import type {
   LearningErrorDay, LearningRecords, Question, QuestionLearningRecord, SessionAnswer, TrainingAnswer,
 } from '../types/schema';
 import { getLocalDaySeed } from './practiceUtils';
+import { findHistoryQuestionId } from './dictationHistory';
 import { applyReviewAnswers } from './reviewProgress';
 import { awardPerfectTrainingStar } from './starRewards';
 
@@ -204,7 +205,6 @@ export function recordCompletedTraining(state: AppState, input: CompletedTrainin
 function backfillRecords(state: AppState, bank: readonly Pick<Question, 'id' | 'prompt'>[], excludedKey?: string): LearningRecords {
   let records = createLearningRecords();
   const recordedKeys = new Set<string>();
-  const byWord = new Map(bank.map((question) => [question.prompt.trim().toLowerCase(), question.id]));
 
   const addKnownQuestion = (questionId: number, answeredAt: string) => {
     if (!Number.isFinite(time(answeredAt))) return;
@@ -249,7 +249,7 @@ function backfillRecords(state: AppState, bank: readonly Pick<Question, 'id' | '
     const questionById = new Map(records.questions.map((question) => [question.questionId, question]));
     entry.wrongWords.forEach((word) => {
       answeredCount += word.meaningWrongCount + word.spellingWrongCount;
-      const questionId = byWord.get(word.word.trim().toLowerCase());
+      const questionId = findHistoryQuestionId(bank, word);
       if (questionId === undefined) return;
       questionIds.push(questionId);
       const previous = questionById.get(questionId) ?? newQuestion(questionId, entry.finishedAt);

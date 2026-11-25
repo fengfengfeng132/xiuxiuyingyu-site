@@ -23,9 +23,9 @@ describe('dictation visual layout', () => {
   });
 
   it('anchors the large-screen dog beside the grass heart instead of the bottom UI', () => {
-    expect(stylesheet).toMatch(/@media \(min-width:\s*768px\)[\s\S]*?\.dictation-lesson-page\s*>\s*\.lesson-dog-image\s*{[^}]*right:\s*24px;/);
-    expect(stylesheet).toMatch(/@media \(min-width:\s*768px\)[\s\S]*?\.dictation-lesson-page\s*>\s*\.lesson-dog-image\s*{[^}]*top:\s*900px;/);
-    expect(stylesheet).not.toMatch(/@media \(min-width:\s*768px\)[\s\S]*?\.dictation-lesson-page\s*>\s*\.lesson-dog-image\s*{[^}]*bottom:/);
+    expect(stylesheet).toMatch(/@media \(min-width:\s*1132px\)[\s\S]*?\.dictation-lesson-page\s*>\s*\.lesson-dog-image\s*{[^}]*right:\s*24px;/);
+    expect(stylesheet).toMatch(/@media \(min-width:\s*1132px\)[\s\S]*?\.dictation-lesson-page\s*>\s*\.lesson-dog-image\s*{[^}]*top:\s*900px;/);
+    expect(stylesheet).not.toMatch(/@media \(min-width:\s*1132px\)[\s\S]*?\.dictation-lesson-page\s*>\s*\.lesson-dog-image\s*{[^}]*bottom:/);
   });
 
   it('keeps the dog below interactive choice content', () => {
@@ -42,12 +42,12 @@ describe('dictation visual layout', () => {
     expect(dictationPageSource).toContain('--lesson-word-title-fit-length');
     expect(stylesheet).toMatch(/\.lesson-word-card h1\s*{[^}]*white-space:\s*nowrap;/s);
     expect(stylesheet).toMatch(
-      /@media \(min-width:\s*768px\)[\s\S]*?\.lesson-word-card h1\s*{[^}]*font-size:\s*clamp\(64px,\s*calc\(1280px \/ var\(--lesson-word-title-fit-length\)\),\s*152px\);/,
+      /@media \(min-width:\s*1132px\)[\s\S]*?\.lesson-word-card h1\s*{[^}]*font-size:\s*clamp\(64px,\s*calc\(1280px \/ var\(--lesson-word-title-fit-length\)\),\s*152px\);/,
     );
   });
 
   it('keeps the large-screen action bar in content flow on short viewports', () => {
-    expect(stylesheet).toMatch(/@media \(min-width:\s*768px\) and \(max-height:\s*900px\)\s*{[\s\S]*?\.lesson-bottom-action\s*{[^}]*position:\s*relative;/);
-    expect(stylesheet).toMatch(/@media \(min-width:\s*768px\) and \(max-height:\s*900px\)\s*{[\s\S]*?\.lesson-bottom-action\s*{[^}]*bottom:\s*auto;/);
+    expect(stylesheet).toMatch(/@media \(min-width:\s*1132px\) and \(max-height:\s*900px\)\s*{[\s\S]*?\.lesson-bottom-action\s*{[^}]*position:\s*relative;/);
+    expect(stylesheet).toMatch(/@media \(min-width:\s*1132px\) and \(max-height:\s*900px\)\s*{[\s\S]*?\.lesson-bottom-action\s*{[^}]*bottom:\s*auto;/);
   });
 });

@@ -12,18 +12,16 @@ export function isSubmitEnter(event: { key: string; keyCode?: number; nativeEven
   return event.key === 'Enter' && event.keyCode !== 229 && !event.nativeEvent?.isComposing;
 }
 
-const BOTTOM_NAV_GAP_PX = 12;
-const TOP_GAP_PX = 12;
+const VIEWPORT_GAP_PX = 12;
 
-// The bottom navigation floats over the page. Once an answer is revealed, the row with "下一题" must not stay
-// hidden under it, so the page moves down just far enough. It never moves so far that the revealed answer
-// (keepVisible) leaves the top of the screen: when both do not fit, the answer wins and the row is reached by scrolling.
-export function revealAboveBottomNav(actionRow: Element | null, keepVisible: Element | null = null): void {
-  if (!actionRow || typeof window === 'undefined' || typeof document === 'undefined') return;
-  const nav = document.querySelector('.bottom-nav');
-  const limit = (nav ? nav.getBoundingClientRect().top : window.innerHeight) - BOTTOM_NAV_GAP_PX;
-  const overflow = actionRow.getBoundingClientRect().bottom - limit;
-  const room = keepVisible ? keepVisible.getBoundingClientRect().top - TOP_GAP_PX : overflow;
+// Keep the answer visible when the action and the answer cannot both fit above the keyboard or screen edge.
+export function revealAnswerActions(actionRow: Element | null, keepVisible: Element | null = null): void {
+  if (!actionRow || typeof window === 'undefined') return;
+  const viewport = window.visualViewport;
+  const top = viewport?.offsetTop ?? 0;
+  const bottom = top + (viewport?.height ?? window.innerHeight);
+  const overflow = actionRow.getBoundingClientRect().bottom - (bottom - VIEWPORT_GAP_PX);
+  const room = keepVisible ? keepVisible.getBoundingClientRect().top - (top + VIEWPORT_GAP_PX) : overflow;
   const distance = Math.min(overflow, room);
   if (distance > 0) window.scrollBy({ top: distance, behavior: 'smooth' });
 }

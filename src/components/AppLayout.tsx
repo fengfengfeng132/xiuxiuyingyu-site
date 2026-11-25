@@ -4,19 +4,17 @@ const navItems = [
   {
     to: '/',
     label: '首页',
-    icon: 'home',
     image: '/images/ui-ipad/nav-home-icon.png',
     paths: ['/', '/modes', '/dictation', '/practice', '/result', '/stars'],
   },
   {
     to: '/wrong',
     label: '词表',
-    icon: 'book',
     image: '/images/ui-ipad/nav-book-icon.png',
     paths: ['/wrong', '/review'],
   },
-  { to: '/parent', label: '统计', icon: 'stats', image: '/images/ui-ipad/nav-stats-icon.png', paths: ['/parent'] },
-  { to: '/settings', label: '我的', icon: 'me', image: '/images/ui-ipad/nav-profile-icon.png', paths: ['/settings'] },
+  { to: '/parent', label: '统计', image: '/images/ui-ipad/nav-stats-icon.png', paths: ['/parent'] },
+  { to: '/settings', label: '我的', image: '/images/ui-ipad/nav-profile-icon.png', paths: ['/settings'] },
 ];
 
 export function AppLayout() {
@@ -25,25 +23,24 @@ export function AppLayout() {
   return (
     <div className="app-shell">
       <Outlet />
-      <footer className="bottom-nav">
+      <nav className="side-nav" aria-label="主要导航">
         {navItems.map((item) => {
           const active = item.paths.includes(location.pathname);
           return (
-            <Link key={item.to} to={item.to} className={`bottom-nav-item ${active ? 'active' : ''}`}>
+            <Link key={item.to} to={item.to} className={`side-nav-item ${active ? 'active' : ''}`} aria-current={active ? 'page' : undefined}>
               <img
-                className="bottom-nav-image-icon"
+                className="side-nav-image-icon"
                 src={item.image}
                 alt=""
                 aria-hidden="true"
                 loading="lazy"
                 decoding="async"
               />
-              <span className={`bottom-nav-icon bottom-nav-icon-${item.icon}`} aria-hidden="true" />
               {item.label}
             </Link>
           );
         })}
-      </footer>
+      </nav>
     </div>
   );
 }

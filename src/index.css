@@ -38,7 +38,8 @@
   --yellow: #e0b347;
   --yellow-soft: #f7dd7f;
   --focus: #2f6edb;
-  --bottom-nav-space: 118px;
+  --side-nav-width: 84px;
+  --side-nav-space: calc(var(--side-nav-width) + 24px + env(safe-area-inset-right));
 }
 
 * {
@@ -114,6 +115,7 @@ ul {
 .app-shell {
   min-height: 100vh;
   position: relative;
+  padding-right: var(--side-nav-space);
 }
 
 .page {
@@ -121,7 +123,7 @@ ul {
   z-index: 1;
   max-width: 900px;
   margin: 0 auto;
-  padding: 22px 20px calc(var(--bottom-nav-space) + env(safe-area-inset-bottom));
+  padding: 22px 20px calc(32px + env(safe-area-inset-bottom));
   display: grid;
   gap: 20px;
 }
@@ -228,7 +230,7 @@ ul {
 }
 
 .mission-grid {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
 }
 
 .stats-grid {
@@ -412,7 +414,7 @@ ul {
 .btn:focus-visible,
 .option:focus-visible,
 .spelling-input:focus-visible,
-.bottom-nav-item:focus-visible,
+.side-nav-item:focus-visible,
 .grid-nav a:focus-visible {
   outline: 3px solid rgba(47, 110, 219, 0.22);
   outline-offset: 2px;
@@ -722,100 +724,59 @@ ul {
   content: '收起';
 }
 
-.bottom-nav {
+.side-nav {
   position: fixed;
-  left: 50%;
-  right: auto;
-  bottom: calc(12px + env(safe-area-inset-bottom));
-  transform: translateX(-50%);
+  top: 50%;
+  right: calc(12px + env(safe-area-inset-right));
+  transform: translateY(-50%);
   z-index: 100;
-  width: min(calc(100% - 24px), 760px);
+  width: var(--side-nav-width);
+  max-height: calc(100svh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 8px;
   padding: 8px;
   isolation: isolate;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 247, 236, 0.92)),
-    rgba(255, 250, 243, 0.88);
-  border: 1px solid rgba(218, 207, 185, 0.82);
-  border-radius: 28px;
+  background: rgba(255, 253, 247, 0.96);
+  border: 1px solid rgba(221, 179, 100, 0.28);
+  border-radius: 26px;
   backdrop-filter: blur(18px) saturate(1.2);
-  box-shadow:
-    0 24px 60px rgba(55, 64, 92, 0.26),
-    0 3px 0 rgba(255, 255, 255, 0.72) inset,
-    0 0 0 1px rgba(255, 255, 255, 0.42) inset;
+  box-shadow: 0 16px 36px rgba(85, 69, 38, 0.16);
 }
 
-.bottom-nav-item {
-  position: relative;
+.side-nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 56px;
-  padding: 9px 7px;
-  border-radius: 21px;
-  background: transparent;
+  min-height: 76px;
+  padding: 10px 4px;
+  border-radius: 18px;
+  color: #8b826d;
   text-decoration: none;
-  color: var(--muted);
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   font-weight: 800;
-  transition:
-    transform 0.16s ease,
-    background 0.16s ease,
-    color 0.16s ease,
-    box-shadow 0.16s ease;
+  transition: background 0.16s ease, color 0.16s ease;
 }
 
-.bottom-nav-item::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #d3c6a7;
-}
-
-.bottom-nav-item:nth-child(1)::before {
-  background: var(--yellow);
-}
-
-.bottom-nav-item:nth-child(2)::before {
-  background: var(--coral);
-}
-
-.bottom-nav-item:nth-child(3)::before {
-  background: var(--blue);
-}
-
-.bottom-nav-item:nth-child(4)::before {
-  background: #d0846b;
-}
-
-.bottom-nav-item:nth-child(5)::before {
-  background: var(--mint);
-}
-
-.bottom-nav-item:nth-child(6)::before {
-  background: #7e8db3;
-}
-
-.bottom-nav-item:hover {
-  transform: translateY(-1px);
+.side-nav-item:hover {
   color: var(--ink-strong);
-  background: rgba(255, 255, 255, 0.58);
-  box-shadow: 0 10px 20px rgba(75, 84, 109, 0.1);
+  background: #f3f8ff;
 }
 
-.bottom-nav-item.active {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(235, 245, 255, 0.98)),
-    rgba(255, 255, 255, 0.9);
-  color: var(--blue-strong);
-  box-shadow:
-    0 12px 24px rgba(63, 116, 220, 0.18),
-    0 1px 0 rgba(255, 255, 255, 0.92) inset;
+.side-nav-item.active {
+  color: #238bff;
+  background: #eaf6ff;
+  box-shadow: inset 0 0 0 1px rgba(77, 141, 242, 0.12);
+}
+
+.side-nav-image-icon {
+  display: block;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .grid-nav {
@@ -1005,7 +966,8 @@ ul {
 
 @media (max-width: 720px) {
   :root {
-    --bottom-nav-space: 128px;
+    --side-nav-width: 64px;
+    --side-nav-space: calc(var(--side-nav-width) + 16px + env(safe-area-inset-right));
   }
 
   body::before {
@@ -1015,7 +977,7 @@ ul {
   }
 
   .page {
-    padding: 18px 14px calc(var(--bottom-nav-space) + env(safe-area-inset-bottom));
+    padding: 18px 14px calc(32px + env(safe-area-inset-bottom));
     gap: 14px;
   }
 
@@ -1042,20 +1004,6 @@ ul {
     grid-template-columns: 1fr;
   }
 
-  .bottom-nav {
-    gap: 6px;
-    bottom: calc(10px + env(safe-area-inset-bottom));
-    width: min(calc(100% - 20px), 430px);
-    padding: 7px;
-    border-radius: 24px;
-  }
-
-  .bottom-nav-item {
-    min-height: 52px;
-    padding: 8px 6px;
-    font-size: 0.8rem;
-    border-radius: 18px;
-  }
 }
 
 @media (max-width: 520px) {
@@ -1089,7 +1037,7 @@ body {
   width: min(100%, 430px);
   min-height: 100svh;
   margin: 0 auto;
-  padding: 20px 18px calc(132px + env(safe-area-inset-bottom));
+  padding: 20px 18px calc(32px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: 13px;
@@ -1639,7 +1587,7 @@ body {
 
 .dictation-lesson-page > .lesson-dog-image {
   position: absolute;
-  right: max(18px, calc((100vw - 430px) / 2 + 12px));
+  right: 18px;
   top: 680px;
   z-index: 1;
   width: 96px;
@@ -1717,6 +1665,7 @@ body {
 
 .lesson-word-card {
   position: relative;
+  container-type: inline-size;
   overflow: hidden;
   min-height: 510px;
   padding: 28px 22px 120px;
@@ -1754,7 +1703,7 @@ body {
   margin-top: 16px;
   max-width: 100%;
   color: #26304a;
-  font-size: clamp(2.4rem, calc(34rem / var(--lesson-word-title-fit-length)), 4.9rem);
+  font-size: clamp(1.5rem, calc(160cqw / var(--lesson-word-title-fit-length)), 4.9rem);
   line-height: 0.92;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -2066,7 +2015,7 @@ body {
 
 .lesson-bottom-action {
   position: sticky;
-  bottom: calc(96px + env(safe-area-inset-bottom));
+  bottom: calc(12px + env(safe-area-inset-bottom));
   z-index: 80;
   display: grid;
   grid-template-columns: 1fr 82px;
@@ -2094,130 +2043,6 @@ body {
   cursor: pointer;
 }
 
-.bottom-nav {
-  width: min(calc(100% - 30px), 398px);
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 5px;
-  bottom: calc(14px + env(safe-area-inset-bottom));
-  padding: 9px;
-  border-radius: 30px;
-  background: rgba(255, 253, 247, 0.94);
-  border: 1px solid rgba(221, 179, 100, 0.28);
-  box-shadow:
-    0 24px 46px rgba(85, 69, 38, 0.2),
-    inset 0 2px 0 rgba(255, 255, 255, 0.84);
-}
-
-.bottom-nav-item {
-  min-height: 62px;
-  gap: 5px;
-  border-radius: 22px;
-  color: #8b826d;
-  font-size: 0.76rem;
-}
-
-.bottom-nav-item::before {
-  display: none;
-}
-
-.bottom-nav-item.active {
-  color: #3d73df;
-  background: #eef6ff;
-  box-shadow: inset 0 0 0 1px rgba(77, 141, 242, 0.12);
-}
-
-.bottom-nav-icon {
-  position: relative;
-  display: block;
-  width: 28px;
-  height: 28px;
-}
-
-.bottom-nav-icon::before,
-.bottom-nav-icon::after {
-  content: '';
-  position: absolute;
-  display: block;
-}
-
-.bottom-nav-icon-home::before {
-  left: 5px;
-  top: 10px;
-  width: 18px;
-  height: 14px;
-  border-radius: 5px;
-  background: currentColor;
-}
-
-.bottom-nav-icon-home::after {
-  left: 5px;
-  top: 3px;
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
-  border-left: 7px solid currentColor;
-  border-top: 7px solid currentColor;
-  transform: rotate(45deg) scale(0.72);
-}
-
-.bottom-nav-icon-book::before {
-  left: 6px;
-  top: 4px;
-  width: 17px;
-  height: 22px;
-  border-radius: 5px 7px 7px 5px;
-  background: currentColor;
-}
-
-.bottom-nav-icon-book::after {
-  left: 11px;
-  top: 8px;
-  width: 3px;
-  height: 15px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.85);
-}
-
-.bottom-nav-icon-stats::before {
-  left: 5px;
-  bottom: 4px;
-  width: 5px;
-  height: 13px;
-  border-radius: 999px;
-  background: currentColor;
-  box-shadow:
-    8px -6px 0 currentColor,
-    16px -11px 0 currentColor;
-}
-
-.bottom-nav-icon-stats::after {
-  left: 3px;
-  right: 3px;
-  bottom: 2px;
-  height: 3px;
-  border-radius: 999px;
-  background: currentColor;
-  opacity: 0.5;
-}
-
-.bottom-nav-icon-me::before {
-  left: 9px;
-  top: 4px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-.bottom-nav-icon-me::after {
-  left: 5px;
-  bottom: 3px;
-  width: 18px;
-  height: 11px;
-  border-radius: 12px 12px 6px 6px;
-  background: currentColor;
-}
-
 @media (min-width: 760px) {
   .reference-page {
     min-height: 860px;
@@ -2242,10 +2067,6 @@ body {
     transform-origin: right bottom;
   }
 
-  .lesson-word-card h1 {
-    font-size: 4.15rem;
-  }
-
   .lesson-audio-row {
     gap: 12px;
   }
@@ -2265,21 +2086,13 @@ body {
 .lesson-slow-icon-image,
 .lesson-heart-image,
 .lesson-dog-image,
-.bottom-nav-image-icon {
+.side-nav-image-icon {
   display: block;
   pointer-events: none;
   user-select: none;
 }
 
-.bottom-nav-image-icon {
-  display: none;
-}
-
-@media (min-width: 768px) {
-  :root {
-    --bottom-nav-space: 210px;
-  }
-
+@media (min-width: 1132px) {
   body {
     overflow-x: hidden;
     background:
@@ -2289,11 +2102,11 @@ body {
   }
 
   .reference-page {
-    width: 1024px;
-    min-width: 1024px;
+    width: min(1024px, 100%);
+    min-width: 0;
     min-height: 1366px;
     margin: 0 auto;
-    padding: 38px 48px 178px;
+    padding: 38px 48px calc(40px + env(safe-area-inset-bottom));
     gap: 20px;
     border: 0;
     border-radius: 48px;
@@ -2621,7 +2434,7 @@ body {
   .dictation-lesson-page {
     position: relative;
     gap: 20px;
-    padding: 36px 48px 190px;
+    padding: 36px 48px calc(40px + env(safe-area-inset-bottom));
     background:
       radial-gradient(circle at 103% 34%, rgba(224, 238, 247, 0.95), transparent 14%),
       linear-gradient(180deg, #fff9eb 0%, #fff5df 65%, #d9f0ce 100%);
@@ -2918,12 +2731,12 @@ body {
   }
 
   .lesson-bottom-action {
-    position: fixed;
-    left: calc(50% - 408px);
-    bottom: 210px;
+    position: sticky;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    margin: 16px auto 0;
     z-index: 90;
     width: 700px;
-    grid-template-columns: 530px 164px;
+    grid-template-columns: minmax(0, 1fr) 164px;
     gap: 30px;
     padding: 0;
     border: 0;
@@ -2948,39 +2761,6 @@ body {
     color: #1b2336;
     font-size: 18px;
     box-shadow: 0 6px 15px rgba(141, 106, 43, 0.12);
-  }
-
-  .bottom-nav {
-    width: 880px;
-    min-height: 132px;
-    bottom: calc(62px + env(safe-area-inset-bottom));
-    padding: 16px 18px;
-    border-radius: 26px;
-    gap: 0;
-  }
-
-  .bottom-nav-item {
-    min-height: 100px;
-    border-radius: 22px;
-    font-size: 18px;
-    gap: 0;
-  }
-
-  .bottom-nav-image-icon {
-    display: block;
-    width: 42px;
-    height: 42px;
-    margin-bottom: 6px;
-    object-fit: contain;
-  }
-
-  .bottom-nav-icon {
-    display: none;
-  }
-
-  .bottom-nav-item.active {
-    background: #eaf6ff;
-    color: #238bff;
   }
 
   .mode-hub-page {
@@ -3213,7 +2993,7 @@ body {
 
   .practice-learning-page {
     position: relative;
-    padding-bottom: 238px;
+    padding-bottom: calc(40px + env(safe-area-inset-bottom));
     background:
       radial-gradient(circle at 103% 34%, rgba(224, 238, 247, 0.95), transparent 14%),
       linear-gradient(180deg, #fff9eb 0%, #fff5df 65%, #d9f0ce 100%);
@@ -3363,11 +3143,7 @@ body {
   }
 }
 
-@media (min-width: 768px) and (max-height: 900px) {
-  .dictation-lesson-page {
-    padding-bottom: 220px;
-  }
-
+@media (min-width: 1132px) and (max-height: 900px) {
   .lesson-bottom-action {
     position: relative;
     left: auto;
@@ -3489,7 +3265,7 @@ body {
   display: none;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1132px) {
   .lesson-word-sources {
     text-align: center;
   }
@@ -3587,12 +3363,7 @@ body {
   cursor: default;
 }
 
-@media (min-width: 768px) {
-  /* The in-flow action bar needs a little more room than the fixed one to clear the floating navigation. */
-  .dictation-lesson-page-with-examples {
-    padding-bottom: 222px;
-  }
-
+@media (min-width: 1132px) {
   .lesson-answer-feedback,
   .lesson-audio-message,
   .lesson-word-card .lesson-spelling-feedback {
@@ -3629,5 +3400,31 @@ body {
     min-height: 64px;
     padding: 12px 48px;
     font-size: 24px;
+  }
+}
+
+@media (max-width: 720px) {
+  .side-nav {
+    right: calc(8px + env(safe-area-inset-right));
+    gap: 6px;
+    padding: 5px;
+    border-radius: 20px;
+  }
+
+  .side-nav-item {
+    min-height: 64px;
+    font-size: 0.8rem;
+    border-radius: 14px;
+  }
+
+  .side-nav-image-icon {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 1131px) {
+  .reference-page {
+    width: min(100%, 720px);
   }
 }

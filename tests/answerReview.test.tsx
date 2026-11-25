@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SpellingReview } from '../src/components/SpellingReview';
-import { ANSWER_REVEAL_GUARD_MS, isRevealGuardActive, isSubmitEnter, revealAboveBottomNav } from '../src/lib/answerReview';
+import { ANSWER_REVEAL_GUARD_MS, isRevealGuardActive, isSubmitEnter, revealAnswerActions } from '../src/lib/answerReview';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -42,51 +42,55 @@ describe('answer reveal guard', () => {
   });
 });
 
-describe('action row and the floating bottom navigation', () => {
-  function stubPage(navTop: number | null) {
+describe('action row and the visible answer', () => {
+  function stubPage(innerHeight: number, visualViewport?: { offsetTop: number; height: number }) {
     const scrollBy = vi.fn();
-    vi.stubGlobal('window', { innerHeight: 1366, scrollBy });
-    vi.stubGlobal('document', { querySelector: () => (navTop === null ? null : { getBoundingClientRect: () => ({ top: navTop }) }) });
+    vi.stubGlobal('window', { innerHeight, visualViewport, scrollBy });
     return scrollBy;
   }
   const rowEndingAt = (bottom: number) => ({ getBoundingClientRect: () => ({ bottom }) }) as unknown as Element;
   const answerStartingAt = (top: number) => ({ getBoundingClientRect: () => ({ top }) }) as unknown as Element;
 
-  it('moves the page just far enough to clear the navigation', () => {
+  it('moves the page just far enough to bring the action onto the screen', () => {
     const scrollBy = stubPage(1170);
-    revealAboveBottomNav(rowEndingAt(1256));
+    revealAnswerActions(rowEndingAt(1256));
     expect(scrollBy).toHaveBeenCalledWith({ top: 98, behavior: 'smooth' });
   });
 
-  it('leaves the page alone when the row is already reachable or missing', () => {
+  it('leaves a reachable row alone even when a side navigation starts higher on the screen', () => {
     const scrollBy = stubPage(1170);
-    revealAboveBottomNav(rowEndingAt(1158));
-    revealAboveBottomNav(null);
+    const sideNav = { getBoundingClientRect: () => ({ top: 150, bottom: 410 }) };
+    vi.stubGlobal('document', { querySelector: (selector: string) => selector === '.side-nav' ? sideNav : null });
+    revealAnswerActions(rowEndingAt(1158));
+    revealAnswerActions(null);
     expect(scrollBy).not.toHaveBeenCalled();
   });
 
-  it('falls back to the viewport edge on pages without the navigation', () => {
-    const scrollBy = stubPage(null);
-    revealAboveBottomNav(rowEndingAt(1400));
-    expect(scrollBy).toHaveBeenCalledWith({ top: 46, behavior: 'smooth' });
+  it('uses the visible screen edges when the on-screen keyboard shrinks and shifts the viewport', () => {
+    const scrollBy = stubPage(844, { offsetTop: 80, height: 420 });
+    revealAnswerActions(rowEndingAt(548), answerStartingAt(200));
+    expect(scrollBy).toHaveBeenCalledWith({ top: 60, behavior: 'smooth' });
+    scrollBy.mockClear();
+    revealAnswerActions(rowEndingAt(548), answerStartingAt(88));
+    expect(scrollBy).not.toHaveBeenCalled();
   });
 
   it('scrolls the full distance while the revealed answer stays on screen', () => {
     const scrollBy = stubPage(1170);
-    revealAboveBottomNav(rowEndingAt(1256), answerStartingAt(400));
+    revealAnswerActions(rowEndingAt(1256), answerStartingAt(400));
     expect(scrollBy).toHaveBeenCalledWith({ top: 98, behavior: 'smooth' });
   });
 
   it('stops before the revealed answer would leave the top of the screen', () => {
     const scrollBy = stubPage(626);
-    revealAboveBottomNav(rowEndingAt(900), answerStartingAt(72));
+    revealAnswerActions(rowEndingAt(900), answerStartingAt(72));
     expect(scrollBy).toHaveBeenCalledWith({ top: 60, behavior: 'smooth' });
   });
 
   it('does not move at all when the answer already sits at the top edge', () => {
     const scrollBy = stubPage(626);
-    revealAboveBottomNav(rowEndingAt(900), answerStartingAt(8));
-    revealAboveBottomNav(rowEndingAt(900), answerStartingAt(-40));
+    revealAnswerActions(rowEndingAt(900), answerStartingAt(8));
+    revealAnswerActions(rowEndingAt(900), answerStartingAt(-40));
     expect(scrollBy).not.toHaveBeenCalled();
   });
 });

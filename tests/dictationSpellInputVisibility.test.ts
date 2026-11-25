@@ -12,8 +12,8 @@ describe('dictation spell input visibility', () => {
   });
 
   it('gives the large-screen spelling input enough room for children to type', () => {
-    expect(stylesheet).toMatch(/@media \(min-width:\s*768px\)[\s\S]*?\.lesson-spell-field\s*{[^}]*width:\s*min\(820px,\s*100%\);/);
-    expect(stylesheet).toMatch(/@media \(min-width:\s*768px\)[\s\S]*?\.lesson-spell-field\s*{[^}]*min-height:\s*132px;/);
-    expect(stylesheet).toMatch(/@media \(min-width:\s*768px\)[\s\S]*?\.lesson-spell-field input\s*{[^}]*font-size:\s*46px;/);
+    expect(stylesheet).toMatch(/@media \(min-width:\s*1132px\)[\s\S]*?\.lesson-spell-field\s*{[^}]*width:\s*min\(820px,\s*100%\);/);
+    expect(stylesheet).toMatch(/@media \(min-width:\s*1132px\)[\s\S]*?\.lesson-spell-field\s*{[^}]*min-height:\s*132px;/);
+    expect(stylesheet).toMatch(/@media \(min-width:\s*1132px\)[\s\S]*?\.lesson-spell-field input\s*{[^}]*font-size:\s*46px;/);
   });
 });

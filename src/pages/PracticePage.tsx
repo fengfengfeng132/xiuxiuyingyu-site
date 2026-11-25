@@ -35,7 +35,7 @@ import {
   getPracticeCardTitle,
   maskSpellingWord,
 } from '../lib/practiceDisplay';
-import { isRevealGuardActive, isSubmitEnter, revealAboveBottomNav } from '../lib/answerReview';
+import { isRevealGuardActive, isSubmitEnter, revealAnswerActions } from '../lib/answerReview';
 import { buildDialogueFillQuestion } from '../lib/dialogueFill';
 import { stableShuffle } from '../lib/stableOptions';
 import { getLegacyPracticeQuestionIds, getSavedPracticeQuestionIds } from '../lib/practiceSession';
@@ -528,8 +528,7 @@ export function PracticePage() {
   }, [question, isSpellingQuestion]);
 
   useEffect(() => {
-    // Once an answer is revealed the card grows (verdict, examples, spelling review), which can push "下一题"
-    // under the floating bottom navigation. Late content such as a looked-up phonetic can push it down again.
+    // Examples, spelling feedback and late-loading content can push "下一题" below the viewport.
     if (!question || submittedExampleQuestionId !== question.id) return;
     const card = actionDockRef.current?.closest('.card');
     // What must stay on screen: the word in listening practice (it is shown only now, in the card title), the
@@ -537,7 +536,7 @@ export function PracticePage() {
     const answerArea = train === 'audio'
       ? '.card-title'
       : train === 'spelling' && submittedAnswerCorrect === false ? '.spelling-feedback-panel' : '.options, .learning-block';
-    revealAboveBottomNav(actionDockRef.current, card?.querySelector(answerArea) ?? null);
+    revealAnswerActions(actionDockRef.current, card?.querySelector(answerArea) ?? null);
   }, [question, submittedExampleQuestionId, submittedAnswerCorrect, train, feedback, phonetic, wordImageUrl, spellingCopied]);
 
   const audioText = question ? getPracticeAudioText(train, question, submittedExampleQuestionId === question.id) : '';

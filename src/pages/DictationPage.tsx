@@ -35,7 +35,7 @@ import { createDictationHistoryEntry, summarizeWeeklyDictationHistory } from '..
 import { summarizeWrongDictationAnswers, type DictationAnswerRecord } from '../lib/dictationSummary';
 import { buildSpellingFeedback } from '../lib/spellingFeedback';
 import { getStarCount } from '../lib/starRewards';
-import { isRevealGuardActive, isSubmitEnter, revealAboveBottomNav } from '../lib/answerReview';
+import { isRevealGuardActive, isSubmitEnter, revealAnswerActions } from '../lib/answerReview';
 import { recordCompletedTraining } from '../lib/learningRecords';
 
 type DictationStep =
@@ -264,7 +264,6 @@ export function DictationPage() {
   }, [clearAutoPlayTimer, stopAudioPlayback]);
 
   useEffect(() => {
-    // After an answer is shown the action bar follows the grown card; keep "下一题" clear of the floating navigation.
     const shownAnswer = currentStep ? answers.find((answer) => answer.stepId === currentStep.id) : undefined;
     if (!currentStep || !shownAnswer) return;
     // What must stay on screen: the verdict with the letter comparison after a wrong or skipped spelling,
@@ -272,7 +271,7 @@ export function DictationPage() {
     const answerArea = currentStep.type === 'listenSpell' && !shownAnswer.isCorrect
       ? '.lesson-answer-feedback'
       : '.lesson-choice-grid, .lesson-spell-field';
-    revealAboveBottomNav(actionBarRef.current, actionBarRef.current?.closest('main')?.querySelector(answerArea) ?? null);
+    revealAnswerActions(actionBarRef.current, actionBarRef.current?.closest('main')?.querySelector(answerArea) ?? null);
   }, [answers, currentStep, spellingCopied]);
 
   useEffect(() => {

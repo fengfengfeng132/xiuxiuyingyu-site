@@ -23,6 +23,6 @@ describe('iPad loading performance', () => {
     expect(modeHubSource).toContain('fetchPriority="high"');
     expect(modeHubSource).toMatch(/<img\s+src=\{step\.icon\}[^>]*decoding="async"/s);
     expect(modeHubSource).toMatch(/<img\s+src=\{card\.icon\}[^>]*loading="lazy"[^>]*decoding="async"/s);
-    expect(appLayoutSource).toMatch(/className="bottom-nav-image-icon"[^>]*loading="lazy"[^>]*decoding="async"/s);
+    expect(appLayoutSource).toMatch(/className="side-nav-image-icon"[^>]*loading="lazy"[^>]*decoding="async"/s);
   });
 });
